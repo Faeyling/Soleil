@@ -67,7 +67,7 @@ export function ProfilPage() {
         return;
       }
       await importerDonnees(data);
-      setMessageImport({ texte: "✓ Importation réussie ! Tes données ont été restaurées.", erreur: false });
+      setMessageImport({ texte: "Importation réussie ! Tes données ont été restaurées.", erreur: false });
     } catch {
       setMessageImport({
         texte: "Impossible de lire ce fichier. Vérifie qu'il s'agit bien d'un export Soleil.",
@@ -88,7 +88,8 @@ export function ProfilPage() {
       <h1 className="text-2xl font-bold mb-4">Profil & données</h1>
 
       <div className="rounded-[var(--rayon-grand)] bg-sauge-clair text-sauge-fonce p-4 mb-6 text-sm">
-        🔒 Toutes tes données restent sur cet appareil, dans ton navigateur. Rien n'est jamais
+        <span aria-hidden="true">🔒 </span>
+        Toutes tes données restent sur cet appareil, dans ton navigateur. Rien n'est jamais
         envoyé à un serveur. Pense à faire une sauvegarde régulière si tu changes d'appareil.
       </div>
 
@@ -119,7 +120,7 @@ export function ProfilPage() {
           </div>
 
           <Bouton className="w-full" onClick={genererPdf}>
-            📄 Générer le rapport PDF
+            <span aria-hidden="true">📄</span> Générer le rapport PDF
           </Bouton>
         </div>
       </section>
@@ -150,6 +151,7 @@ export function ProfilPage() {
                 messageImport.erreur ? "bg-terracotta-clair text-terracotta-fonce" : "bg-sauge-clair text-sauge-fonce"
               }`}
             >
+              {!messageImport.erreur && <span aria-hidden="true">✓ </span>}
               {messageImport.texte}
             </p>
           )}

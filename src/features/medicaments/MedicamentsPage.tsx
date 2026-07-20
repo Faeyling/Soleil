@@ -53,7 +53,8 @@ export function MedicamentsPage() {
 
       {confirmation && (
         <div className="mb-4 rounded-xl bg-sauge-clair text-sauge-fonce px-4 py-3 text-sm">
-          ✓ Prise enregistrée !
+          <span aria-hidden="true">✓ </span>
+          Prise enregistrée !
         </div>
       )}
 
@@ -119,7 +120,9 @@ export function MedicamentsPage() {
               onClick={() => navigate(`/medicaments/${m.id}`)}
               className="flex items-center gap-3 rounded-xl border border-bordure bg-surface px-4 py-3 text-left cursor-pointer hover:bg-fond-douce"
             >
-              <span className="text-xl">💊</span>
+              <span className="text-xl" aria-hidden="true">
+                💊
+              </span>
               <span className="font-semibold">{m.nom}</span>
             </button>
           ))}

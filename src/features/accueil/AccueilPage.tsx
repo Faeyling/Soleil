@@ -50,7 +50,9 @@ export function AccueilPage() {
     return (
       <div className="flex flex-col items-center text-center gap-4 pt-8">
         <Mascotte taille={150} />
-        <h1 className="text-xl font-bold">Bienvenue sur Soleil 🌤️</h1>
+        <h1 className="text-xl font-bold">
+          Bienvenue sur Soleil <span aria-hidden="true">🌤️</span>
+        </h1>
         <p className="text-texte-doux max-w-sm">
           Je suis là pour t'aider à suivre tes symptômes au jour le jour, en toute
           simplicité. Commence par signaler un symptôme, ajouter un médicament, ou
@@ -66,7 +68,9 @@ export function AccueilPage() {
 
   return (
     <div className="pb-4">
-      <h1 className="text-2xl font-bold mb-4">Bonjour 🌤️</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Bonjour <span aria-hidden="true">🌤️</span>
+      </h1>
 
       <div className="flex justify-around mb-6">
         <ActionRonde
@@ -90,7 +94,7 @@ export function AccueilPage() {
       </div>
 
       <Bouton className="w-full mb-6" onClick={() => navigate("/parcours")}>
-        ☀️ Remplir le suivi du jour
+        <span aria-hidden="true">☀️</span> Remplir le suivi du jour
       </Bouton>
 
       <CalendrierMensuel

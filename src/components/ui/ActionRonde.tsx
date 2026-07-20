@@ -16,6 +16,7 @@ export function ActionRonde({ icone, label, couleur, onClick }: ActionRondeProps
       <span
         className="flex items-center justify-center w-16 h-16 rounded-full text-2xl text-white shadow-[var(--ombre-forte)] transition-transform group-active:scale-90"
         style={{ background: couleur }}
+        aria-hidden="true"
       >
         {icone}
       </span>

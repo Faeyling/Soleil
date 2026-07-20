@@ -49,7 +49,8 @@ export function RessourcesPage() {
       </div>
 
       <div className="rounded-[var(--rayon)] bg-fond-douce p-4 mb-6 text-xs text-texte-doux leading-relaxed">
-        ℹ️ {AVERTISSEMENT_RESSOURCES}
+        <span aria-hidden="true">ℹ️ </span>
+        {AVERTISSEMENT_RESSOURCES}
       </div>
 
       <section className="mb-8">
@@ -63,7 +64,7 @@ export function RessourcesPage() {
               rel="noreferrer"
               className="text-ardoise-fonce underline text-sm"
             >
-              {lien.titre} ↗
+              {lien.titre} <span aria-hidden="true">↗</span>
             </a>
           ))}
         </div>
@@ -122,7 +123,7 @@ export function RessourcesPage() {
                 </div>
                 {n.url && (
                   <a href={n.url} target="_blank" rel="noreferrer" className="text-ardoise-fonce underline text-sm block mt-1">
-                    {n.url} ↗
+                    {n.url} <span aria-hidden="true">↗</span>
                   </a>
                 )}
                 {n.note && <p className="text-sm mt-1">{n.note}</p>}

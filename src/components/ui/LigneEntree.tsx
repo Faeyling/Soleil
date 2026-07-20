@@ -23,7 +23,10 @@ export function LigneEntree({ entree }: LigneEntreeProps) {
       onClick={() => navigate(cheminEdition(entree))}
       className="w-full flex items-center gap-3 py-3 px-2 rounded-xl hover:bg-fond-douce transition-colors text-left cursor-pointer"
     >
-      <span className="text-xl w-9 h-9 flex items-center justify-center rounded-full bg-fond-douce flex-shrink-0">
+      <span
+        className="text-xl w-9 h-9 flex items-center justify-center rounded-full bg-fond-douce flex-shrink-0"
+        aria-hidden="true"
+      >
         {iconeEntree(entree)}
       </span>
       <span className="flex-1 min-w-0">

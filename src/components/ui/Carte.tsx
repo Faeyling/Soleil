@@ -37,6 +37,7 @@ export function CarteElement({ icone, label, couleur, onClick }: CarteElementPro
       <span
         className="flex items-center justify-center w-11 h-11 rounded-full text-xl"
         style={{ background: couleur }}
+        aria-hidden="true"
       >
         {icone}
       </span>

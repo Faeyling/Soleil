@@ -254,7 +254,7 @@ function EtapeSymptomes({
           return (
             <div key={id}>
               <p className="font-semibold text-sm mb-2">
-                {def.icone} {def.label}
+                <span aria-hidden="true">{def.icone}</span> {def.label}
               </p>
               <SelecteurSeverite valeur={valeurs[id]} onChange={(s) => onChange(id, s)} />
             </div>
@@ -337,7 +337,7 @@ function EtapeAutresSuivis({
           return (
             <div key={id}>
               <p className="font-semibold text-sm mb-2">
-                {def.icone} {def.label}
+                <span aria-hidden="true">{def.icone}</span> {def.label}
               </p>
               {def.typeFormulaire === "severite" ? (
                 <SelecteurSeverite

@@ -13,7 +13,8 @@ export function CaseImportante({ valeur, onChange }: CaseImportanteProps) {
         className="w-5 h-5 accent-[var(--color-terracotta)]"
       />
       <span className="text-sm font-medium">
-        ⭐ Marquer comme importante (incluse en priorité dans le rapport pour le médecin)
+        <span aria-hidden="true">⭐ </span>
+        Marquer comme importante (incluse en priorité dans le rapport pour le médecin)
       </span>
     </label>
   );

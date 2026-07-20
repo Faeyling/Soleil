@@ -109,7 +109,9 @@ function GestionMedicament({ medicamentId, medicamentNom, prises, onSupprime }: 
                 <span className="block text-sm font-semibold">{formatDateTimeLisible(p.datetime)}</span>
                 {p.dose && <span className="block text-xs text-texte-doux">Dose : {p.dose}</span>}
               </span>
-              <span className="text-texte-doux">›</span>
+              <span className="text-texte-doux" aria-hidden="true">
+                ›
+              </span>
             </button>
           ))}
         </div>

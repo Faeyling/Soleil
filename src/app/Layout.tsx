@@ -26,7 +26,9 @@ export function Layout() {
                 }`
               }
             >
-              <span className="text-xl leading-none">{onglet.icone}</span>
+              <span className="text-xl leading-none" aria-hidden="true">
+                {onglet.icone}
+              </span>
               {onglet.label}
             </NavLink>
           ))}
