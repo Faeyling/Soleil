@@ -7,12 +7,17 @@ import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
 import { Bouton } from "../../components/ui/Bouton";
 import { Confirmation } from "../../components/ui/Confirmation";
 import { CaseImportante } from "../../components/ui/CaseImportante";
+import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { SECTIONS } from "../../lib/sections";
 import type { Severite } from "../../lib/severite";
-import { datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
-import { creerEntree, modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
+import { dateDepuisDatetimeLocal, datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
+import {
+  creerEntree,
+  modifierEntreeAvecUnicite,
+  supprimerEntree,
+} from "../../data/repositories/entreesRepository";
 import { useEntree } from "../../hooks/useEntrees";
-import type { EntreeSymptome } from "../../data/types";
+import { CHARGEMENT } from "../../hooks/chargement";
 
 export function SymptomeFormPage() {
   const { id = "" } = useParams();
@@ -20,7 +25,7 @@ export function SymptomeFormPage() {
   const navigate = useNavigate();
   const entreeId = searchParams.get("entreeId") ?? undefined;
   const symptome = trouverSymptome(id);
-  const entreeExistante = useEntree(entreeId) as EntreeSymptome | undefined;
+  const entreeBrute = useEntree(entreeId);
 
   const [severite, setSeverite] = useState<Severite | undefined>();
   const [datetime, setDatetime] = useState(datetimeLocalValue(maintenantISO()));
@@ -30,6 +35,14 @@ export function SymptomeFormPage() {
   const [erreur, setErreur] = useState<string | undefined>();
   const [suppressionDemandee, setSuppressionDemandee] = useState(false);
   const [entreeChargeeId, setEntreeChargeeId] = useState<string | undefined>();
+  const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
+
+  if (entreeId && entreeBrute === CHARGEMENT) {
+    return <ChargementEcran />;
+  }
+  // Narrowing par `type` plutôt qu'un cast : une entreeId pointant vers une
+  // entrée d'un autre type ne doit jamais être lue/écrite comme un symptôme.
+  const entreeExistante = entreeBrute && entreeBrute !== CHARGEMENT && entreeBrute.type === "symptom" ? entreeBrute : undefined;
 
   if (entreeExistante && entreeExistante.id !== entreeChargeeId) {
     setEntreeChargeeId(entreeExistante.id);
@@ -51,52 +64,65 @@ export function SymptomeFormPage() {
   };
 
   const enregistrer = async () => {
+    if (enregistrementEnCours) return;
     if (!severite) {
       setErreur("Choisis une sévérité pour continuer.");
       return;
     }
-    const iso = isoDepuisDatetimeLocal(datetime);
-    const date = iso.slice(0, 10);
+    setEnregistrementEnCours(true);
+    try {
+      const iso = isoDepuisDatetimeLocal(datetime);
+      const date = dateDepuisDatetimeLocal(datetime);
 
-    if (entreeExistante) {
-      await modifierEntree(entreeExistante.id, {
-        severity: severite,
-        datetime: iso,
+      if (entreeExistante) {
+        const resultat = await modifierEntreeAvecUnicite(entreeExistante, {
+          severity: severite,
+          datetime: iso,
+          date,
+          location: symptome.localisable ? localisation : undefined,
+          note: note.trim() || undefined,
+          important,
+        });
+        if (!resultat.modifiee && resultat.conflit) {
+          setErreur(
+            "Tu as déjà une entrée pour ce symptôme à cette date. Voici cette entrée-là plutôt.",
+          );
+          navigate(`/symptomes/${symptome.id}?entreeId=${resultat.conflit.id}`, { replace: true });
+          return;
+        }
+        navigate("/");
+        return;
+      }
+
+      const resultat = await creerEntree({
+        type: "symptom",
+        item: symptome.id,
         date,
+        datetime: iso,
+        severity: severite,
         location: symptome.localisable ? localisation : undefined,
         note: note.trim() || undefined,
         important,
       });
-      navigate("/");
-      return;
-    }
 
-    const resultat = await creerEntree({
-      type: "symptom",
-      item: symptome.id,
-      date,
-      datetime: iso,
-      severity: severite,
-      location: symptome.localisable ? localisation : undefined,
-      note: note.trim() || undefined,
-      important,
-    });
-
-    if (!resultat.creee) {
-      setErreur(
-        "Tu as déjà une entrée pour ce symptôme aujourd'hui. Modifie-la plutôt que d'en créer une nouvelle.",
-      );
-      if (resultat.entree.type === "symptom") {
-        setSeverite(resultat.entree.severity);
-        setDatetime(datetimeLocalValue(resultat.entree.datetime));
-        setLocalisation(resultat.entree.location ?? []);
-        setNote(resultat.entree.note ?? "");
-        setImportant(resultat.entree.important ?? false);
+      if (!resultat.creee) {
+        setErreur(
+          "Tu as déjà une entrée pour ce symptôme aujourd'hui. Modifie-la plutôt que d'en créer une nouvelle.",
+        );
+        if (resultat.entree.type === "symptom") {
+          setSeverite(resultat.entree.severity);
+          setDatetime(datetimeLocalValue(resultat.entree.datetime));
+          setLocalisation(resultat.entree.location ?? []);
+          setNote(resultat.entree.note ?? "");
+          setImportant(resultat.entree.important ?? false);
+        }
+        navigate(`/symptomes/${symptome.id}?entreeId=${resultat.entree.id}`, { replace: true });
+        return;
       }
-      navigate(`/symptomes/${symptome.id}?entreeId=${resultat.entree.id}`, { replace: true });
-      return;
+      navigate("/");
+    } finally {
+      setEnregistrementEnCours(false);
     }
-    navigate("/");
   };
 
   const supprimer = async () => {
@@ -168,7 +194,12 @@ export function SymptomeFormPage() {
       <CaseImportante valeur={important} onChange={setImportant} />
 
       <div className="flex gap-3 mt-6">
-        <Bouton className="flex-1" couleur={SECTIONS.symptomes.couleur} onClick={enregistrer}>
+        <Bouton
+          className="flex-1"
+          couleur={SECTIONS.symptomes.couleur}
+          onClick={enregistrer}
+          disabled={enregistrementEnCours}
+        >
           Enregistrer
         </Bouton>
         {entreeExistante && (
@@ -189,4 +220,3 @@ export function SymptomeFormPage() {
     </div>
   );
 }
-

@@ -1,13 +1,22 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../data/db";
 import type { Entree, TypeEntree } from "../data/types";
+import { CHARGEMENT, type OuChargement } from "./chargement";
 
-export function useToutesLesEntrees(): Entree[] {
-  return (
-    useLiveQuery(async () => {
+/**
+ * Renvoie `CHARGEMENT` tant que la requête Dexie n'a pas résolu une première
+ * fois, pour permettre de distinguer "en cours de chargement" de "vide" côté
+ * appelant (ex. écran d'accueil : ne pas afficher l'état "aucune entrée"
+ * avant d'être sûr qu'il n'y a vraiment aucune entrée).
+ */
+export function useToutesLesEntrees(): OuChargement<Entree[]> {
+  return useLiveQuery(
+    async () => {
       const entrees = await db.entrees.orderBy("datetime").toArray();
       return entrees.reverse();
-    }, []) ?? []
+    },
+    [],
+    CHARGEMENT,
   );
 }
 
@@ -35,8 +44,8 @@ export function useEntreesEntreDates(dateDebut: string, dateFin: string): Entree
   );
 }
 
-export function useEntree(id: string | undefined): Entree | undefined {
-  return useLiveQuery(() => (id ? db.entrees.get(id) : undefined), [id]);
+export function useEntree(id: string | undefined): OuChargement<Entree | undefined> {
+  return useLiveQuery(() => (id ? db.entrees.get(id) : undefined), [id], CHARGEMENT);
 }
 
 /** Historique des prises d'un médicament (`item` vaut `medicationId` pour ce type). */

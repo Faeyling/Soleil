@@ -1,18 +1,30 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToutesLesEntrees } from "../../hooks/useEntrees";
+import { CHARGEMENT } from "../../hooks/chargement";
+import type { Entree } from "../../data/types";
 import { ActionRonde } from "../../components/ui/ActionRonde";
 import { CalendrierMensuel } from "../../components/ui/CalendrierMensuel";
 import { LigneEntree } from "../../components/ui/LigneEntree";
 import { Bouton } from "../../components/ui/Bouton";
+import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { Mascotte } from "../../components/mascotte/Mascotte";
 import { SECTIONS } from "../../lib/sections";
 import { formatDateLisible } from "../../lib/date";
 
+// Référence stable (ne change pas d'identité entre les rendus), pour ne pas
+// invalider le useMemo ci-dessous à chaque rendu pendant le chargement.
+const AUCUNE_ENTREE: Entree[] = [];
+
 export function AccueilPage() {
   const navigate = useNavigate();
-  const entrees = useToutesLesEntrees();
+  const entreesBrutes = useToutesLesEntrees();
   const [jourSelectionne, setJourSelectionne] = useState<string | undefined>();
+
+  // Retombe sur [] pendant le chargement pour garder les hooks ci-dessous
+  // inconditionnels (règle des hooks) ; le rendu "chargement" est décidé
+  // après tous les hooks, pour ne jamais confondre "en cours" et "vide".
+  const entrees = entreesBrutes === CHARGEMENT ? AUCUNE_ENTREE : entreesBrutes;
 
   const entreesParJour = useMemo(() => {
     const carte = new Map<string, typeof entrees>();
@@ -29,6 +41,10 @@ export function AccueilPage() {
   const suivis = entrees.filter((e) => e.type === "track_something").slice(0, 5);
 
   const entreesJourSelectionne = jourSelectionne ? entreesParJour.get(jourSelectionne) ?? [] : [];
+
+  if (entreesBrutes === CHARGEMENT) {
+    return <ChargementEcran />;
+  }
 
   if (entrees.length === 0) {
     return (

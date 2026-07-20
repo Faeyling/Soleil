@@ -10,7 +10,7 @@ export function SuivisListePage() {
     <div>
       <EnTete titre="Suivre autre chose" couleur={SECTIONS.suivis.couleurFonce} />
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {AUTRES_SUIVIS.map((s) => (
+        {AUTRES_SUIVIS.filter((s) => !s.masque).map((s) => (
           <CarteElement
             key={s.id}
             icone={s.icone}

@@ -12,6 +12,7 @@ import type { Entree } from "../../data/types";
 import { joursDepuis, dateDuJour, formatDateLisible } from "../../lib/date";
 import { ordreSeverite, LABEL_SEVERITE } from "../../lib/severite";
 import { libelleEntree, iconeEntree } from "../../lib/libelleEntree";
+import { dateDebutPeriode, type Periode } from "../../lib/periode";
 
 const PALETTE = [
   "var(--color-terracotta)",
@@ -24,15 +25,17 @@ const PALETTE = [
 
 interface GraphiqueEvolutionProps {
   entrees: Entree[];
-  dateDebut: string;
+  periode: Periode;
 }
 
-export function GraphiqueEvolution({ entrees, dateDebut }: GraphiqueEvolutionProps) {
+export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps) {
   const [masques, setMasques] = useState<Set<string>>(new Set());
 
+  const dateDebutSelection = dateDebutPeriode(periode);
+
   const entreesAvecSeverite = useMemo(
-    () => entrees.filter((e) => "severity" in e && e.severity && e.date >= dateDebut),
-    [entrees, dateDebut],
+    () => entrees.filter((e) => "severity" in e && e.severity && e.date >= dateDebutSelection),
+    [entrees, dateDebutSelection],
   );
 
   const items = useMemo(() => {
@@ -48,21 +51,42 @@ export function GraphiqueEvolution({ entrees, dateDebut }: GraphiqueEvolutionPro
     return carte;
   }, [entreesAvecSeverite]);
 
+  // Pour "tout", on ne remonte pas jusqu'à la borne fixe de dateDebutPeriode
+  // (très ancienne) mais jusqu'à la date d'entrée réelle la plus ancienne —
+  // sinon le graphique se retrouve arbitrairement tronqué (365 jours) ou, si
+  // on retire le plafond, à afficher des décennies de jours vides.
   const jours = useMemo(() => {
-    const nbJoursDiff = Math.min(
-      365,
-      Math.max(1, Math.round((new Date(dateDuJour()).getTime() - new Date(dateDebut).getTime()) / 86400000) + 1),
+    let debut = dateDebutSelection;
+    if (periode === "tout") {
+      debut =
+        entreesAvecSeverite.length > 0
+          ? entreesAvecSeverite.reduce((min, e) => (e.date < min ? e.date : min), entreesAvecSeverite[0].date)
+          : dateDuJour();
+    }
+    const nbJours = Math.max(
+      1,
+      Math.round((new Date(dateDuJour()).getTime() - new Date(debut).getTime()) / 86400000) + 1,
     );
-    return joursDepuis(nbJoursDiff);
-  }, [dateDebut]);
+    return joursDepuis(nbJours);
+  }, [dateDebutSelection, periode, entreesAvecSeverite]);
 
   const donnees = useMemo(() => {
+    // Index (date -> item -> sévérité) construit en un seul passage, pour
+    // éviter de re-scanner tout `entreesAvecSeverite` à chaque cellule
+    // jour × élément (ce qui serait en O(jours × items × entrées)).
+    const parJourEtCle = new Map<string, Map<string, number>>();
+    for (const e of entreesAvecSeverite) {
+      if (!("severity" in e) || !e.severity) continue;
+      const parCle = parJourEtCle.get(e.date) ?? new Map<string, number>();
+      parCle.set(`${e.type}:${e.item}`, ordreSeverite(e.severity));
+      parJourEtCle.set(e.date, parCle);
+    }
+
     return jours.map((jour) => {
       const ligne: Record<string, number | string | null> = { date: jour };
+      const parCle = parJourEtCle.get(jour);
       for (const [cle] of items) {
-        const [type, item] = cle.split(":");
-        const entree = entreesAvecSeverite.find((e) => e.date === jour && e.type === type && e.item === item);
-        ligne[cle] = entree && "severity" in entree && entree.severity ? ordreSeverite(entree.severity) : null;
+        ligne[cle] = parCle?.get(cle) ?? null;
       }
       return ligne;
     });
@@ -144,7 +168,7 @@ export function GraphiqueEvolution({ entrees, dateDebut }: GraphiqueEvolutionPro
                 stroke={info.couleur}
                 strokeWidth={2.5}
                 dot={{ r: 3 }}
-                connectNulls={false}
+                connectNulls
                 isAnimationActive={false}
               />
             ),

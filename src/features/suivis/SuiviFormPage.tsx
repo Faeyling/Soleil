@@ -7,12 +7,17 @@ import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
 import { Bouton } from "../../components/ui/Bouton";
 import { Confirmation } from "../../components/ui/Confirmation";
 import { CaseImportante } from "../../components/ui/CaseImportante";
+import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { SECTIONS } from "../../lib/sections";
 import type { Severite } from "../../lib/severite";
-import { datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
-import { creerEntree, modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
+import { dateDepuisDatetimeLocal, datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
+import {
+  creerEntree,
+  modifierEntreeAvecUnicite,
+  supprimerEntree,
+} from "../../data/repositories/entreesRepository";
 import { useEntree } from "../../hooks/useEntrees";
-import type { EntreeSuivi } from "../../data/types";
+import { CHARGEMENT } from "../../hooks/chargement";
 
 export function SuiviFormPage() {
   const { id = "" } = useParams();
@@ -20,7 +25,7 @@ export function SuiviFormPage() {
   const navigate = useNavigate();
   const entreeId = searchParams.get("entreeId") ?? undefined;
   const suivi = trouverSuivi(id);
-  const entreeExistante = useEntree(entreeId) as EntreeSuivi | undefined;
+  const entreeBrute = useEntree(entreeId);
 
   const [severite, setSeverite] = useState<Severite | undefined>();
   const [valeur, setValeur] = useState("");
@@ -30,6 +35,15 @@ export function SuiviFormPage() {
   const [erreur, setErreur] = useState<string | undefined>();
   const [suppressionDemandee, setSuppressionDemandee] = useState(false);
   const [entreeChargeeId, setEntreeChargeeId] = useState<string | undefined>();
+  const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
+
+  if (entreeId && entreeBrute === CHARGEMENT) {
+    return <ChargementEcran />;
+  }
+  // Narrowing par `type` plutôt qu'un cast : une entreeId pointant vers une
+  // entrée d'un autre type ne doit jamais être lue/écrite comme un suivi.
+  const entreeExistante =
+    entreeBrute && entreeBrute !== CHARGEMENT && entreeBrute.type === "track_something" ? entreeBrute : undefined;
 
   if (entreeExistante && entreeExistante.id !== entreeChargeeId) {
     setEntreeChargeeId(entreeExistante.id);
@@ -45,6 +59,7 @@ export function SuiviFormPage() {
   }
 
   const enregistrer = async () => {
+    if (enregistrementEnCours) return;
     if (suivi.typeFormulaire === "severite" && !severite) {
       setErreur("Choisis un niveau pour continuer.");
       return;
@@ -53,43 +68,54 @@ export function SuiviFormPage() {
       setErreur("Ajoute une petite description avant d'enregistrer.");
       return;
     }
-    const iso = isoDepuisDatetimeLocal(datetime);
-    const date = iso.slice(0, 10);
+    setEnregistrementEnCours(true);
+    try {
+      const iso = isoDepuisDatetimeLocal(datetime);
+      const date = dateDepuisDatetimeLocal(datetime);
 
-    const champs = {
-      severity: suivi.typeFormulaire === "severite" ? severite : undefined,
-      value: suivi.typeFormulaire === "numerique" && valeur !== "" ? Number(valeur) : undefined,
-      unit: suivi.typeFormulaire === "numerique" ? suivi.unite : undefined,
-      note: note.trim() || undefined,
-      important,
-      datetime: iso,
-      date,
-    };
+      const champs = {
+        severity: suivi.typeFormulaire === "severite" ? severite : undefined,
+        value: suivi.typeFormulaire === "numerique" && valeur !== "" ? Number(valeur) : undefined,
+        unit: suivi.typeFormulaire === "numerique" ? suivi.unite : undefined,
+        note: note.trim() || undefined,
+        important,
+        datetime: iso,
+        date,
+      };
 
-    if (entreeExistante) {
-      await modifierEntree(entreeExistante.id, champs);
+      if (entreeExistante) {
+        const resultat = await modifierEntreeAvecUnicite(entreeExistante, champs);
+        if (!resultat.modifiee && resultat.conflit) {
+          setErreur("Tu as déjà une entrée pour cet élément à cette date. Voici cette entrée-là plutôt.");
+          navigate(`/suivis/${suivi.id}?entreeId=${resultat.conflit.id}`, { replace: true });
+          return;
+        }
+        navigate("/");
+        return;
+      }
+
+      const resultat = await creerEntree({
+        type: "track_something",
+        item: suivi.id,
+        ...champs,
+      });
+
+      if (!resultat.creee) {
+        setErreur("Tu as déjà une entrée pour cet élément aujourd'hui. Modifie-la plutôt.");
+        if (resultat.entree.type === "track_something") {
+          setSeverite(resultat.entree.severity);
+          setValeur(resultat.entree.value != null ? String(resultat.entree.value) : "");
+          setDatetime(datetimeLocalValue(resultat.entree.datetime));
+          setNote(resultat.entree.note ?? "");
+          setImportant(resultat.entree.important ?? false);
+        }
+        navigate(`/suivis/${suivi.id}?entreeId=${resultat.entree.id}`, { replace: true });
+        return;
+      }
       navigate("/");
-      return;
+    } finally {
+      setEnregistrementEnCours(false);
     }
-
-    const resultat = await creerEntree({
-      type: "track_something",
-      item: suivi.id,
-      ...champs,
-    });
-
-    if (!resultat.creee) {
-      setErreur("Tu as déjà une entrée pour cet élément aujourd'hui. Modifie-la plutôt.");
-      const existante = resultat.entree as EntreeSuivi;
-      setSeverite(existante.severity);
-      setValeur(existante.value != null ? String(existante.value) : "");
-      setDatetime(datetimeLocalValue(existante.datetime));
-      setNote(existante.note ?? "");
-      setImportant(existante.important ?? false);
-      navigate(`/suivis/${suivi.id}?entreeId=${resultat.entree.id}`, { replace: true });
-      return;
-    }
-    navigate("/");
   };
 
   const supprimer = async () => {
@@ -163,7 +189,12 @@ export function SuiviFormPage() {
       <CaseImportante valeur={important} onChange={setImportant} />
 
       <div className="flex gap-3 mt-6">
-        <Bouton className="flex-1" couleur={SECTIONS.suivis.couleur} onClick={enregistrer}>
+        <Bouton
+          className="flex-1"
+          couleur={SECTIONS.suivis.couleur}
+          onClick={enregistrer}
+          disabled={enregistrementEnCours}
+        >
           Enregistrer
         </Bouton>
         {entreeExistante && (

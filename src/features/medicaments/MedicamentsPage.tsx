@@ -7,7 +7,7 @@ import { SECTIONS } from "../../lib/sections";
 import { useMedicaments } from "../../hooks/useMedicaments";
 import { ajouterMedicament } from "../../data/repositories/medicamentsRepository";
 import { creerEntree } from "../../data/repositories/entreesRepository";
-import { datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
+import { dateDepuisDatetimeLocal, datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
 
 export function MedicamentsPage() {
   const navigate = useNavigate();
@@ -18,27 +18,33 @@ export function MedicamentsPage() {
   const [note, setNote] = useState("");
   const [datetime, setDatetime] = useState(datetimeLocalValue(maintenantISO()));
   const [confirmation, setConfirmation] = useState(false);
+  const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
 
   const enregistrerPrise = async () => {
-    if (!nom.trim()) return;
-    const medicament = await ajouterMedicament(nom);
-    const iso = isoDepuisDatetimeLocal(datetime);
-    await creerEntree({
-      type: "medication_intake",
-      item: medicament.id,
-      medicationId: medicament.id,
-      medicationName: medicament.nom,
-      dose: dose.trim() || undefined,
-      note: note.trim() || undefined,
-      date: iso.slice(0, 10),
-      datetime: iso,
-    });
-    setNom("");
-    setDose("");
-    setNote("");
-    setDatetime(datetimeLocalValue(maintenantISO()));
-    setConfirmation(true);
-    setTimeout(() => setConfirmation(false), 2500);
+    if (enregistrementEnCours || !nom.trim()) return;
+    setEnregistrementEnCours(true);
+    try {
+      const medicament = await ajouterMedicament(nom);
+      const iso = isoDepuisDatetimeLocal(datetime);
+      await creerEntree({
+        type: "medication_intake",
+        item: medicament.id,
+        medicationId: medicament.id,
+        medicationName: medicament.nom,
+        dose: dose.trim() || undefined,
+        note: note.trim() || undefined,
+        date: dateDepuisDatetimeLocal(datetime),
+        datetime: iso,
+      });
+      setNom("");
+      setDose("");
+      setNote("");
+      setDatetime(datetimeLocalValue(maintenantISO()));
+      setConfirmation(true);
+      setTimeout(() => setConfirmation(false), 2500);
+    } finally {
+      setEnregistrementEnCours(false);
+    }
   };
 
   return (
@@ -46,8 +52,8 @@ export function MedicamentsPage() {
       <EnTete titre="Ajouter un médicament" couleur={SECTIONS.medicaments.couleurFonce} />
 
       {confirmation && (
-        <div className="mb-4 rounded-xl bg-ardoise-clair text-ardoise-fonce px-4 py-3 text-sm">
-          Prise enregistrée !
+        <div className="mb-4 rounded-xl bg-sauge-clair text-sauge-fonce px-4 py-3 text-sm">
+          ✓ Prise enregistrée !
         </div>
       )}
 
@@ -96,7 +102,7 @@ export function MedicamentsPage() {
           className="w-full"
           couleur={SECTIONS.medicaments.couleur}
           onClick={enregistrerPrise}
-          disabled={!nom.trim()}
+          disabled={!nom.trim() || enregistrementEnCours}
         >
           Enregistrer la prise
         </Bouton>

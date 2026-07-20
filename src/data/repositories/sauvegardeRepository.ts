@@ -1,5 +1,6 @@
 import { db } from "../db";
 import type { Entree, Medicament, RessourceNote } from "../types";
+import { TYPES_UNIQUES } from "./entreesRepository";
 
 const VERSION_SAUVEGARDE = 1;
 
@@ -54,6 +55,32 @@ export function estSauvegardeValide(data: unknown): data is Sauvegarde {
   );
 }
 
+/**
+ * Ne garde qu'une entrée par (type, item, date) pour les types soumis à la
+ * règle d'unicité quotidienne — en cas de doublon dans le fichier importé
+ * (sauvegarde corrompue ou modifiée à la main), on conserve la plus
+ * récemment modifiée plutôt que de restaurer des doublons que l'app ne
+ * permet jamais de créer normalement.
+ */
+function dedupliquerEntrees(entrees: Entree[]): Entree[] {
+  const dernierParCle = new Map<string, Entree>();
+  const autres: Entree[] = [];
+
+  for (const entree of entrees) {
+    if (!TYPES_UNIQUES.includes(entree.type)) {
+      autres.push(entree);
+      continue;
+    }
+    const cle = `${entree.type}:${entree.item}:${entree.date}`;
+    const existante = dernierParCle.get(cle);
+    if (!existante || entree.updatedAt > existante.updatedAt) {
+      dernierParCle.set(cle, entree);
+    }
+  }
+
+  return [...autres, ...dernierParCle.values()];
+}
+
 /** Remplace toutes les données locales par le contenu de la sauvegarde fournie. */
 export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
   await db.transaction(
@@ -66,7 +93,7 @@ export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
         db.ressourcesNotes.clear(),
       ]);
       await Promise.all([
-        db.entrees.bulkAdd(sauvegarde.entrees),
+        db.entrees.bulkAdd(dedupliquerEntrees(sauvegarde.entrees)),
         db.medicaments.bulkAdd(sauvegarde.medicaments),
         db.ressourcesNotes.bulkAdd(sauvegarde.ressourcesNotes),
       ]);

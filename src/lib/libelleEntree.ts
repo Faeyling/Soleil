@@ -2,6 +2,7 @@ import type { Entree } from "../data/types";
 import { trouverSymptome } from "../content/symptomes";
 import { trouverSuivi } from "../content/autresSuivis";
 
+/** Slug de la note de fin de parcours quotidien — entrée normale du contenu "autres suivis" (masquée de la grille). */
 export const ID_NOTE_JOURNEE = "journal-jour";
 
 export function libelleEntree(entree: Entree): string {
@@ -9,7 +10,6 @@ export function libelleEntree(entree: Entree): string {
     return trouverSymptome(entree.item)?.label ?? entree.item;
   }
   if (entree.type === "track_something") {
-    if (entree.item === ID_NOTE_JOURNEE) return "Note du jour";
     return trouverSuivi(entree.item)?.label ?? entree.item;
   }
   return entree.medicationName;
@@ -20,7 +20,6 @@ export function iconeEntree(entree: Entree): string {
     return trouverSymptome(entree.item)?.icone ?? "🩹";
   }
   if (entree.type === "track_something") {
-    if (entree.item === ID_NOTE_JOURNEE) return "📔";
     return trouverSuivi(entree.item)?.icone ?? "📈";
   }
   return "💊";

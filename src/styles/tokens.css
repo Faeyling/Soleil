@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * Palette "vivid earth", vérifiée pour le contraste WCAG 2.1 AA :
+ * - Toute paire texte/fond utilisée comme texte réel vise ≥ 4.5:1 (texte normal).
+ * - Les couleurs "-clair" ne servent qu'à des fonds/teintes décoratifs, jamais
+ *   de texte directement dessus (sauf `--color-texte`, très largement au-dessus du seuil).
+ * - Les pastilles de sévérité (non-texte) visent ≥ 3:1 contre fond/surface.
+ * Voir le script de vérification utilisé pendant le développement si la
+ * palette doit être retouchée : chaque couleur doit repasser ces seuils.
+ */
 @theme {
   --color-fond: #faf3ea;
   --color-fond-douce: #f3e6d6;
@@ -8,59 +17,41 @@
   --color-texte-doux: #6b5a4e;
   --color-bordure: #e6d5c0;
 
-  --color-terracotta: #c96f4a;
-  --color-terracotta-fonce: #a5563a;
+  /* Symptômes — terracotta / rouge brique */
+  --color-terracotta: #a8543a;
+  --color-terracotta-fonce: #7c3d29;
   --color-terracotta-clair: #f0d3c4;
 
+  /* Médicaments — bleu ardoise */
   --color-ardoise: #4d6a80;
   --color-ardoise-fonce: #35505f;
   --color-ardoise-clair: #d6e2e8;
 
-  --color-ocre: #d9a441;
-  --color-ocre-fonce: #b3822a;
+  /* Autres suivis — ocre / moutarde */
+  --color-ocre: #8f6416;
+  --color-ocre-fonce: #6b4b10;
   --color-ocre-clair: #f6e3ba;
 
-  --color-sauge: #6f8f6a;
+  /* Accent vert sauge / olive — confirmations, confidentialité, 4e teinte des graphiques */
+  --color-sauge: #4f6b46;
+  --color-sauge-fonce: #374d30;
+  --color-sauge-clair: #dfe8d8;
+
   --color-sable: #cbb08a;
   --color-marine: #2f3e52;
-  --color-caramel: #b9713f;
+  --color-caramel: #a86337;
 
-  --color-severite-bas: #e3b23c;
-  --color-severite-moyen: #e08a3c;
-  --color-severite-haut: #c94c3c;
+  --color-severite-bas: #b3841a;
+  --color-severite-moyen: #c9642a;
+  --color-severite-haut: #b8402f;
 
   --font-arrondi: "Quicksand", "Nunito", "Segoe UI", sans-serif;
 }
 
 :root {
-  /* Palette "vivid earth" */
-  --couleur-fond: #faf3ea;
-  --couleur-fond-douce: #f3e6d6;
-  --couleur-surface: #ffffff;
-  --couleur-texte: #3a2e26;
-  --couleur-texte-doux: #6b5a4e;
-  --couleur-bordure: #e6d5c0;
-
-  --couleur-terracotta: #c96f4a;
-  --couleur-terracotta-fonce: #a5563a;
-  --couleur-terracotta-clair: #f0d3c4;
-
-  --couleur-ardoise: #4d6a80;
-  --couleur-ardoise-fonce: #35505f;
-  --couleur-ardoise-clair: #d6e2e8;
-
-  --couleur-ocre: #d9a441;
-  --couleur-ocre-fonce: #b3822a;
-  --couleur-ocre-clair: #f6e3ba;
-
-  --couleur-sauge: #6f8f6a;
-  --couleur-sable: #cbb08a;
-  --couleur-marine: #2f3e52;
-  --couleur-caramel: #b9713f;
-
-  --severite-bas: #e3b23c;
-  --severite-moyen: #e08a3c;
-  --severite-haut: #c94c3c;
+  --severite-bas: var(--color-severite-bas);
+  --severite-moyen: var(--color-severite-moyen);
+  --severite-haut: var(--color-severite-haut);
 
   --rayon: 1.1rem;
   --rayon-grand: 1.6rem;
@@ -74,8 +65,8 @@
 
 html,
 body {
-  background: var(--couleur-fond);
-  color: var(--couleur-texte);
+  background: var(--color-fond);
+  color: var(--color-texte);
   font-family:
     "Quicksand", "Nunito", "Segoe UI", -apple-system, BlinkMacSystemFont,
     sans-serif;
@@ -91,5 +82,5 @@ button {
 }
 
 ::selection {
-  background: var(--couleur-terracotta-clair);
+  background: var(--color-terracotta-clair);
 }

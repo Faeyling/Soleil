@@ -32,15 +32,18 @@ export function ParcoursQuotidienPage() {
   const [symptomeValeurs, setSymptomeValeurs] = useState<Record<string, Severite | undefined>>({});
   const [humeur, setHumeur] = useState<Severite | undefined>();
   const [medicamentsCoches, setMedicamentsCoches] = useState<Set<string>>(new Set());
+  const [medicamentsDejaCoches, setMedicamentsDejaCoches] = useState<Set<string>>(new Set());
   const [suivisValeurs, setSuivisValeurs] = useState<Record<string, string>>({});
   const [noteFin, setNoteFin] = useState("");
+
+  const idsSymptomesQuotidiens = getSymptomesQuotidiens();
 
   const [preremplissageFait, setPreremplissageFait] = useState(false);
   if (!preremplissageFait && entreesJour.length > 0) {
     setPreremplissageFait(true);
     const symptomes: Record<string, Severite | undefined> = {};
     for (const e of entreesJour) {
-      if (e.type === "symptom") {
+      if (e.type === "symptom" && idsSymptomesQuotidiens.includes(e.item)) {
         symptomes[e.item] = (e as EntreeSymptome).severity;
       }
     }
@@ -59,9 +62,14 @@ export function ParcoursQuotidienPage() {
       }
     }
     setSuivisValeurs((prev) => ({ ...prev, ...suivis }));
+
+    const medicamentsPrisAujourdhui = new Set(
+      entreesJour.filter((e) => e.type === "medication_intake").map((e) => e.medicationId),
+    );
+    setMedicamentsCoches(medicamentsPrisAujourdhui);
+    setMedicamentsDejaCoches(medicamentsPrisAujourdhui);
   }
 
-  const idsSymptomesQuotidiens = getSymptomesQuotidiens();
   const couleurEtape =
     etape === 1
       ? SECTIONS.symptomes.couleur
@@ -102,7 +110,11 @@ export function ParcoursQuotidienPage() {
       });
     }
 
+    // Seuls les médicaments nouvellement cochés déclenchent une nouvelle prise :
+    // ceux déjà cochés au préremplissage (déjà pris aujourd'hui) ne sont pas
+    // relogués simplement parce que la case reste cochée en rouvrant le parcours.
     for (const medicamentId of medicamentsCoches) {
+      if (medicamentsDejaCoches.has(medicamentId)) continue;
       const medicament = medicaments.find((m) => m.id === medicamentId);
       if (!medicament) continue;
       await creerEntree({

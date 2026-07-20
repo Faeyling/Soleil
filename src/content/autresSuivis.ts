@@ -7,6 +7,8 @@ export interface SuiviDef {
   typeFormulaire: TypeFormulaireSuivi;
   unite?: string;
   placeholder?: string;
+  /** Si vrai, l'élément n'apparaît pas dans la grille "Suivre autre chose" — utilisé pour les entrées créées uniquement par un autre écran (ex. la note de fin du parcours quotidien), qui doivent tout de même rester consultables/éditables/supprimables normalement. */
+  masque?: boolean;
 }
 
 // Ordre alphabétique, tel que spécifié.
@@ -50,6 +52,14 @@ export const AUTRES_SUIVIS: SuiviDef[] = [
   },
   { id: "poids", label: "Poids", icone: "⚖️", typeFormulaire: "numerique", unite: "kg", placeholder: "Ex. 62.5" },
   { id: "autre-suivi", label: "Autre", icone: "➕", typeFormulaire: "texte" },
+  {
+    id: "journal-jour",
+    label: "Note du jour",
+    icone: "📔",
+    typeFormulaire: "texte",
+    placeholder: "Comment s'est passée ta journée ?",
+    masque: true,
+  },
 ];
 
 export function trouverSuivi(id: string): SuiviDef | undefined {

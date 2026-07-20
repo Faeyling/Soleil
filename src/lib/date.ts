@@ -80,6 +80,16 @@ export function isoDepuisDatetimeLocal(value: string): string {
   return new Date(value).toISOString();
 }
 
+/**
+ * Extrait la date (YYYY-MM-DD) directement depuis la valeur d'un input
+ * `datetime-local`, qui est déjà exprimée en heure locale — contrairement à
+ * `isoDepuisDatetimeLocal(value).slice(0, 10)`, qui donnerait la date UTC et
+ * peut se tromper de jour en soirée/nuit pour un fuseau horaire ≠ UTC.
+ */
+export function dateDepuisDatetimeLocal(value: string): string {
+  return value.slice(0, 10);
+}
+
 export function premierJourMois(annee: number, mois: number): Date {
   return new Date(annee, mois, 1);
 }

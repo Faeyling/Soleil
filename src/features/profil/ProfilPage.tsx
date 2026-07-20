@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useToutesLesEntrees } from "../../hooks/useEntrees";
+import { CHARGEMENT } from "../../hooks/chargement";
 import { useMedicaments } from "../../hooks/useMedicaments";
 import { Bouton } from "../../components/ui/Bouton";
 import { Confirmation } from "../../components/ui/Confirmation";
@@ -15,7 +16,8 @@ import {
 } from "../../data/repositories/sauvegardeRepository";
 
 export function ProfilPage() {
-  const entrees = useToutesLesEntrees();
+  const entreesBrutes = useToutesLesEntrees();
+  const entrees = entreesBrutes === CHARGEMENT ? [] : entreesBrutes;
   const medicaments = useMedicaments();
   const fichierRef = useRef<HTMLInputElement>(null);
 
@@ -25,7 +27,7 @@ export function ProfilPage() {
   const [inclureEvenements, setInclureEvenements] = useState(true);
   const [inclureNotesImportantes, setInclureNotesImportantes] = useState(true);
 
-  const [messageImport, setMessageImport] = useState<string | undefined>();
+  const [messageImport, setMessageImport] = useState<{ texte: string; erreur: boolean } | undefined>();
   const [confirmationImport, setConfirmationImport] = useState<File | undefined>();
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
 
@@ -61,13 +63,16 @@ export function ProfilPage() {
       const texte = await fichier.text();
       const data = JSON.parse(texte);
       if (!estSauvegardeValide(data)) {
-        setMessageImport("Ce fichier ne semble pas être une sauvegarde Soleil valide.");
+        setMessageImport({ texte: "Ce fichier ne semble pas être une sauvegarde Soleil valide.", erreur: true });
         return;
       }
       await importerDonnees(data);
-      setMessageImport("Importation réussie ! Tes données ont été restaurées.");
+      setMessageImport({ texte: "✓ Importation réussie ! Tes données ont été restaurées.", erreur: false });
     } catch {
-      setMessageImport("Impossible de lire ce fichier. Vérifie qu'il s'agit bien d'un export Soleil.");
+      setMessageImport({
+        texte: "Impossible de lire ce fichier. Vérifie qu'il s'agit bien d'un export Soleil.",
+        erreur: true,
+      });
     } finally {
       if (fichierRef.current) fichierRef.current.value = "";
     }
@@ -82,7 +87,7 @@ export function ProfilPage() {
     <div className="pb-4">
       <h1 className="text-2xl font-bold mb-4">Profil & données</h1>
 
-      <div className="rounded-[var(--rayon-grand)] bg-ardoise-clair text-ardoise-fonce p-4 mb-6 text-sm">
+      <div className="rounded-[var(--rayon-grand)] bg-sauge-clair text-sauge-fonce p-4 mb-6 text-sm">
         🔒 Toutes tes données restent sur cet appareil, dans ton navigateur. Rien n'est jamais
         envoyé à un serveur. Pense à faire une sauvegarde régulière si tu changes d'appareil.
       </div>
@@ -139,7 +144,15 @@ export function ProfilPage() {
             className="hidden"
             onChange={(e) => fichierChoisi(e.target.files?.[0] ?? null)}
           />
-          {messageImport && <p className="text-sm text-texte-doux">{messageImport}</p>}
+          {messageImport && (
+            <p
+              className={`text-sm rounded-xl px-3 py-2 ${
+                messageImport.erreur ? "bg-terracotta-clair text-terracotta-fonce" : "bg-sauge-clair text-sauge-fonce"
+              }`}
+            >
+              {messageImport.texte}
+            </p>
+          )}
         </div>
       </section>
 

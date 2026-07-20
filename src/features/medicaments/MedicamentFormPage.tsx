@@ -4,15 +4,17 @@ import { EnTete } from "../../components/ui/EnTete";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
 import { Confirmation } from "../../components/ui/Confirmation";
+import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { SECTIONS } from "../../lib/sections";
 import { useMedicament } from "../../hooks/useMedicaments";
 import { useEntree, usePrisesMedicament } from "../../hooks/useEntrees";
+import { CHARGEMENT } from "../../hooks/chargement";
 import {
   renommerMedicament,
   supprimerMedicament,
 } from "../../data/repositories/medicamentsRepository";
 import { modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
-import { datetimeLocalValue, formatDateTimeLisible, isoDepuisDatetimeLocal } from "../../lib/date";
+import { dateDepuisDatetimeLocal, datetimeLocalValue, formatDateTimeLisible, isoDepuisDatetimeLocal } from "../../lib/date";
 import type { EntreePriseMedicament } from "../../data/types";
 
 export function MedicamentFormPage() {
@@ -21,18 +23,26 @@ export function MedicamentFormPage() {
   const navigate = useNavigate();
   const entreeId = searchParams.get("entreeId") ?? undefined;
 
-  const medicament = useMedicament(id);
-  const entree = useEntree(entreeId) as EntreePriseMedicament | undefined;
+  const medicamentBrut = useMedicament(id);
+  const entreeBrute = useEntree(entreeId);
   const prises = usePrisesMedicament(id);
 
+  if (medicamentBrut === CHARGEMENT || (entreeId !== undefined && entreeBrute === CHARGEMENT)) {
+    return <ChargementEcran />;
+  }
+  // Narrowing par `type` plutôt qu'un cast : une entreeId pointant vers une
+  // entrée d'un autre type ne doit jamais être lue/écrite comme une prise.
+  const entree =
+    entreeBrute && entreeBrute !== CHARGEMENT && entreeBrute.type === "medication_intake" ? entreeBrute : undefined;
+
   if (entreeId) {
-    return <EditionPrise entree={entree} medicamentNom={medicament?.nom} />;
+    return <EditionPrise entree={entree} medicamentNom={medicamentBrut?.nom} />;
   }
 
   return (
     <GestionMedicament
       medicamentId={id}
-      medicamentNom={medicament?.nom}
+      medicamentNom={medicamentBrut?.nom}
       prises={prises}
       onSupprime={() => navigate("/medicaments")}
     />
@@ -133,6 +143,7 @@ function EditionPrise({ entree, medicamentNom }: EditionPriseProps) {
   const [datetime, setDatetime] = useState("");
   const [suppressionDemandee, setSuppressionDemandee] = useState(false);
   const [entreeChargeeId, setEntreeChargeeId] = useState<string | undefined>();
+  const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
 
   if (entree && entree.id !== entreeChargeeId) {
     setEntreeChargeeId(entree.id);
@@ -146,14 +157,20 @@ function EditionPrise({ entree, medicamentNom }: EditionPriseProps) {
   }
 
   const enregistrer = async () => {
-    const iso = isoDepuisDatetimeLocal(datetime);
-    await modifierEntree(entree.id, {
-      dose: dose.trim() || undefined,
-      note: note.trim() || undefined,
-      datetime: iso,
-      date: iso.slice(0, 10),
-    });
-    navigate(-1);
+    if (enregistrementEnCours) return;
+    setEnregistrementEnCours(true);
+    try {
+      const iso = isoDepuisDatetimeLocal(datetime);
+      await modifierEntree(entree.id, {
+        dose: dose.trim() || undefined,
+        note: note.trim() || undefined,
+        datetime: iso,
+        date: dateDepuisDatetimeLocal(datetime),
+      });
+      navigate(-1);
+    } finally {
+      setEnregistrementEnCours(false);
+    }
   };
 
   const supprimer = async () => {
@@ -181,7 +198,12 @@ function EditionPrise({ entree, medicamentNom }: EditionPriseProps) {
       </Champ>
 
       <div className="flex gap-3 mt-6">
-        <Bouton className="flex-1" couleur={SECTIONS.medicaments.couleur} onClick={enregistrer}>
+        <Bouton
+          className="flex-1"
+          couleur={SECTIONS.medicaments.couleur}
+          onClick={enregistrer}
+          disabled={enregistrementEnCours}
+        >
           Enregistrer
         </Bouton>
         <Bouton variante="danger" onClick={() => setSuppressionDemandee(true)}>

@@ -7,7 +7,7 @@ type NouvelleEntree = OmitDistributif<Entree, "id" | "createdAt" | "updatedAt">;
 type ChangementsEntree = PartialDistributif<OmitDistributif<Entree, "id" | "type" | "createdAt">>;
 
 /** Types soumis à la règle "une entrée max par élément et par jour". */
-const TYPES_UNIQUES: TypeEntree[] = ["symptom", "track_something"];
+export const TYPES_UNIQUES: TypeEntree[] = ["symptom", "track_something"];
 
 export async function trouverEntreeDuJour(
   type: TypeEntree,
@@ -26,35 +26,74 @@ export interface ResultatCreation {
  * Crée une entrée, sauf si une entrée existe déjà pour (type, item, date)
  * et que ce type est soumis à la contrainte d'unicité quotidienne — dans ce
  * cas, l'entrée existante est renvoyée pour rediriger vers son édition.
+ *
+ * La vérification et l'écriture sont regroupées dans une seule transaction
+ * `rw` : IndexedDB sérialise les transactions `readwrite` qui se chevauchent
+ * sur la même table, ce qui empêche deux appels concurrents (ex. double-tap
+ * sur "Enregistrer") de tous les deux passer le contrôle d'unicité avant que
+ * l'un des deux n'ait écrit.
  */
 export async function creerEntree(donnees: NouvelleEntree): Promise<ResultatCreation> {
-  if (TYPES_UNIQUES.includes(donnees.type)) {
-    const existante = await trouverEntreeDuJour(
-      donnees.type,
-      donnees.item,
-      donnees.date,
-    );
-    if (existante) {
-      return { creee: false, entree: existante };
+  return db.transaction("rw", db.entrees, async () => {
+    if (TYPES_UNIQUES.includes(donnees.type)) {
+      const existante = await trouverEntreeDuJour(donnees.type, donnees.item, donnees.date);
+      if (existante) {
+        return { creee: false, entree: existante };
+      }
     }
-  }
 
-  const maintenant = maintenantISO();
-  const entree = {
-    ...donnees,
-    id: uuid(),
-    createdAt: maintenant,
-    updatedAt: maintenant,
-  } as Entree;
+    const maintenant = maintenantISO();
+    const entree = {
+      ...donnees,
+      id: uuid(),
+      createdAt: maintenant,
+      updatedAt: maintenant,
+    } as Entree;
 
-  await db.entrees.add(entree);
-  return { creee: true, entree };
+    await db.entrees.add(entree);
+    return { creee: true, entree };
+  });
 }
 
 export async function modifierEntree(id: string, changements: ChangementsEntree): Promise<void> {
   await db.entrees.update(id, {
     ...changements,
     updatedAt: maintenantISO(),
+  });
+}
+
+export interface ResultatModification {
+  modifiee: boolean;
+  /** Présente uniquement si `modifiee` est faux : l'entrée en conflit à (type, item, nouvelle date). */
+  conflit?: Entree;
+}
+
+/**
+ * Modifie une entrée en respectant la règle d'unicité quotidienne : si les
+ * changements déplacent l'entrée vers une date où (type, item) a déjà une
+ * autre entrée, la modification est refusée et l'entrée en conflit est
+ * renvoyée pour que l'appelant puisse rediriger vers son édition, au lieu de
+ * silencieusement créer un doublon.
+ */
+export async function modifierEntreeAvecUnicite(
+  entreeActuelle: Entree,
+  changements: ChangementsEntree,
+): Promise<ResultatModification> {
+  return db.transaction("rw", db.entrees, async () => {
+    const nouvelleDate = (changements as { date?: string }).date ?? entreeActuelle.date;
+
+    if (TYPES_UNIQUES.includes(entreeActuelle.type) && nouvelleDate !== entreeActuelle.date) {
+      const conflit = await trouverEntreeDuJour(entreeActuelle.type, entreeActuelle.item, nouvelleDate);
+      if (conflit && conflit.id !== entreeActuelle.id) {
+        return { modifiee: false, conflit };
+      }
+    }
+
+    await db.entrees.update(entreeActuelle.id, {
+      ...changements,
+      updatedAt: maintenantISO(),
+    });
+    return { modifiee: true };
   });
 }
 
