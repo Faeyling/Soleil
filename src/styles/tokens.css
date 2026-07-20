@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fond: #faf3ea;
+  --color-fond-douce: #f3e6d6;
+  --color-surface: #ffffff;
+  --color-texte: #3a2e26;
+  --color-texte-doux: #6b5a4e;
+  --color-bordure: #e6d5c0;
+
+  --color-terracotta: #c96f4a;
+  --color-terracotta-fonce: #a5563a;
+  --color-terracotta-clair: #f0d3c4;
+
+  --color-ardoise: #4d6a80;
+  --color-ardoise-fonce: #35505f;
+  --color-ardoise-clair: #d6e2e8;
+
+  --color-ocre: #d9a441;
+  --color-ocre-fonce: #b3822a;
+  --color-ocre-clair: #f6e3ba;
+
+  --color-sauge: #6f8f6a;
+  --color-sable: #cbb08a;
+  --color-marine: #2f3e52;
+  --color-caramel: #b9713f;
+
+  --color-severite-bas: #e3b23c;
+  --color-severite-moyen: #e08a3c;
+  --color-severite-haut: #c94c3c;
+
+  --font-arrondi: "Quicksand", "Nunito", "Segoe UI", sans-serif;
+}
+
+:root {
+  /* Palette "vivid earth" */
+  --couleur-fond: #faf3ea;
+  --couleur-fond-douce: #f3e6d6;
+  --couleur-surface: #ffffff;
+  --couleur-texte: #3a2e26;
+  --couleur-texte-doux: #6b5a4e;
+  --couleur-bordure: #e6d5c0;
+
+  --couleur-terracotta: #c96f4a;
+  --couleur-terracotta-fonce: #a5563a;
+  --couleur-terracotta-clair: #f0d3c4;
+
+  --couleur-ardoise: #4d6a80;
+  --couleur-ardoise-fonce: #35505f;
+  --couleur-ardoise-clair: #d6e2e8;
+
+  --couleur-ocre: #d9a441;
+  --couleur-ocre-fonce: #b3822a;
+  --couleur-ocre-clair: #f6e3ba;
+
+  --couleur-sauge: #6f8f6a;
+  --couleur-sable: #cbb08a;
+  --couleur-marine: #2f3e52;
+  --couleur-caramel: #b9713f;
+
+  --severite-bas: #e3b23c;
+  --severite-moyen: #e08a3c;
+  --severite-haut: #c94c3c;
+
+  --rayon: 1.1rem;
+  --rayon-grand: 1.6rem;
+  --ombre: 0 4px 14px rgba(58, 46, 38, 0.08);
+  --ombre-forte: 0 8px 24px rgba(58, 46, 38, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--couleur-fond);
+  color: var(--couleur-texte);
+  font-family:
+    "Quicksand", "Nunito", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    sans-serif;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--couleur-terracotta-clair);
+}

@@ -1,0 +1,19 @@
+import type { Entree } from "../data/types";
+import { COULEUR_SEVERITE } from "./severite";
+import { SECTIONS } from "./sections";
+
+export function couleurEntree(entree: Entree): string {
+  if ("severity" in entree && entree.severity) {
+    return COULEUR_SEVERITE[entree.severity];
+  }
+  if (entree.type === "medication_intake") {
+    return SECTIONS.medicaments.couleur;
+  }
+  return SECTIONS.suivis.couleur;
+}
+
+export function sectionEntree(entree: Entree): keyof typeof SECTIONS {
+  if (entree.type === "symptom") return "symptomes";
+  if (entree.type === "medication_intake") return "medicaments";
+  return "suivis";
+}
