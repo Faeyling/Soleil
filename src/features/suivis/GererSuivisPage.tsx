@@ -26,6 +26,7 @@ const FORMULAIRE_VIDE: FormulaireSuivi = {
 
 const LABEL_TYPE: Record<TypeFormulaireSuivi, string> = {
   severite: "Niveau (Bas / Moyen / Haut)",
+  ouinon: "Oui / Non",
   numerique: "Valeur numérique",
   texte: "Texte libre",
 };
@@ -65,7 +66,10 @@ export function GererSuivisPage() {
         label: formulaire.label.trim(),
         typeFormulaire: formulaire.typeFormulaire,
         unite: formulaire.typeFormulaire === "numerique" ? formulaire.unite.trim() || undefined : undefined,
-        placeholder: formulaire.typeFormulaire !== "severite" ? formulaire.placeholder.trim() || undefined : undefined,
+        placeholder:
+          formulaire.typeFormulaire !== "severite" && formulaire.typeFormulaire !== "ouinon"
+            ? formulaire.placeholder.trim() || undefined
+            : undefined,
       };
       if (edition === "nouveau") {
         await ajouterSuivi(donnees);
@@ -143,7 +147,7 @@ export function GererSuivisPage() {
               />
             </Champ>
           )}
-          {formulaire.typeFormulaire !== "severite" && (
+          {formulaire.typeFormulaire !== "severite" && formulaire.typeFormulaire !== "ouinon" && (
             <Champ label="Exemple affiché dans le champ" optionnel>
               <input
                 className={classesInput}

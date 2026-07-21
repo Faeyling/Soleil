@@ -207,8 +207,13 @@ export function ProfilPage() {
         <h2 className="font-bold text-lg mb-3">Personnaliser le parcours quotidien</h2>
         <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4 flex flex-col gap-5">
           <div>
-            <p className="text-sm font-semibold mb-2">
-              Symptômes proposés à l'étape 1 (« Suivi du jour »)
+            <p className="text-sm font-semibold mb-1">
+              Symptômes proposés à l'étape 1
+            </p>
+            <p className="text-xs text-texte-doux mb-2">
+              Première étape du parcours guidé (avant l'humeur, les médicaments et les autres
+              suivis) : les symptômes cochés ici y apparaissent avec un sélecteur de sévérité,
+              pré-rempli s'ils ont déjà une entrée aujourd'hui.
             </p>
             <div className="flex flex-wrap gap-2">
               {symptomes.map((s) => {
@@ -234,8 +239,13 @@ export function ProfilPage() {
           </div>
 
           <div>
-            <p className="text-sm font-semibold mb-2">
+            <p className="text-sm font-semibold mb-1">
               Autres suivis proposés à l'étape 4
+            </p>
+            <p className="text-xs text-texte-doux mb-2">
+              Avant-dernière étape du parcours guidé (après symptômes, humeur et médicaments,
+              avant la note de fin) : les éléments cochés ici y apparaissent, chacun avec le
+              type de saisie qui lui est propre (sévérité, valeur numérique ou texte libre).
             </p>
             <div className="flex flex-wrap gap-2">
               {autresSuivis.filter((s) => !s.masque).map((s) => {

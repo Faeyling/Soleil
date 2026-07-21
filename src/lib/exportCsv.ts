@@ -1,6 +1,6 @@
 import type { Entree } from "../data/types";
 import { libelleEntree } from "./libelleEntree";
-import { LABEL_SEVERITE } from "./severite";
+import { labelSeverite } from "./severite";
 import { labelArticulation } from "../content/symptomes";
 import { dateDuJour } from "./date";
 
@@ -41,7 +41,7 @@ export function genererCSV(entrees: Entree[]): string {
       libelleEntree(e),
       date,
       (heure ?? "").slice(0, 5),
-      "severity" in e && e.severity ? LABEL_SEVERITE[e.severity] : "",
+      "severity" in e && e.severity ? labelSeverite(e.severity, e.item) : "",
       "value" in e && e.value != null ? String(e.value) : "",
       "unit" in e && e.unit ? e.unit : "",
       "location" in e && e.location ? e.location.map(labelArticulation).join(" / ") : "",

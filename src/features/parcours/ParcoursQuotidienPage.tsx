@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { EnTete } from "../../components/ui/EnTete";
 import { BarreProgression } from "../../components/ui/BarreProgression";
 import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
+import { SelecteurOuiNon } from "../../components/ui/SelecteurOuiNon";
+import { versSeverite, depuisSeverite } from "../../lib/ouinon";
 import { Bouton } from "../../components/ui/Bouton";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Mascotte } from "../../components/mascotte/Mascotte";
@@ -134,7 +136,10 @@ export function ParcoursQuotidienPage() {
       await enregistrerOuMettreAJour({
         type: "track_something",
         item,
-        severity: suivi.typeFormulaire === "severite" ? (valeurBrute as Severite) : undefined,
+        severity:
+          suivi.typeFormulaire === "severite" || suivi.typeFormulaire === "ouinon"
+            ? (valeurBrute as Severite)
+            : undefined,
         value: suivi.typeFormulaire === "numerique" ? Number(valeurBrute) : undefined,
         unit: suivi.typeFormulaire === "numerique" ? suivi.unite : undefined,
         date: dateJour,
@@ -354,6 +359,11 @@ function EtapeAutresSuivis({
                   valeur={valeurs[id] as Severite | undefined}
                   onChange={(s) => onChange(id, s)}
                   itemId={id}
+                />
+              ) : def.typeFormulaire === "ouinon" ? (
+                <SelecteurOuiNon
+                  valeur={depuisSeverite(valeurs[id] as Severite | undefined)}
+                  onChange={(r) => onChange(id, versSeverite(r))}
                 />
               ) : (
                 <input

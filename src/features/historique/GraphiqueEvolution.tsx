@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import type { Entree } from "../../data/types";
 import { joursDepuis, dateDuJour, formatDateLisible } from "../../lib/date";
-import { ordreSeverite, LABEL_SEVERITE, type Severite } from "../../lib/severite";
+import { ordreSeverite, LABEL_SEVERITE, labelSeverite, type Severite } from "../../lib/severite";
 import { libelleEntree, iconeEntree } from "../../lib/libelleEntree";
 import { dateDebutPeriode, type Periode } from "../../lib/periode";
 
@@ -157,8 +157,9 @@ export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps
             formatter={(valeur, nom) => {
               const cle = String(nom);
               const info = items.get(cle);
+              const itemId = cle.split(":")[1];
               const n = Number(valeur);
-              const label = SEVERITE_PAR_ORDRE[n] ? LABEL_SEVERITE[SEVERITE_PAR_ORDRE[n]] : "";
+              const label = SEVERITE_PAR_ORDRE[n] ? labelSeverite(SEVERITE_PAR_ORDRE[n], itemId) : "";
               return [label, info?.label ?? cle];
             }}
           />

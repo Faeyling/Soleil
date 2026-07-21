@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { Entree, Medicament } from "../data/types";
-import { LABEL_SEVERITE, type Severite } from "./severite";
+import { labelSeverite, type Severite } from "./severite";
 import { libelleEntree } from "./libelleEntree";
 import { labelArticulation } from "../content/symptomes";
 import { formatDateLisible, formatDateTimeLisible } from "./date";
@@ -110,13 +110,12 @@ export function genererRapportPDF(
         }
         sousTitre(`${label} — ${liste.length} occurrence${liste.length > 1 ? "s" : ""}`);
         paragraphe(
-          `Répartition : Bas ${compte.bas} · Moyen ${compte.moyen} · Haut ${compte.haut}${
-            compte.crise > 0 ? ` · Crise ${compte.crise}` : ""
+          `Répartition : ${labelSeverite("bas", item)} ${compte.bas} · ${labelSeverite("moyen", item)} ${compte.moyen} · ${labelSeverite("haut", item)} ${compte.haut}${
+            compte.crise > 0 ? ` · ${labelSeverite("crise", item)} ${compte.crise}` : ""
           }`,
           9.5,
           COULEUR_DOUX,
         );
-        void item;
       }
     }
   }
@@ -157,7 +156,7 @@ export function genererRapportPDF(
         if (e.type !== "symptom") continue;
         const zones = e.location?.map(labelArticulation).join(", ");
         paragraphe(
-          `${formatDateTimeLisible(e.datetime)} — ${libelleEntree(e)} (${LABEL_SEVERITE[e.severity]})${
+          `${formatDateTimeLisible(e.datetime)} — ${libelleEntree(e)} (${labelSeverite(e.severity, e.item)})${
             zones ? ` — Zone(s) : ${zones}` : ""
           }${e.note ? ` — ${e.note}` : ""}`,
           9.5,

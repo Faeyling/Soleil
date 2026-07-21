@@ -73,7 +73,7 @@ export interface SymptomeDef {
   ordre: number;
 }
 
-export type TypeFormulaireSuivi = "severite" | "numerique" | "texte";
+export type TypeFormulaireSuivi = "severite" | "numerique" | "texte" | "ouinon";
 
 export interface SuiviDef {
   id: string;

@@ -4,7 +4,7 @@ import { SECTIONS } from "./sections";
 
 export function couleurEntree(entree: Entree): string {
   if ("severity" in entree && entree.severity) {
-    return couleurSeverite(entree.severity, entree.item);
+    return couleurSeverite(entree.severity);
   }
   if (entree.type === "medication_intake") {
     return SECTIONS.medicaments.couleur;

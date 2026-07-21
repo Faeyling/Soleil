@@ -64,12 +64,32 @@ interface CorrelationsProps {
 
 export function Correlations({ entrees, periode }: CorrelationsProps) {
   const medicaments = useMedicaments();
-  const symptomes = useSymptomes();
+  const symptomesTous = useSymptomes();
   const suivisTous = useSuivis();
-  const suivisSelectionnables = suivisTous.filter((s) => !s.masque);
-  const suivisAvecSeverite = suivisTous.filter((s) => s.typeFormulaire === "severite");
   const [activite, setActivite] = useState(() => localStorage.getItem(CLE_ACTIVITE) ?? "kine");
   const [cible, setCible] = useState(() => localStorage.getItem(CLE_CIBLE) ?? "douleur");
+
+  // On ne propose que les éléments qui ont déjà au moins une entrée — pas
+  // de comparaison possible (ni intéressante) avec quelque chose que tu n'as
+  // jamais enregistré.
+  const idsAvecEntrees = useMemo(() => new Set(entrees.map((e) => e.item)), [entrees]);
+
+  const symptomes = symptomesTous.filter((s) => idsAvecEntrees.has(s.id));
+  const suivisSelectionnables = suivisTous.filter((s) => !s.masque && idsAvecEntrees.has(s.id));
+  const suivisAvecSeverite = suivisTous.filter((s) => s.typeFormulaire === "severite" && idsAvecEntrees.has(s.id));
+  const medicamentsAvecEntree = medicaments.filter((m) => idsAvecEntrees.has(m.id));
+
+  const idsActivite = [
+    ...symptomes.map((s) => s.id),
+    ...suivisSelectionnables.map((s) => s.id),
+    ...medicamentsAvecEntree.map((m) => m.id),
+  ];
+  const idsCible = [...symptomes.map((s) => s.id), ...suivisAvecSeverite.map((s) => s.id)];
+
+  // Si le choix mémorisé (ou par défaut) ne fait plus partie des éléments
+  // disponibles, on retombe sur le premier élément qui a des données.
+  const activiteAffichee = idsActivite.includes(activite) ? activite : (idsActivite[0] ?? "");
+  const cibleAffichee = idsCible.includes(cible) ? cible : (idsCible[0] ?? "");
 
   const changerActivite = (id: string) => {
     setActivite(id);
@@ -82,47 +102,57 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
 
   const dateDebut = dateDebutPeriode(periode);
 
-  const resultat = useMemo(
-    () => calculerCorrelation(entrees, activite, cible, dateDebut),
-    [entrees, activite, cible, dateDebut],
-  );
+  const resultat = calculerCorrelation(entrees, activiteAffichee, cibleAffichee, dateDebut);
 
-  const infoActivite = libelle(activite, medicaments);
-  const infoCible = libelle(cible, medicaments);
-  const maxCible = severitesDisponibles(cible).length;
+  const infoActivite = libelle(activiteAffichee, medicaments);
+  const infoCible = libelle(cibleAffichee, medicaments);
+  const maxCible = severitesDisponibles(cibleAffichee).length;
+
+  if (idsActivite.length === 0 || idsCible.length === 0) {
+    return (
+      <p className="text-sm text-texte-doux">
+        Enregistre au moins deux éléments différents (une activité et un symptôme ou suivi, par
+        exemple) pour voir apparaître des corrélations ici.
+      </p>
+    );
+  }
 
   return (
     <div>
       <p className="text-xs text-texte-doux mb-3">
         Compare la sévérité moyenne d'un suivi les jours avec/sans une activité, le jour même et le
-        lendemain — utile pour repérer un contrecoup après l'effort. Choisis n'importe quelle paire
-        d'éléments que tu suis.
+        lendemain — utile pour repérer un contrecoup après l'effort. Seuls les éléments déjà
+        enregistrés au moins une fois sont proposés.
       </p>
 
       <div className="flex gap-2 mb-4 flex-wrap">
         <select
-          value={activite}
+          value={activiteAffichee}
           onChange={(e) => changerActivite(e.target.value)}
           className="flex-1 min-w-[140px] rounded-xl border border-bordure bg-surface px-3 py-2 text-sm cursor-pointer"
           aria-label="Activité"
         >
-          <optgroup label="Symptômes">
-            {symptomes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.icone} {s.label}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Autres suivis">
-            {suivisSelectionnables.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.icone} {s.label}
-              </option>
-            ))}
-          </optgroup>
-          {medicaments.length > 0 && (
+          {symptomes.length > 0 && (
+            <optgroup label="Symptômes">
+              {symptomes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.icone} {s.label}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {suivisSelectionnables.length > 0 && (
+            <optgroup label="Autres suivis">
+              {suivisSelectionnables.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.icone} {s.label}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {medicamentsAvecEntree.length > 0 && (
             <optgroup label="Médicaments">
-              {medicaments.map((m) => (
+              {medicamentsAvecEntree.map((m) => (
                 <option key={m.id} value={m.id}>
                   💊 {m.nom}
                 </option>
@@ -131,25 +161,29 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
           )}
         </select>
         <select
-          value={cible}
+          value={cibleAffichee}
           onChange={(e) => changerCible(e.target.value)}
           className="flex-1 min-w-[140px] rounded-xl border border-bordure bg-surface px-3 py-2 text-sm cursor-pointer"
           aria-label="Symptôme ou suivi à comparer"
         >
-          <optgroup label="Symptômes">
-            {symptomes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.icone} {s.label}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Autres suivis">
-            {suivisAvecSeverite.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.icone} {s.label}
-              </option>
-            ))}
-          </optgroup>
+          {symptomes.length > 0 && (
+            <optgroup label="Symptômes">
+              {symptomes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.icone} {s.label}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {suivisAvecSeverite.length > 0 && (
+            <optgroup label="Autres suivis">
+              {suivisAvecSeverite.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.icone} {s.label}
+                </option>
+              ))}
+            </optgroup>
+          )}
         </select>
       </div>
 

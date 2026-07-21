@@ -1,7 +1,10 @@
 const CLE_SYMPTOMES_QUOTIDIENS = "soleil-symptomes-quotidiens";
 const CLE_SUIVIS_QUOTIDIENS = "soleil-suivis-quotidiens";
 
-const DEFAUT_SYMPTOMES_QUOTIDIENS = ["douleur", "fatigue", "vertiges", "sommeil"];
+// "sommeil" (symptôme) n'est pas repris ici par défaut : le sommeil est déjà
+// suivi à l'étape 4 via "sommeil-suivi", pour éviter de le demander deux fois
+// dans le même parcours quotidien.
+const DEFAUT_SYMPTOMES_QUOTIDIENS = ["douleur", "fatigue", "vertiges"];
 const DEFAUT_SUIVIS_QUOTIDIENS = ["sommeil-suivi", "activite", "stress", "hydratation"];
 
 function getListePersistee(cle: string, defaut: string[]): string[] {
