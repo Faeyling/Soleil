@@ -1,19 +1,33 @@
 import { useMemo, useState } from "react";
-import type { Entree } from "../../data/types";
-import { trouverSuivi } from "../../content/autresSuivis";
-import { trouverSymptome } from "../../content/symptomes";
+import type { Entree, Medicament } from "../../data/types";
+import { AUTRES_SUIVIS, trouverSuivi } from "../../content/autresSuivis";
+import { SYMPTOMES, trouverSymptome } from "../../content/symptomes";
+import { useMedicaments } from "../../hooks/useMedicaments";
 import { calculerCorrelation } from "../../lib/correlations";
 import { severitesDisponibles } from "../../lib/severite";
 import { dateDebutPeriode, type Periode } from "../../lib/periode";
 
-const ACTIVITES = ["kine", "danse", "travail", "activite"];
-const CIBLES = ["douleur", "fatigue", "vertiges", "energie", "sommeil-suivi", "humeur", "stress"];
+const CLE_ACTIVITE = "soleil-correlation-activite";
+const CLE_CIBLE = "soleil-correlation-cible";
 
-function libelle(id: string): { label: string; icone: string } {
+// "Activité" (l'influence testée) : tout ce qui peut être enregistré un jour
+// donné — symptômes, autres suivis (quel que soit leur type de formulaire) et
+// médicaments — puisqu'on ne teste que sa présence ce jour-là, pas sa valeur.
+const SUIVIS_SELECTIONNABLES = AUTRES_SUIVIS.filter((s) => !s.masque);
+
+// "Cible" (ce qu'on compare) : seuls les éléments notés par sévérité ont une
+// valeur moyennable — symptômes (toujours notés en sévérité) et suivis dont
+// le formulaire est "severite".
+const SUIVIS_AVEC_SEVERITE = AUTRES_SUIVIS.filter((s) => s.typeFormulaire === "severite");
+
+function libelle(id: string, medicaments: Medicament[]): { label: string; icone: string } {
   const suivi = trouverSuivi(id);
   if (suivi) return { label: suivi.label, icone: suivi.icone };
   const symptome = trouverSymptome(id);
-  return { label: symptome?.label ?? id, icone: symptome?.icone ?? "•" };
+  if (symptome) return { label: symptome.label, icone: symptome.icone };
+  const medicament = medicaments.find((m) => m.id === id);
+  if (medicament) return { label: medicament.nom, icone: "💊" };
+  return { label: id, icone: "•" };
 }
 
 function couleurMoyenne(valeur: number, max: number): string {
@@ -59,8 +73,18 @@ interface CorrelationsProps {
 }
 
 export function Correlations({ entrees, periode }: CorrelationsProps) {
-  const [activite, setActivite] = useState(ACTIVITES[0]);
-  const [cible, setCible] = useState(CIBLES[0]);
+  const medicaments = useMedicaments();
+  const [activite, setActivite] = useState(() => localStorage.getItem(CLE_ACTIVITE) ?? "kine");
+  const [cible, setCible] = useState(() => localStorage.getItem(CLE_CIBLE) ?? "douleur");
+
+  const changerActivite = (id: string) => {
+    setActivite(id);
+    localStorage.setItem(CLE_ACTIVITE, id);
+  };
+  const changerCible = (id: string) => {
+    setCible(id);
+    localStorage.setItem(CLE_CIBLE, id);
+  };
 
   const dateDebut = dateDebutPeriode(periode);
 
@@ -69,47 +93,69 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
     [entrees, activite, cible, dateDebut],
   );
 
-  const infoActivite = libelle(activite);
-  const infoCible = libelle(cible);
+  const infoActivite = libelle(activite, medicaments);
+  const infoCible = libelle(cible, medicaments);
   const maxCible = severitesDisponibles(cible).length;
 
   return (
     <div>
       <p className="text-xs text-texte-doux mb-3">
         Compare la sévérité moyenne d'un suivi les jours avec/sans une activité, le jour même et le
-        lendemain — utile pour repérer un contrecoup après l'effort.
+        lendemain — utile pour repérer un contrecoup après l'effort. Choisis n'importe quelle paire
+        d'éléments que tu suis.
       </p>
 
       <div className="flex gap-2 mb-4 flex-wrap">
         <select
           value={activite}
-          onChange={(e) => setActivite(e.target.value)}
+          onChange={(e) => changerActivite(e.target.value)}
           className="flex-1 min-w-[140px] rounded-xl border border-bordure bg-surface px-3 py-2 text-sm cursor-pointer"
           aria-label="Activité"
         >
-          {ACTIVITES.map((id) => {
-            const info = libelle(id);
-            return (
-              <option key={id} value={id}>
-                {info.icone} {info.label}
+          <optgroup label="Symptômes">
+            {SYMPTOMES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.icone} {s.label}
               </option>
-            );
-          })}
+            ))}
+          </optgroup>
+          <optgroup label="Autres suivis">
+            {SUIVIS_SELECTIONNABLES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.icone} {s.label}
+              </option>
+            ))}
+          </optgroup>
+          {medicaments.length > 0 && (
+            <optgroup label="Médicaments">
+              {medicaments.map((m) => (
+                <option key={m.id} value={m.id}>
+                  💊 {m.nom}
+                </option>
+              ))}
+            </optgroup>
+          )}
         </select>
         <select
           value={cible}
-          onChange={(e) => setCible(e.target.value)}
+          onChange={(e) => changerCible(e.target.value)}
           className="flex-1 min-w-[140px] rounded-xl border border-bordure bg-surface px-3 py-2 text-sm cursor-pointer"
           aria-label="Symptôme ou suivi à comparer"
         >
-          {CIBLES.map((id) => {
-            const info = libelle(id);
-            return (
-              <option key={id} value={id}>
-                {info.icone} {info.label}
+          <optgroup label="Symptômes">
+            {SYMPTOMES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.icone} {s.label}
               </option>
-            );
-          })}
+            ))}
+          </optgroup>
+          <optgroup label="Autres suivis">
+            {SUIVIS_AVEC_SEVERITE.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.icone} {s.label}
+              </option>
+            ))}
+          </optgroup>
         </select>
       </div>
 

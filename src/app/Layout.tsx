@@ -22,7 +22,20 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-fond">
       <NotificationMiseAJour />
-      <main className="flex-1 pb-24 max-w-2xl w-full mx-auto px-4 pt-6">
+      <header className="flex items-center gap-2 max-w-2xl w-full mx-auto px-4 pt-4">
+        <img
+          src="/icon-512.png"
+          alt=""
+          aria-hidden="true"
+          width={32}
+          height={32}
+          className="rounded-[22%] shadow-[0_1px_4px_rgba(58,46,38,0.18)]"
+        />
+        <span className="font-bold text-lg" style={{ color: "var(--color-terracotta)" }}>
+          Soleil
+        </span>
+      </header>
+      <main className="flex-1 pb-24 max-w-2xl w-full mx-auto px-4 pt-2">
         <Outlet />
       </main>
       <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-bordure z-40">
