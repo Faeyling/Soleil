@@ -31,7 +31,7 @@ export function Layout() {
           height={32}
           className="rounded-[22%] shadow-[0_1px_4px_rgba(58,46,38,0.18)]"
         />
-        <span className="font-bold text-lg" style={{ color: "var(--color-terracotta)" }}>
+        <span className="font-bold text-lg" style={{ color: "var(--color-ardoise)" }}>
           Soleil
         </span>
       </header>
@@ -47,7 +47,7 @@ export function Layout() {
               end={onglet.fin}
               className={({ isActive }) =>
                 `flex flex-col items-center gap-0.5 py-2.5 px-3 flex-1 text-xs font-semibold transition-colors ${
-                  isActive ? "text-terracotta" : "text-texte-doux"
+                  isActive ? "text-ardoise" : "text-texte-doux"
                 }`
               }
             >

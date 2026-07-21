@@ -141,7 +141,7 @@ export function ProfilPage() {
                 key={p.id}
                 onClick={() => setPeriode(p.id)}
                 className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                  periode === p.id ? "bg-terracotta text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
+                  periode === p.id ? "bg-ardoise text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
                 }`}
               >
                 {p.label}
@@ -267,14 +267,24 @@ export function ProfilPage() {
 
       <section>
         <h2 className="font-bold text-lg mb-3">Zone de danger</h2>
-        <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4">
-          <p className="text-sm text-texte-doux mb-3">
-            Supprime définitivement toutes tes entrées, médicaments et notes de cet appareil.
-            Cette action est irréversible — pense à exporter tes données avant si besoin.
-          </p>
-          <Bouton variante="danger" onClick={() => setConfirmationSuppression(true)}>
-            Supprimer toutes mes données
-          </Bouton>
+        <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure overflow-hidden">
+          <div
+            className="h-3"
+            aria-hidden="true"
+            style={{
+              background:
+                "repeating-linear-gradient(135deg, var(--color-severite-haut) 0 12px, var(--color-texte) 12px 24px)",
+            }}
+          />
+          <div className="p-4">
+            <p className="text-sm text-texte-doux mb-3">
+              Supprime définitivement toutes tes entrées, médicaments et notes de cet appareil.
+              Cette action est irréversible — pense à exporter tes données avant si besoin.
+            </p>
+            <Bouton variante="danger" onClick={() => setConfirmationSuppression(true)}>
+              Supprimer toutes mes données
+            </Bouton>
+          </div>
         </div>
       </section>
 
@@ -318,7 +328,7 @@ function CaseSection({
         type="checkbox"
         checked={valeur}
         onChange={(e) => onChange(e.target.checked)}
-        className="w-5 h-5 accent-[var(--color-terracotta)]"
+        className="w-5 h-5 accent-[var(--color-ardoise)]"
       />
       {label}
     </label>

@@ -10,7 +10,7 @@ export function CaseImportante({ valeur, onChange }: CaseImportanteProps) {
         type="checkbox"
         checked={valeur}
         onChange={(e) => onChange(e.target.checked)}
-        className="w-5 h-5 accent-[var(--color-terracotta)]"
+        className="w-5 h-5 accent-[var(--color-ardoise)]"
       />
       <span className="text-sm font-medium">
         <span aria-hidden="true">⭐ </span>

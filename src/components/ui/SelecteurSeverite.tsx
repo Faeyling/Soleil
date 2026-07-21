@@ -33,6 +33,11 @@ export function SelecteurSeverite({ valeur, onChange, itemId }: SelecteurSeverit
       {options.map((s, index) => {
         const actif = valeur === s;
         const couleur = couleurSeverite(s, itemId);
+        // "Crise" a son propre fond clair dédié (rose de la palette) plutôt
+        // que la teinte automatique dérivée de sa couleur, pour rester
+        // lisible sans virer au magenta.
+        const fondActif =
+          s === "crise" ? "var(--color-crise-clair)" : `color-mix(in srgb, ${couleur} 15%, var(--color-surface))`;
         return (
           <button
             key={s}
@@ -45,7 +50,7 @@ export function SelecteurSeverite({ valeur, onChange, itemId }: SelecteurSeverit
             className="flex-1 min-w-[70px] flex flex-col items-center gap-2 rounded-[var(--rayon)] border-2 py-3 transition-transform active:scale-95 cursor-pointer"
             style={{
               borderColor: actif ? couleur : "var(--color-bordure)",
-              background: actif ? `color-mix(in srgb, ${couleur} 15%, var(--color-surface))` : "var(--color-surface)",
+              background: actif ? fondActif : "var(--color-surface)",
             }}
           >
             <span className="w-6 h-6 rounded-full" style={{ background: couleur }} />

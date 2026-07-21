@@ -9,7 +9,7 @@ interface BoutonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export function Bouton({
   variante = "plein",
-  couleur = "var(--color-terracotta)",
+  couleur = "var(--color-ardoise)",
   className = "",
   style,
   children,

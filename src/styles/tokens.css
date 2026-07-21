@@ -1,47 +1,58 @@
 @import "tailwindcss";
 
 /*
- * Palette "vivid earth", vérifiée pour le contraste WCAG 2.1 AA :
- * - Toute paire texte/fond utilisée comme texte réel vise ≥ 4.5:1 (texte normal).
- * - Les couleurs "-clair" ne servent qu'à des fonds/teintes décoratifs, jamais
- *   de texte directement dessus (sauf `--color-texte`, très largement au-dessus du seuil).
+ * Palette fournie par l'utilisatrice (7 teintes : sauge, orange, terracotta,
+ * tan, crème, rose, bleu) — chacune est utilisée quelque part, littéralement :
+ * - crème = fond, tan = bordure/fond-douce (clair)
+ * - terracotta/orange/bleu/vert = couleur "-clair" claire (Autres suivis, en
+ *   clair, prend directement la teinte orange donnée) et couleur "-couleur"
+ *   dérivée en clair pour le contraste texte, mais RESTENT la teinte donnée
+ *   telle quelle en thème sombre (voir plus bas — elles y fonctionnent déjà
+ *   parfaitement telles quelles, aucune dérivation nécessaire)
+ * - rose = fond du badge "Crise" (le "Crise" lui-même est une version plus
+ *   soutenue de la même teinte, pour rester lisible en texte)
+ *
+ * Vérifié WCAG 2.1 AA :
+ * - Toute paire texte/fond utilisée comme texte réel vise ≥ 4.5:1.
+ * - Les couleurs "-clair" ne servent qu'à des fonds/teintes, jamais de texte
+ *   directement dessus (sauf `--color-texte`, très largement au-dessus du seuil) —
+ *   sauf la paire couleurFonce-sur-couleurClair (bannières, messages), vérifiée
+ *   séparément pour chaque teinte.
  * - Les pastilles de sévérité (non-texte) visent ≥ 3:1 contre fond/surface.
- * Le thème sombre ci-dessous (`[data-theme="dark"]`) est vérifié séparément
- * avec les mêmes seuils, contre son propre fond sombre.
- * Voir le script de vérification utilisé pendant le développement si la
- * palette doit être retouchée : chaque couleur doit repasser ces seuils.
  */
 @theme {
-  --color-fond: #faf3ea;
-  --color-fond-douce: #f3e6d6;
+  --color-fond: #fff5e9;
+  --color-fond-douce: #f5e6d4;
   --color-surface: #ffffff;
   --color-texte: #3a2e26;
   --color-texte-doux: #6b5a4e;
-  --color-bordure: #e6d5c0;
+  --color-bordure: #e7cfb5;
   /* Couleur du texte posé sur un fond "accent" plein (boutons, badges) —
      blanc en clair, texte sombre en sombre (les teintes vives du thème sombre
      sont trop claires pour porter du texte blanc lisible). */
   --color-texte-sur-accent: #ffffff;
 
-  /* Symptômes — terracotta doux, desaturé pour un rendu plus apaisant */
-  --color-terracotta: #a6543f;
-  --color-terracotta-fonce: #763c2d;
-  --color-terracotta-clair: #f0dbd6;
+  /* Symptômes — terracotta de la palette fournie */
+  --color-terracotta: #b65e2b;
+  --color-terracotta-fonce: #884620;
+  --color-terracotta-clair: #ffd8c2;
 
-  /* Médicaments — bleu ardoise doux */
-  --color-ardoise: #4b708b;
-  --color-ardoise-fonce: #365063;
-  --color-ardoise-clair: #dbe4eb;
+  /* Médicaments — bleu de la palette fournie, aussi utilisé comme teinte de
+     mise en valeur transverse (bouton principal, focus, sélections actives) */
+  --color-ardoise: #2b79b6;
+  --color-ardoise-fonce: #205b88;
+  --color-ardoise-clair: #c2e4ff;
 
-  /* Autres suivis — ocre / miel doux */
-  --color-ocre: #8a6628;
-  --color-ocre-fonce: #5f461c;
-  --color-ocre-clair: #f2e7d4;
+  /* Autres suivis — orange de la palette fournie (gardé vif en "-clair", tel
+     quel, plutôt que délavé) */
+  --color-ocre: #ab6407;
+  --color-ocre-fonce: #764505;
+  --color-ocre-clair: #feba65;
 
-  /* Accent vert sauge / olive — confirmations, confidentialité, Ressources, 4e teinte des graphiques */
-  --color-sauge: #50743e;
-  --color-sauge-fonce: #37502b;
-  --color-sauge-clair: #e0ebdb;
+  /* Accent vert sauge — confirmations, confidentialité, Ressources, 4e teinte des graphiques */
+  --color-sauge: #548226;
+  --color-sauge-fonce: #385719;
+  --color-sauge-clair: #cbe4ab;
 
   --color-sable: #cbb08a;
   --color-marine: #2f3e52;
@@ -50,21 +61,22 @@
   /* Sévérité : vert (Bas = léger) → ambre (Moyen) → rouge doux (Haut = sévère).
      Inversé pour le sommeil (Bas = peu/mal dormi = rouge, Haut = réparateur = vert),
      voir src/lib/severite.ts. */
-  --color-severite-bas: #659b4b;
-  --color-severite-moyen: #be7f37;
-  --color-severite-haut: #c06659;
-  /* Niveau "Crise", réservé à la Douleur — plus alarmant que Haut. */
-  --color-severite-crise: #8b2252;
+  --color-severite-bas: #548226;
+  --color-severite-moyen: #ab6407;
+  --color-severite-haut: #b65e2b;
+  /* Niveau "Crise", réservé à la Douleur — version soutenue du rose fourni. */
+  --color-severite-crise: #cd379b;
+  --color-crise-clair: #ffe3ff;
 
   --font-arrondi: "Quicksand", "Nunito", "Segoe UI", sans-serif;
 }
 
 /*
  * Thème sombre : appliqué via l'attribut `data-theme="dark"` posé sur <html>
- * par src/lib/theme.ts (préférence système ou choix manuel dans Profil). Les
- * teintes de section sont éclaircies (elles doivent contraster sur un fond
- * sombre au lieu d'un fond clair), et le texte porté par les boutons/badges
- * pleins passe au sombre plutôt qu'au blanc — voir --color-texte-sur-accent.
+ * par src/lib/theme.ts (préférence système ou choix manuel dans Profil).
+ * Les 4 teintes fournies (terracotta/orange/bleu/vert) fonctionnent déjà
+ * parfaitement telles quelles sur fond sombre — utilisées ici sans aucune
+ * retouche, exactement comme fournies.
  */
 :root[data-theme="dark"] {
   --color-fond: #1e1712;
@@ -75,30 +87,31 @@
   --color-bordure: #4a3c2e;
   --color-texte-sur-accent: #1e1712;
 
-  --color-terracotta: #d17761;
-  --color-terracotta-fonce: #dd9988;
-  --color-terracotta-clair: color-mix(in srgb, #d17761 20%, #1e1712);
+  --color-terracotta: #d07f50;
+  --color-terracotta-fonce: #d49e7f;
+  --color-terracotta-clair: color-mix(in srgb, #d07f50 20%, #1e1712);
 
-  --color-ardoise: #61a2d1;
-  --color-ardoise-fonce: #88badd;
-  --color-ardoise-clair: color-mix(in srgb, #61a2d1 20%, #1e1712);
+  --color-ardoise: #89bde4;
+  --color-ardoise-fonce: #b6d4ea;
+  --color-ardoise-clair: color-mix(in srgb, #89bde4 20%, #1e1712);
 
-  --color-ocre: #d1a861;
-  --color-ocre-fonce: #ddbe88;
-  --color-ocre-clair: color-mix(in srgb, #d1a861 20%, #1e1712);
+  --color-ocre: #feba65;
+  --color-ocre-fonce: #fad09c;
+  --color-ocre-clair: color-mix(in srgb, #feba65 20%, #1e1712);
 
-  --color-sauge: #86d161;
-  --color-sauge-fonce: #a4dd88;
-  --color-sauge-clair: color-mix(in srgb, #86d161 20%, #1e1712);
+  --color-sauge: #cbe4ab;
+  --color-sauge-fonce: #e2eed3;
+  --color-sauge-clair: color-mix(in srgb, #cbe4ab 20%, #1e1712);
 
   --color-sable: #cbb08a;
   --color-marine: #91adca;
   --color-caramel: #ca9572;
 
-  --color-severite-bas: #8ac76b;
-  --color-severite-moyen: #d19d61;
-  --color-severite-haut: #d37769;
-  --color-severite-crise: #e37bac;
+  --color-severite-bas: #cbe4ab;
+  --color-severite-moyen: #feba65;
+  --color-severite-haut: #d07f50;
+  --color-severite-crise: #d45ead;
+  --color-crise-clair: color-mix(in srgb, #d45ead 20%, #1e1712);
 }
 
 :root {

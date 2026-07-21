@@ -120,7 +120,7 @@ export function SchemaCorporel({ zonesSelectionnees, onToggleZone }: SchemaCorpo
               onClick={() => setVue(v)}
               aria-pressed={vue === v}
               className={`px-3 py-1.5 rounded-full text-sm font-semibold cursor-pointer transition-colors ${
-                vue === v ? "bg-terracotta text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
+                vue === v ? "bg-ardoise text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
               }`}
             >
               Vue de {v === "face" ? "face" : "dos"}

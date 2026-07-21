@@ -19,4 +19,4 @@ export function Champ({ label, children, optionnel = false }: ChampProps) {
 }
 
 export const classesInput =
-  "w-full rounded-[var(--rayon)] border border-bordure bg-surface px-4 py-3 text-base text-texte placeholder:text-texte-doux/60 focus:outline-none focus:ring-2 focus:ring-terracotta";
+  "w-full rounded-[var(--rayon)] border border-bordure bg-surface px-4 py-3 text-base text-texte placeholder:text-texte-doux/60 focus:outline-none focus:ring-2 focus:ring-ardoise";

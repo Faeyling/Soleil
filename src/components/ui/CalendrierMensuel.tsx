@@ -95,9 +95,9 @@ export function CalendrierMensuel({
               onClick={() => onSelectJour?.(date)}
               className={`aspect-square flex flex-col items-center justify-center gap-0.5 rounded-xl text-sm cursor-pointer transition-colors ${
                 estSelectionne
-                  ? "bg-terracotta text-[var(--color-texte-sur-accent)] font-bold"
+                  ? "bg-ardoise text-[var(--color-texte-sur-accent)] font-bold"
                   : estAuj
-                    ? "bg-terracotta-clair font-bold"
+                    ? "bg-ardoise-clair font-bold"
                     : "hover:bg-fond-douce"
               }`}
             >

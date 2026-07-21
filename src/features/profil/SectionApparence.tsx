@@ -29,7 +29,7 @@ export function SectionApparence() {
               onClick={() => choisir(o.valeur)}
               aria-pressed={theme === o.valeur}
               className={`px-3 py-1.5 rounded-full text-sm font-semibold cursor-pointer transition-colors ${
-                theme === o.valeur ? "bg-terracotta text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
+                theme === o.valeur ? "bg-ardoise text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
               }`}
             >
               {o.label}
