@@ -170,7 +170,7 @@ export function SymptomeFormPage() {
                   style={{
                     borderColor: SECTIONS.symptomes.couleur,
                     background: actif ? SECTIONS.symptomes.couleur : "transparent",
-                    color: actif ? "white" : SECTIONS.symptomes.couleurFonce,
+                    color: actif ? "var(--color-texte-sur-accent)" : SECTIONS.symptomes.couleurFonce,
                   }}
                 >
                   {a.label}

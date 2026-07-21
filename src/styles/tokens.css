@@ -6,6 +6,8 @@
  * - Les couleurs "-clair" ne servent qu'à des fonds/teintes décoratifs, jamais
  *   de texte directement dessus (sauf `--color-texte`, très largement au-dessus du seuil).
  * - Les pastilles de sévérité (non-texte) visent ≥ 3:1 contre fond/surface.
+ * Le thème sombre ci-dessous (`[data-theme="dark"]`) est vérifié séparément
+ * avec les mêmes seuils, contre son propre fond sombre.
  * Voir le script de vérification utilisé pendant le développement si la
  * palette doit être retouchée : chaque couleur doit repasser ces seuils.
  */
@@ -16,6 +18,10 @@
   --color-texte: #3a2e26;
   --color-texte-doux: #6b5a4e;
   --color-bordure: #e6d5c0;
+  /* Couleur du texte posé sur un fond "accent" plein (boutons, badges) —
+     blanc en clair, texte sombre en sombre (les teintes vives du thème sombre
+     sont trop claires pour porter du texte blanc lisible). */
+  --color-texte-sur-accent: #ffffff;
 
   /* Symptômes — terracotta doux, desaturé pour un rendu plus apaisant */
   --color-terracotta: #a6543f;
@@ -51,6 +57,47 @@
   --font-arrondi: "Quicksand", "Nunito", "Segoe UI", sans-serif;
 }
 
+/*
+ * Thème sombre : appliqué via l'attribut `data-theme="dark"` posé sur <html>
+ * par src/lib/theme.ts (préférence système ou choix manuel dans Profil). Les
+ * teintes de section sont éclaircies (elles doivent contraster sur un fond
+ * sombre au lieu d'un fond clair), et le texte porté par les boutons/badges
+ * pleins passe au sombre plutôt qu'au blanc — voir --color-texte-sur-accent.
+ */
+:root[data-theme="dark"] {
+  --color-fond: #1e1712;
+  --color-fond-douce: #281f18;
+  --color-surface: #2c2219;
+  --color-texte: #f3e9df;
+  --color-texte-doux: #c9b9aa;
+  --color-bordure: #4a3c2e;
+  --color-texte-sur-accent: #1e1712;
+
+  --color-terracotta: #d17761;
+  --color-terracotta-fonce: #dd9988;
+  --color-terracotta-clair: color-mix(in srgb, #d17761 20%, #1e1712);
+
+  --color-ardoise: #61a2d1;
+  --color-ardoise-fonce: #88badd;
+  --color-ardoise-clair: color-mix(in srgb, #61a2d1 20%, #1e1712);
+
+  --color-ocre: #d1a861;
+  --color-ocre-fonce: #ddbe88;
+  --color-ocre-clair: color-mix(in srgb, #d1a861 20%, #1e1712);
+
+  --color-sauge: #86d161;
+  --color-sauge-fonce: #a4dd88;
+  --color-sauge-clair: color-mix(in srgb, #86d161 20%, #1e1712);
+
+  --color-sable: #cbb08a;
+  --color-marine: #91adca;
+  --color-caramel: #ca9572;
+
+  --color-severite-bas: #8ac76b;
+  --color-severite-moyen: #d19d61;
+  --color-severite-haut: #d37769;
+}
+
 :root {
   --severite-bas: var(--color-severite-bas);
   --severite-moyen: var(--color-severite-moyen);
@@ -62,8 +109,21 @@
   --ombre-forte: 0 8px 24px rgba(58, 46, 38, 0.14);
 }
 
+:root[data-theme="dark"] {
+  --ombre: 0 4px 14px rgba(0, 0, 0, 0.3);
+  --ombre-forte: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
 * {
   box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 html,
@@ -73,6 +133,9 @@ body {
   font-family:
     "Quicksand", "Nunito", "Segoe UI", -apple-system, BlinkMacSystemFont,
     sans-serif;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 body {

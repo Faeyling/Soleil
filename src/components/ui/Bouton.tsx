@@ -1,9 +1,10 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 
 interface BoutonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variante?: "plein" | "contour" | "discret" | "danger";
   couleur?: string;
   children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Bouton({
@@ -12,6 +13,7 @@ export function Bouton({
   className = "",
   style,
   children,
+  ref,
   ...props
 }: BoutonProps) {
   const base =
@@ -19,17 +21,17 @@ export function Bouton({
 
   let styleVariante: React.CSSProperties = {};
   if (variante === "plein") {
-    styleVariante = { background: couleur, color: "white" };
+    styleVariante = { background: couleur, color: "var(--color-texte-sur-accent)" };
   } else if (variante === "contour") {
     styleVariante = { background: "transparent", color: couleur, border: `2px solid ${couleur}` };
   } else if (variante === "discret") {
     styleVariante = { background: "var(--color-fond-douce)", color: "var(--color-texte)" };
   } else if (variante === "danger") {
-    styleVariante = { background: "var(--color-severite-haut)", color: "white" };
+    styleVariante = { background: "var(--color-severite-haut)", color: "var(--color-texte-sur-accent)" };
   }
 
   return (
-    <button className={`${base} ${className}`} style={{ ...styleVariante, ...style }} {...props}>
+    <button ref={ref} className={`${base} ${className}`} style={{ ...styleVariante, ...style }} {...props}>
       {children}
     </button>
   );

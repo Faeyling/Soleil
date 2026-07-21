@@ -8,7 +8,7 @@ import { Champ, classesInput } from "../../components/ui/Champ";
 import { Mascotte } from "../../components/mascotte/Mascotte";
 import { SECTIONS } from "../../lib/sections";
 import type { Severite } from "../../lib/severite";
-import { getSymptomesQuotidiens } from "../../lib/preferences";
+import { getSymptomesQuotidiens, getSuivisQuotidiens } from "../../lib/preferences";
 import { trouverSymptome } from "../../content/symptomes";
 import { trouverSuivi } from "../../content/autresSuivis";
 import { useEntreesDuJour } from "../../hooks/useEntrees";
@@ -18,7 +18,6 @@ import { dateDuJour, maintenantISO } from "../../lib/date";
 import { ID_NOTE_JOURNEE } from "../../lib/libelleEntree";
 import type { EntreeSymptome, EntreeSuivi } from "../../data/types";
 
-const IDS_SUIVIS_QUOTIDIENS = ["sommeil-suivi", "activite", "stress", "hydratation"];
 const TOTAL_ETAPES = 5;
 
 export function ParcoursQuotidienPage() {
@@ -37,6 +36,7 @@ export function ParcoursQuotidienPage() {
   const [noteFin, setNoteFin] = useState("");
 
   const idsSymptomesQuotidiens = getSymptomesQuotidiens();
+  const idsSuivisQuotidiens = getSuivisQuotidiens();
 
   const [preremplissageFait, setPreremplissageFait] = useState(false);
   if (!preremplissageFait && entreesJour.length > 0) {
@@ -56,7 +56,7 @@ export function ParcoursQuotidienPage() {
 
     const suivis: Record<string, string> = {};
     for (const e of entreesJour) {
-      if (e.type === "track_something" && IDS_SUIVIS_QUOTIDIENS.includes(e.item)) {
+      if (e.type === "track_something" && idsSuivisQuotidiens.includes(e.item)) {
         const suivi = e as EntreeSuivi;
         suivis[e.item] = suivi.severity ?? (suivi.value != null ? String(suivi.value) : "");
       }
@@ -201,7 +201,7 @@ export function ParcoursQuotidienPage() {
           )}
           {etape === 4 && (
             <EtapeAutresSuivis
-              ids={IDS_SUIVIS_QUOTIDIENS}
+              ids={idsSuivisQuotidiens}
               valeurs={suivisValeurs}
               onChange={(id, v) => setSuivisValeurs((prev) => ({ ...prev, [id]: v }))}
             />
@@ -247,6 +247,11 @@ function EtapeSymptomes({
       <h2 className="font-bold text-lg mb-4" style={{ color: SECTIONS.symptomes.couleurFonce }}>
         Comment se sentent tes symptômes aujourd'hui ?
       </h2>
+      {ids.length === 0 && (
+        <p className="text-sm text-texte-doux">
+          Aucun symptôme sélectionné pour ce parcours — personnalise-le depuis Profil.
+        </p>
+      )}
       <div className="flex flex-col gap-5">
         {ids.map((id) => {
           const def = trouverSymptome(id);
@@ -330,6 +335,11 @@ function EtapeAutresSuivis({
       <h2 className="font-bold text-lg mb-4" style={{ color: SECTIONS.suivis.couleurFonce }}>
         Un dernier tour d'horizon
       </h2>
+      {ids.length === 0 && (
+        <p className="text-sm text-texte-doux">
+          Aucun suivi sélectionné pour ce parcours — personnalise-le depuis Profil.
+        </p>
+      )}
       <div className="flex flex-col gap-5">
         {ids.map((id) => {
           const def = trouverSuivi(id);

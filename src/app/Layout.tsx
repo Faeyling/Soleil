@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { EcranVerrouillage } from "../components/ui/EcranVerrouillage";
+import { estDeverrouille } from "../lib/verrouillage";
 
 const ONGLETS = [
   { to: "/", label: "Accueil", icone: "🏠", fin: true },
@@ -8,6 +11,12 @@ const ONGLETS = [
 ];
 
 export function Layout() {
+  const [deverrouille, setDeverrouille] = useState(estDeverrouille);
+
+  if (!deverrouille) {
+    return <EcranVerrouillage onDeverrouille={() => setDeverrouille(true)} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-fond">
       <main className="flex-1 pb-24 max-w-2xl w-full mx-auto px-4 pt-6">

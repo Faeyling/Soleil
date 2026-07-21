@@ -8,9 +8,16 @@ import { CalendrierMensuel } from "../../components/ui/CalendrierMensuel";
 import { LigneEntree } from "../../components/ui/LigneEntree";
 import { Bouton } from "../../components/ui/Bouton";
 import { ChargementEcran } from "../../components/ui/ChargementEcran";
+import { BanniereRappel } from "../../components/ui/BanniereRappel";
 import { Mascotte } from "../../components/mascotte/Mascotte";
 import { SECTIONS } from "../../lib/sections";
-import { formatDateLisible } from "../../lib/date";
+import { dateDuJour, formatDateLisible } from "../../lib/date";
+import {
+  doitRappelerParcoursDuJour,
+  masquerRappelParcoursAujourdhui,
+  doitRappelerSauvegarde,
+  masquerRappelSauvegardePendantQuelquesJours,
+} from "../../lib/rappels";
 
 // Référence stable (ne change pas d'identité entre les rendus), pour ne pas
 // invalider le useMemo ci-dessous à chaque rendu pendant le chargement.
@@ -25,6 +32,8 @@ export function AccueilPage() {
   // inconditionnels (règle des hooks) ; le rendu "chargement" est décidé
   // après tous les hooks, pour ne jamais confondre "en cours" et "vide".
   const entrees = entreesBrutes === CHARGEMENT ? AUCUNE_ENTREE : entreesBrutes;
+  const [rappelParcoursMasque, setRappelParcoursMasque] = useState(false);
+  const [rappelSauvegardeMasque, setRappelSauvegardeMasque] = useState(false);
 
   const entreesParJour = useMemo(() => {
     const carte = new Map<string, typeof entrees>();
@@ -41,6 +50,10 @@ export function AccueilPage() {
   const suivis = entrees.filter((e) => e.type === "track_something").slice(0, 5);
 
   const entreesJourSelectionne = jourSelectionne ? entreesParJour.get(jourSelectionne) ?? [] : [];
+  const entreesAujourdhui = entreesParJour.get(dateDuJour()) ?? [];
+  const afficherRappelParcours =
+    !rappelParcoursMasque && doitRappelerParcoursDuJour(entreesAujourdhui.length === 0);
+  const afficherRappelSauvegarde = !rappelSauvegardeMasque && doitRappelerSauvegarde();
 
   if (entreesBrutes === CHARGEMENT) {
     return <ChargementEcran />;
@@ -96,6 +109,36 @@ export function AccueilPage() {
       <Bouton className="w-full mb-6" onClick={() => navigate("/parcours")}>
         <span aria-hidden="true">☀️</span> Remplir le suivi du jour
       </Bouton>
+
+      {afficherRappelParcours && (
+        <BanniereRappel
+          icone="☀️"
+          texte="Tu n'as encore rien noté aujourd'hui. Deux minutes suffisent pour le suivi du jour."
+          labelAction="Remplir le suivi du jour"
+          onAction={() => navigate("/parcours")}
+          onIgnorer={() => {
+            masquerRappelParcoursAujourdhui();
+            setRappelParcoursMasque(true);
+          }}
+          couleur={SECTIONS.suivis.couleurFonce}
+          couleurClaire={SECTIONS.suivis.couleurClaire}
+        />
+      )}
+
+      {afficherRappelSauvegarde && (
+        <BanniereRappel
+          icone="🔒"
+          texte="Ça fait plus de 3 jours depuis ta dernière sauvegarde. Pense à exporter tes données."
+          labelAction="Exporter maintenant"
+          onAction={() => navigate("/profil")}
+          onIgnorer={() => {
+            masquerRappelSauvegardePendantQuelquesJours();
+            setRappelSauvegardeMasque(true);
+          }}
+          couleur="var(--color-sauge-fonce)"
+          couleurClaire="var(--color-sauge-clair)"
+        />
+      )}
 
       <CalendrierMensuel
         entreesParJour={entreesParJour}

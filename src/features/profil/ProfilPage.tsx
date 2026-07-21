@@ -7,6 +7,19 @@ import { Confirmation } from "../../components/ui/Confirmation";
 import { PERIODES, dateDebutPeriode, type Periode } from "../../lib/periode";
 import { dateDuJour } from "../../lib/date";
 import { genererRapportPDF } from "../../lib/exportPdf";
+import { telechargerCSV } from "../../lib/exportCsv";
+import { SYMPTOMES } from "../../content/symptomes";
+import { AUTRES_SUIVIS } from "../../content/autresSuivis";
+import {
+  getSymptomesQuotidiens,
+  setSymptomesQuotidiens,
+  getSuivisQuotidiens,
+  setSuivisQuotidiens,
+} from "../../lib/preferences";
+import { SECTIONS } from "../../lib/sections";
+import { marquerSauvegardeExportee } from "../../lib/rappels";
+import { SectionSecurite } from "./SectionSecurite";
+import { SectionApparence } from "./SectionApparence";
 import {
   exporterDonnees,
   telechargerSauvegardeJSON,
@@ -31,6 +44,25 @@ export function ProfilPage() {
   const [confirmationImport, setConfirmationImport] = useState<File | undefined>();
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
 
+  const [symptomesQuotidiens, setSymptomesQuotidiensEtat] = useState<string[]>(getSymptomesQuotidiens);
+  const [suivisQuotidiens, setSuivisQuotidiensEtat] = useState<string[]>(getSuivisQuotidiens);
+
+  const basculerSymptomeQuotidien = (id: string) => {
+    const suivant = symptomesQuotidiens.includes(id)
+      ? symptomesQuotidiens.filter((s) => s !== id)
+      : [...symptomesQuotidiens, id];
+    setSymptomesQuotidiensEtat(suivant);
+    setSymptomesQuotidiens(suivant);
+  };
+
+  const basculerSuiviQuotidien = (id: string) => {
+    const suivant = suivisQuotidiens.includes(id)
+      ? suivisQuotidiens.filter((s) => s !== id)
+      : [...suivisQuotidiens, id];
+    setSuivisQuotidiensEtat(suivant);
+    setSuivisQuotidiens(suivant);
+  };
+
   const genererPdf = () => {
     const doc = genererRapportPDF(entrees, medicaments, {
       inclureSymptomes,
@@ -46,6 +78,7 @@ export function ProfilPage() {
   const exporterJSON = async () => {
     const sauvegarde = await exporterDonnees();
     telechargerSauvegardeJSON(sauvegarde);
+    marquerSauvegardeExportee();
   };
 
   const declencherImport = () => fichierRef.current?.click();
@@ -93,6 +126,10 @@ export function ProfilPage() {
         envoyé à un serveur. Pense à faire une sauvegarde régulière si tu changes d'appareil.
       </div>
 
+      <SectionApparence />
+
+      <SectionSecurite />
+
       <section className="mb-8">
         <h2 className="font-bold text-lg mb-3">Rapport pour ton médecin</h2>
         <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4">
@@ -103,7 +140,7 @@ export function ProfilPage() {
                 key={p.id}
                 onClick={() => setPeriode(p.id)}
                 className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                  periode === p.id ? "bg-terracotta text-white" : "text-texte-doux"
+                  periode === p.id ? "bg-terracotta text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
                 }`}
               >
                 {p.label}
@@ -135,6 +172,9 @@ export function ProfilPage() {
           <Bouton variante="contour" onClick={exporterJSON}>
             Exporter mes données (JSON)
           </Bouton>
+          <Bouton variante="contour" onClick={() => telechargerCSV(entrees)}>
+            Exporter en CSV (tableur)
+          </Bouton>
           <Bouton variante="contour" onClick={declencherImport}>
             Importer une sauvegarde
           </Bouton>
@@ -155,6 +195,70 @@ export function ProfilPage() {
               {messageImport.texte}
             </p>
           )}
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="font-bold text-lg mb-3">Personnaliser le parcours quotidien</h2>
+        <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4 flex flex-col gap-5">
+          <div>
+            <p className="text-sm font-semibold mb-2">
+              Symptômes proposés à l'étape 1 (« Suivi du jour »)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SYMPTOMES.map((s) => {
+                const actif = symptomesQuotidiens.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => basculerSymptomeQuotidien(s.id)}
+                    aria-pressed={actif}
+                    className="px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors"
+                    style={{
+                      borderColor: SECTIONS.symptomes.couleur,
+                      background: actif ? SECTIONS.symptomes.couleur : "transparent",
+                      color: actif ? "var(--color-texte-sur-accent)" : SECTIONS.symptomes.couleurFonce,
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-2">
+              Autres suivis proposés à l'étape 4
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {AUTRES_SUIVIS.filter((s) => !s.masque).map((s) => {
+                const actif = suivisQuotidiens.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => basculerSuiviQuotidien(s.id)}
+                    aria-pressed={actif}
+                    className="px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors"
+                    style={{
+                      borderColor: SECTIONS.suivis.couleur,
+                      background: actif ? SECTIONS.suivis.couleur : "transparent",
+                      color: actif ? "var(--color-texte-sur-accent)" : SECTIONS.suivis.couleurFonce,
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <p className="text-xs text-texte-doux">
+            Les éléments non sélectionnés restent accessibles depuis « Signaler un symptôme » et
+            « Suivre autre chose » — ils sont juste retirés du parcours guidé quotidien.
+          </p>
         </div>
       </section>
 

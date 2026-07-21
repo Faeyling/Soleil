@@ -87,7 +87,7 @@ export function HistoriquePage() {
                 key={p.id}
                 onClick={() => setPeriode(p.id)}
                 className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                  periode === p.id ? "bg-terracotta text-white" : "text-texte-doux"
+                  periode === p.id ? "bg-terracotta text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
                 }`}
               >
                 {p.label}
