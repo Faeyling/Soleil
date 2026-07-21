@@ -1,10 +1,10 @@
 import type { Entree } from "../data/types";
-import { COULEUR_SEVERITE } from "./severite";
+import { couleurSeverite } from "./severite";
 import { SECTIONS } from "./sections";
 
 export function couleurEntree(entree: Entree): string {
   if ("severity" in entree && entree.severity) {
-    return COULEUR_SEVERITE[entree.severity];
+    return couleurSeverite(entree.severity, entree.item);
   }
   if (entree.type === "medication_intake") {
     return SECTIONS.medicaments.couleur;

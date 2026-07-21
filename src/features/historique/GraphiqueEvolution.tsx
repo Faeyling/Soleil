@@ -119,7 +119,9 @@ export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps
                 borderColor: info.couleur,
                 color: masque ? "var(--color-texte-doux)" : info.couleur,
                 opacity: masque ? 0.45 : 1,
-                background: masque ? "transparent" : `${info.couleur}18`,
+                background: masque
+                  ? "transparent"
+                  : `color-mix(in srgb, ${info.couleur} 15%, var(--color-surface))`,
               }}
             >
               <span

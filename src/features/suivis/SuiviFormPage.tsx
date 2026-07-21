@@ -135,7 +135,7 @@ export function SuiviFormPage() {
 
       {suivi.typeFormulaire === "severite" && (
         <Champ label="Niveau">
-          <SelecteurSeverite valeur={severite} onChange={setSeverite} />
+          <SelecteurSeverite valeur={severite} onChange={setSeverite} itemId={suivi.id} />
         </Champ>
       )}
 

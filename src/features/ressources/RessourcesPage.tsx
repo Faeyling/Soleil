@@ -40,7 +40,7 @@ export function RessourcesPage() {
       <div className="flex flex-col gap-4 mb-6">
         {RUBRIQUES_RESSOURCES.map((r) => (
           <div key={r.titre} className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4">
-            <h2 className="font-bold text-base mb-1.5" style={{ color: "var(--color-ardoise-fonce)" }}>
+            <h2 className="font-bold text-base mb-1.5" style={{ color: "var(--color-sauge-fonce)" }}>
               {r.titre}
             </h2>
             <p className="text-sm text-texte leading-relaxed">{r.texte}</p>
@@ -62,7 +62,7 @@ export function RessourcesPage() {
               href={lien.url}
               target="_blank"
               rel="noreferrer"
-              className="text-ardoise-fonce underline text-sm"
+              className="text-sauge-fonce underline text-sm"
             >
               {lien.titre} <span aria-hidden="true">↗</span>
             </a>
@@ -122,7 +122,7 @@ export function RessourcesPage() {
                   </button>
                 </div>
                 {n.url && (
-                  <a href={n.url} target="_blank" rel="noreferrer" className="text-ardoise-fonce underline text-sm block mt-1">
+                  <a href={n.url} target="_blank" rel="noreferrer" className="text-sauge-fonce underline text-sm block mt-1">
                     {n.url} <span aria-hidden="true">↗</span>
                   </a>
                 )}

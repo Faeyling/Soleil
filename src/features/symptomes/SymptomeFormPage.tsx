@@ -143,7 +143,7 @@ export function SymptomeFormPage() {
       )}
 
       <Champ label="Sévérité">
-        <SelecteurSeverite valeur={severite} onChange={setSeverite} />
+        <SelecteurSeverite valeur={severite} onChange={setSeverite} itemId={symptome.id} />
       </Champ>
 
       <Champ label="Date et heure">

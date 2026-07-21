@@ -36,7 +36,9 @@ export function LigneEntree({ entree }: LigneEntreeProps) {
           {sousTitre ? ` · ${sousTitre}` : ""}
         </span>
       </span>
-      {"severity" in entree && entree.severity && <Pastille severite={entree.severity} />}
+      {"severity" in entree && entree.severity && (
+        <Pastille severite={entree.severity} itemId={entree.item} />
+      )}
     </button>
   );
 }

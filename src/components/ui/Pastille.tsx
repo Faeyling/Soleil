@@ -1,13 +1,15 @@
 import type { Severite } from "../../lib/severite";
-import { COULEUR_SEVERITE, LABEL_SEVERITE } from "../../lib/severite";
+import { couleurSeverite, LABEL_SEVERITE } from "../../lib/severite";
 
 interface PastilleProps {
   severite: Severite;
+  /** Slug de l'élément suivi (ex. "sommeil") — détermine si l'échelle de couleur est inversée. */
+  itemId?: string;
   taille?: number;
   avecLabel?: boolean;
 }
 
-export function Pastille({ severite, taille = 12, avecLabel = false }: PastilleProps) {
+export function Pastille({ severite, itemId, taille = 12, avecLabel = false }: PastilleProps) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span
@@ -16,7 +18,7 @@ export function Pastille({ severite, taille = 12, avecLabel = false }: PastilleP
           width: taille,
           height: taille,
           borderRadius: "999px",
-          background: COULEUR_SEVERITE[severite],
+          background: couleurSeverite(severite, itemId),
           flexShrink: 0,
         }}
         aria-hidden={avecLabel}

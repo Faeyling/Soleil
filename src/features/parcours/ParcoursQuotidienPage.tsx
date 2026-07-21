@@ -256,7 +256,7 @@ function EtapeSymptomes({
               <p className="font-semibold text-sm mb-2">
                 <span aria-hidden="true">{def.icone}</span> {def.label}
               </p>
-              <SelecteurSeverite valeur={valeurs[id]} onChange={(s) => onChange(id, s)} />
+              <SelecteurSeverite valeur={valeurs[id]} onChange={(s) => onChange(id, s)} itemId={id} />
             </div>
           );
         })}
@@ -271,7 +271,7 @@ function EtapeHumeur({ valeur, onChange }: { valeur?: Severite; onChange: (s: Se
       <h2 className="font-bold text-lg mb-4" style={{ color: SECTIONS.suivis.couleurFonce }}>
         Et ton humeur ?
       </h2>
-      <SelecteurSeverite valeur={valeur} onChange={onChange} />
+      <SelecteurSeverite valeur={valeur} onChange={onChange} itemId="humeur" />
     </div>
   );
 }
@@ -343,6 +343,7 @@ function EtapeAutresSuivis({
                 <SelecteurSeverite
                   valeur={valeurs[id] as Severite | undefined}
                   onChange={(s) => onChange(id, s)}
+                  itemId={id}
                 />
               ) : (
                 <input

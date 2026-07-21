@@ -55,7 +55,7 @@ export function TableauSemaine({ entrees }: TableauSemaineProps) {
                     <td key={j} className="text-center px-1">
                       {entree && "severity" in entree && entree.severity ? (
                         <span className="flex justify-center">
-                          <Pastille severite={entree.severity} />
+                          <Pastille severite={entree.severity} itemId={entree.item} />
                         </span>
                       ) : (
                         <span className="text-bordure">·</span>

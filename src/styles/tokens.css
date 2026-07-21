@@ -17,33 +17,36 @@
   --color-texte-doux: #6b5a4e;
   --color-bordure: #e6d5c0;
 
-  /* Symptômes — terracotta / rouge brique */
-  --color-terracotta: #a8543a;
-  --color-terracotta-fonce: #7c3d29;
-  --color-terracotta-clair: #f0d3c4;
+  /* Symptômes — terracotta doux, desaturé pour un rendu plus apaisant */
+  --color-terracotta: #a6543f;
+  --color-terracotta-fonce: #763c2d;
+  --color-terracotta-clair: #f0dbd6;
 
-  /* Médicaments — bleu ardoise */
-  --color-ardoise: #4d6a80;
-  --color-ardoise-fonce: #35505f;
-  --color-ardoise-clair: #d6e2e8;
+  /* Médicaments — bleu ardoise doux */
+  --color-ardoise: #4b708b;
+  --color-ardoise-fonce: #365063;
+  --color-ardoise-clair: #dbe4eb;
 
-  /* Autres suivis — ocre / moutarde */
-  --color-ocre: #8f6416;
-  --color-ocre-fonce: #6b4b10;
-  --color-ocre-clair: #f6e3ba;
+  /* Autres suivis — ocre / miel doux */
+  --color-ocre: #8a6628;
+  --color-ocre-fonce: #5f461c;
+  --color-ocre-clair: #f2e7d4;
 
-  /* Accent vert sauge / olive — confirmations, confidentialité, 4e teinte des graphiques */
-  --color-sauge: #4f6b46;
-  --color-sauge-fonce: #374d30;
-  --color-sauge-clair: #dfe8d8;
+  /* Accent vert sauge / olive — confirmations, confidentialité, Ressources, 4e teinte des graphiques */
+  --color-sauge: #50743e;
+  --color-sauge-fonce: #37502b;
+  --color-sauge-clair: #e0ebdb;
 
   --color-sable: #cbb08a;
   --color-marine: #2f3e52;
   --color-caramel: #a86337;
 
-  --color-severite-bas: #b3841a;
-  --color-severite-moyen: #c9642a;
-  --color-severite-haut: #b8402f;
+  /* Sévérité : vert (Bas = léger) → ambre (Moyen) → rouge doux (Haut = sévère).
+     Inversé pour le sommeil (Bas = peu/mal dormi = rouge, Haut = réparateur = vert),
+     voir src/lib/severite.ts. */
+  --color-severite-bas: #659b4b;
+  --color-severite-moyen: #be7f37;
+  --color-severite-haut: #c06659;
 
   --font-arrondi: "Quicksand", "Nunito", "Segoe UI", sans-serif;
 }
