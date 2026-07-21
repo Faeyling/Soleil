@@ -3,6 +3,7 @@ import type { Entree } from "../../data/types";
 import { trouverSuivi } from "../../content/autresSuivis";
 import { trouverSymptome } from "../../content/symptomes";
 import { calculerCorrelation } from "../../lib/correlations";
+import { severitesDisponibles } from "../../lib/severite";
 import { dateDebutPeriode, type Periode } from "../../lib/periode";
 
 const ACTIVITES = ["kine", "danse", "travail", "activite"];
@@ -15,18 +16,19 @@ function libelle(id: string): { label: string; icone: string } {
   return { label: symptome?.label ?? id, icone: symptome?.icone ?? "•" };
 }
 
-function couleurMoyenne(valeur: number): string {
-  if (valeur <= 1.5) return "var(--severite-bas)";
-  if (valeur <= 2.5) return "var(--severite-moyen)";
+function couleurMoyenne(valeur: number, max: number): string {
+  if (valeur <= max * 0.5) return "var(--severite-bas)";
+  if (valeur <= max * (2.5 / 3)) return "var(--severite-moyen)";
   return "var(--severite-haut)";
 }
 
 interface BarreProps {
   label: string;
   valeur: number | null;
+  max: number;
 }
 
-function Barre({ label, valeur }: BarreProps) {
+function Barre({ label, valeur, max }: BarreProps) {
   if (valeur === null) {
     return (
       <div className="flex-1">
@@ -41,11 +43,11 @@ function Barre({ label, valeur }: BarreProps) {
       <div className="h-2 rounded-full bg-fond-douce overflow-hidden mb-1">
         <div
           className="h-full rounded-full"
-          style={{ width: `${(valeur / 3) * 100}%`, background: couleurMoyenne(valeur) }}
+          style={{ width: `${(valeur / max) * 100}%`, background: couleurMoyenne(valeur, max) }}
         />
       </div>
-      <p className="text-sm font-bold" style={{ color: couleurMoyenne(valeur) }}>
-        {valeur.toFixed(1)} / 3
+      <p className="text-sm font-bold" style={{ color: couleurMoyenne(valeur, max) }}>
+        {valeur.toFixed(1)} / {max}
       </p>
     </div>
   );
@@ -69,6 +71,7 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
 
   const infoActivite = libelle(activite);
   const infoCible = libelle(cible);
+  const maxCible = severitesDisponibles(cible).length;
 
   return (
     <div>
@@ -124,15 +127,15 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
           <div>
             <p className="text-sm font-semibold mb-2">Le jour même</p>
             <div className="flex gap-4">
-              <Barre label={`Avec ${infoActivite.label}`} valeur={resultat.moyenneJourMemeAvec} />
-              <Barre label={`Sans ${infoActivite.label}`} valeur={resultat.moyenneJourMemeSans} />
+              <Barre label={`Avec ${infoActivite.label}`} valeur={resultat.moyenneJourMemeAvec} max={maxCible} />
+              <Barre label={`Sans ${infoActivite.label}`} valeur={resultat.moyenneJourMemeSans} max={maxCible} />
             </div>
           </div>
           <div>
             <p className="text-sm font-semibold mb-2">Le lendemain</p>
             <div className="flex gap-4">
-              <Barre label={`Après un jour avec`} valeur={resultat.moyenneLendemainAvec} />
-              <Barre label={`Après un jour sans`} valeur={resultat.moyenneLendemainSans} />
+              <Barre label={`Après un jour avec`} valeur={resultat.moyenneLendemainAvec} max={maxCible} />
+              <Barre label={`Après un jour sans`} valeur={resultat.moyenneLendemainSans} max={maxCible} />
             </div>
           </div>
         </div>

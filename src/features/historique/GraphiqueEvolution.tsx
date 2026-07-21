@@ -10,9 +10,11 @@ import {
 } from "recharts";
 import type { Entree } from "../../data/types";
 import { joursDepuis, dateDuJour, formatDateLisible } from "../../lib/date";
-import { ordreSeverite, LABEL_SEVERITE } from "../../lib/severite";
+import { ordreSeverite, LABEL_SEVERITE, type Severite } from "../../lib/severite";
 import { libelleEntree, iconeEntree } from "../../lib/libelleEntree";
 import { dateDebutPeriode, type Periode } from "../../lib/periode";
+
+const SEVERITE_PAR_ORDRE: Record<number, Severite> = { 1: "bas", 2: "moyen", 3: "haut", 4: "crise" };
 
 const PALETTE = [
   "var(--color-terracotta)",
@@ -145,8 +147,8 @@ export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps
           />
           <YAxis
             domain={[0, 4]}
-            ticks={[1, 2, 3]}
-            tickFormatter={(v: number) => LABEL_SEVERITE[v === 1 ? "bas" : v === 2 ? "moyen" : "haut"]}
+            ticks={[1, 2, 3, 4]}
+            tickFormatter={(v: number) => (SEVERITE_PAR_ORDRE[v] ? LABEL_SEVERITE[SEVERITE_PAR_ORDRE[v]] : "")}
             tick={{ fontSize: 11 }}
             width={70}
           />
@@ -156,7 +158,7 @@ export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps
               const cle = String(nom);
               const info = items.get(cle);
               const n = Number(valeur);
-              const label = n === 1 ? "Bas" : n === 2 ? "Moyen" : n === 3 ? "Haut" : "";
+              const label = SEVERITE_PAR_ORDRE[n] ? LABEL_SEVERITE[SEVERITE_PAR_ORDRE[n]] : "";
               return [label, info?.label ?? cle];
             }}
           />

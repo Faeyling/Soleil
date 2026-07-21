@@ -104,13 +104,15 @@ export function genererRapportPDF(
       }
       for (const [item, liste] of parItem) {
         const label = libelleEntree(liste[0]);
-        const compte: Record<Severite, number> = { bas: 0, moyen: 0, haut: 0 };
+        const compte: Record<Severite, number> = { bas: 0, moyen: 0, haut: 0, crise: 0 };
         for (const e of liste) {
           if ("severity" in e && e.severity) compte[e.severity]++;
         }
         sousTitre(`${label} — ${liste.length} occurrence${liste.length > 1 ? "s" : ""}`);
         paragraphe(
-          `Répartition : Bas ${compte.bas} · Moyen ${compte.moyen} · Haut ${compte.haut}`,
+          `Répartition : Bas ${compte.bas} · Moyen ${compte.moyen} · Haut ${compte.haut}${
+            compte.crise > 0 ? ` · Crise ${compte.crise}` : ""
+          }`,
           9.5,
           COULEUR_DOUX,
         );

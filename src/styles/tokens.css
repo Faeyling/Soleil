@@ -53,6 +53,8 @@
   --color-severite-bas: #659b4b;
   --color-severite-moyen: #be7f37;
   --color-severite-haut: #c06659;
+  /* Niveau "Crise", réservé à la Douleur — plus alarmant que Haut. */
+  --color-severite-crise: #8b2252;
 
   --font-arrondi: "Quicksand", "Nunito", "Segoe UI", sans-serif;
 }
@@ -96,12 +98,14 @@
   --color-severite-bas: #8ac76b;
   --color-severite-moyen: #d19d61;
   --color-severite-haut: #d37769;
+  --color-severite-crise: #e37bac;
 }
 
 :root {
   --severite-bas: var(--color-severite-bas);
   --severite-moyen: var(--color-severite-moyen);
   --severite-haut: var(--color-severite-haut);
+  --severite-crise: var(--color-severite-crise);
 
   --rayon: 1.1rem;
   --rayon-grand: 1.6rem;

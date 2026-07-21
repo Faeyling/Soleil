@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { trouverSymptome, ARTICULATIONS } from "../../content/symptomes";
+import { trouverSymptome } from "../../content/symptomes";
 import { EnTete } from "../../components/ui/EnTete";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
+import { SchemaCorporel } from "../../components/ui/SchemaCorporel";
 import { Bouton } from "../../components/ui/Bouton";
 import { Confirmation } from "../../components/ui/Confirmation";
 import { CaseImportante } from "../../components/ui/CaseImportante";
@@ -159,28 +160,12 @@ export function SymptomeFormPage() {
       </Champ>
 
       {symptome.localisable && (
-        <Champ label="Zone(s) concernée(s)" optionnel>
-          <div className="flex flex-wrap gap-2">
-            {ARTICULATIONS.map((a) => {
-              const actif = localisation.includes(a.id);
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => basculerZone(a.id)}
-                  className="px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors"
-                  style={{
-                    borderColor: SECTIONS.symptomes.couleur,
-                    background: actif ? SECTIONS.symptomes.couleur : "transparent",
-                    color: actif ? "var(--color-texte-sur-accent)" : SECTIONS.symptomes.couleurFonce,
-                  }}
-                >
-                  {a.label}
-                </button>
-              );
-            })}
-          </div>
-        </Champ>
+        <div className="mb-4">
+          <span className="block text-sm font-semibold mb-1.5 text-texte">
+            Zone(s) concernée(s) <span className="text-texte-doux font-normal">(optionnel)</span>
+          </span>
+          <SchemaCorporel zonesSelectionnees={localisation} onToggleZone={basculerZone} />
+        </div>
       )}
 
       <Champ label="Note" optionnel>
