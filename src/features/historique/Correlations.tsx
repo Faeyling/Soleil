@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Entree, Medicament } from "../../data/types";
-import { AUTRES_SUIVIS, trouverSuivi } from "../../content/autresSuivis";
-import { SYMPTOMES, trouverSymptome } from "../../content/symptomes";
+import { useSuivis, trouverSuivi } from "../../content/autresSuivis";
+import { useSymptomes, trouverSymptome } from "../../content/symptomes";
 import { useMedicaments } from "../../hooks/useMedicaments";
 import { calculerCorrelation } from "../../lib/correlations";
 import { severitesDisponibles } from "../../lib/severite";
@@ -9,16 +9,6 @@ import { dateDebutPeriode, type Periode } from "../../lib/periode";
 
 const CLE_ACTIVITE = "soleil-correlation-activite";
 const CLE_CIBLE = "soleil-correlation-cible";
-
-// "Activité" (l'influence testée) : tout ce qui peut être enregistré un jour
-// donné — symptômes, autres suivis (quel que soit leur type de formulaire) et
-// médicaments — puisqu'on ne teste que sa présence ce jour-là, pas sa valeur.
-const SUIVIS_SELECTIONNABLES = AUTRES_SUIVIS.filter((s) => !s.masque);
-
-// "Cible" (ce qu'on compare) : seuls les éléments notés par sévérité ont une
-// valeur moyennable — symptômes (toujours notés en sévérité) et suivis dont
-// le formulaire est "severite".
-const SUIVIS_AVEC_SEVERITE = AUTRES_SUIVIS.filter((s) => s.typeFormulaire === "severite");
 
 function libelle(id: string, medicaments: Medicament[]): { label: string; icone: string } {
   const suivi = trouverSuivi(id);
@@ -74,6 +64,10 @@ interface CorrelationsProps {
 
 export function Correlations({ entrees, periode }: CorrelationsProps) {
   const medicaments = useMedicaments();
+  const symptomes = useSymptomes();
+  const suivisTous = useSuivis();
+  const suivisSelectionnables = suivisTous.filter((s) => !s.masque);
+  const suivisAvecSeverite = suivisTous.filter((s) => s.typeFormulaire === "severite");
   const [activite, setActivite] = useState(() => localStorage.getItem(CLE_ACTIVITE) ?? "kine");
   const [cible, setCible] = useState(() => localStorage.getItem(CLE_CIBLE) ?? "douleur");
 
@@ -113,14 +107,14 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
           aria-label="Activité"
         >
           <optgroup label="Symptômes">
-            {SYMPTOMES.map((s) => (
+            {symptomes.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.icone} {s.label}
               </option>
             ))}
           </optgroup>
           <optgroup label="Autres suivis">
-            {SUIVIS_SELECTIONNABLES.map((s) => (
+            {suivisSelectionnables.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.icone} {s.label}
               </option>
@@ -143,14 +137,14 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
           aria-label="Symptôme ou suivi à comparer"
         >
           <optgroup label="Symptômes">
-            {SYMPTOMES.map((s) => (
+            {symptomes.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.icone} {s.label}
               </option>
             ))}
           </optgroup>
           <optgroup label="Autres suivis">
-            {SUIVIS_AVEC_SEVERITE.map((s) => (
+            {suivisAvecSeverite.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.icone} {s.label}
               </option>

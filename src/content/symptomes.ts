@@ -1,35 +1,59 @@
-export interface SymptomeDef {
-  id: string;
-  label: string;
-  icone: string;
-  /** Si vrai, le formulaire propose une sélection d'articulations/zones concernées. */
-  localisable?: boolean;
-}
+import { useSyncExternalStore } from "react";
+import type { SymptomeDef } from "../data/types";
 
-// Ordre alphabétique, tel que spécifié.
-export const SYMPTOMES: SymptomeDef[] = [
-  { id: "douleur-vesicale", label: "Douleur vésicale / difficulté à uriner", icone: "💧" },
-  { id: "tension-arterielle", label: "Tension artérielle", icone: "🩺" },
-  { id: "bleus", label: "Bleus / ecchymoses", icone: "🟣" },
-  { id: "constipation", label: "Constipation", icone: "🌀" },
-  { id: "diarrhee", label: "Diarrhée", icone: "🚽" },
-  { id: "vertiges", label: "Vertiges", icone: "💫" },
-  { id: "fatigue", label: "Fatigue", icone: "🪫" },
-  { id: "troubles-digestifs", label: "Troubles digestifs / gastro-intestinaux", icone: "🤢" },
-  { id: "frequence-cardiaque", label: "Fréquence cardiaque", icone: "❤️" },
-  { id: "urticaire", label: "Urticaire", icone: "🔴" },
-  { id: "demangeaisons", label: "Démangeaisons", icone: "✋" },
-  { id: "luxation-articulaire", label: "Luxation articulaire", icone: "🦴", localisable: true },
-  { id: "subluxation-articulaire", label: "Subluxation articulaire", icone: "🦴", localisable: true },
-  { id: "nausees", label: "Nausées", icone: "🤮" },
-  { id: "douleur", label: "Douleur", icone: "⚡", localisable: true },
-  { id: "sommeil", label: "Sommeil", icone: "🌙" },
-  { id: "vomissements", label: "Vomissements", icone: "🤢" },
-  { id: "autre-symptome", label: "Autre", icone: "➕" },
+export type { SymptomeDef };
+
+// Contenu de départ, semé en base une seule fois au premier lancement (voir
+// data/repositories/contenuRepository.ts) — modifiable ensuite par la
+// personne qui utilise l'app, voir GererSymptomesPage.
+export const SYMPTOMES_PAR_DEFAUT: SymptomeDef[] = [
+  { id: "douleur-vesicale", label: "Douleur vésicale / difficulté à uriner", icone: "💧", ordre: 0 },
+  { id: "tension-arterielle", label: "Tension artérielle", icone: "🩺", ordre: 1 },
+  { id: "bleus", label: "Bleus / ecchymoses", icone: "🟣", ordre: 2 },
+  { id: "constipation", label: "Constipation", icone: "🌀", ordre: 3 },
+  { id: "diarrhee", label: "Diarrhée", icone: "🚽", ordre: 4 },
+  { id: "vertiges", label: "Vertiges", icone: "💫", ordre: 5 },
+  { id: "fatigue", label: "Fatigue", icone: "🪫", ordre: 6 },
+  { id: "troubles-digestifs", label: "Troubles digestifs / gastro-intestinaux", icone: "🤢", ordre: 7 },
+  { id: "frequence-cardiaque", label: "Fréquence cardiaque", icone: "❤️", ordre: 8 },
+  { id: "urticaire", label: "Urticaire", icone: "🔴", ordre: 9 },
+  { id: "demangeaisons", label: "Démangeaisons", icone: "✋", ordre: 10 },
+  { id: "luxation-articulaire", label: "Luxation articulaire", icone: "🦴", localisable: true, ordre: 11 },
+  { id: "subluxation-articulaire", label: "Subluxation articulaire", icone: "🦴", localisable: true, ordre: 12 },
+  { id: "nausees", label: "Nausées", icone: "🤮", ordre: 13 },
+  { id: "douleur", label: "Douleur", icone: "⚡", localisable: true, ordre: 14 },
+  { id: "sommeil", label: "Sommeil", icone: "🌙", ordre: 15 },
+  { id: "vomissements", label: "Vomissements", icone: "🤢", ordre: 16 },
+  { id: "autre-symptome", label: "Autre", icone: "➕", ordre: 17 },
 ];
 
+// Store externe (façon useSyncExternalStore) tenu à jour par un liveQuery sur
+// la table `symptomes` — voir data/contenuInit.ts. Permet à `trouverSymptome`
+// de rester une fonction synchrone utilisable partout (export PDF/CSV, code
+// hors composant), tout en offrant `useSymptomes()` pour les listes réactives.
+let symptomes: SymptomeDef[] = SYMPTOMES_PAR_DEFAUT;
+const abonnes = new Set<() => void>();
+
+export function definirSymptomes(liste: SymptomeDef[]): void {
+  symptomes = [...liste].sort((a, b) => a.ordre - b.ordre);
+  for (const f of abonnes) f();
+}
+
+function sAbonner(f: () => void): () => void {
+  abonnes.add(f);
+  return () => abonnes.delete(f);
+}
+
+function obtenirEtat(): SymptomeDef[] {
+  return symptomes;
+}
+
+export function useSymptomes(): SymptomeDef[] {
+  return useSyncExternalStore(sAbonner, obtenirEtat);
+}
+
 export function trouverSymptome(id: string): SymptomeDef | undefined {
-  return SYMPTOMES.find((s) => s.id === id);
+  return symptomes.find((s) => s.id === id);
 }
 
 export const ARTICULATIONS: { id: string; label: string }[] = [

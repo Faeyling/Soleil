@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { Entree, Medicament, RessourceNote } from "./types";
+import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef } from "./types";
 
 export interface Parametre {
   cle: string;
@@ -11,6 +11,8 @@ export class SoleilDatabase extends Dexie {
   medicaments!: Table<Medicament, string>;
   ressourcesNotes!: Table<RessourceNote, string>;
   parametres!: Table<Parametre, string>;
+  symptomes!: Table<SymptomeDef, string>;
+  autresSuivis!: Table<SuiviDef, string>;
 
   constructor() {
     super("soleil-db");
@@ -24,6 +26,14 @@ export class SoleilDatabase extends Dexie {
     // existantes ne changent pas de structure.
     this.version(2).stores({
       parametres: "cle",
+    });
+    // La liste des symptômes et des "autres suivis" devient éditable : elle
+    // vit désormais en base, semée une seule fois avec le contenu par défaut
+    // au premier lancement (voir contenuRepository.ts) plutôt que d'être un
+    // tableau figé dans le code.
+    this.version(3).stores({
+      symptomes: "id, ordre",
+      autresSuivis: "id, ordre",
     });
   }
 }

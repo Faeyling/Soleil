@@ -8,8 +8,8 @@ import { PERIODES, dateDebutPeriode, type Periode } from "../../lib/periode";
 import { dateDuJour } from "../../lib/date";
 import { genererRapportPDF } from "../../lib/exportPdf";
 import { telechargerCSV } from "../../lib/exportCsv";
-import { SYMPTOMES } from "../../content/symptomes";
-import { AUTRES_SUIVIS } from "../../content/autresSuivis";
+import { useSymptomes } from "../../content/symptomes";
+import { useSuivis } from "../../content/autresSuivis";
 import {
   getSymptomesQuotidiens,
   setSymptomesQuotidiens,
@@ -33,6 +33,8 @@ export function ProfilPage() {
   const entreesBrutes = useToutesLesEntrees();
   const entrees = entreesBrutes === CHARGEMENT ? [] : entreesBrutes;
   const medicaments = useMedicaments();
+  const symptomes = useSymptomes();
+  const autresSuivis = useSuivis();
   const fichierRef = useRef<HTMLInputElement>(null);
 
   const [periode, setPeriode] = useState<Periode>("30");
@@ -209,7 +211,7 @@ export function ProfilPage() {
               Symptômes proposés à l'étape 1 (« Suivi du jour »)
             </p>
             <div className="flex flex-wrap gap-2">
-              {SYMPTOMES.map((s) => {
+              {symptomes.map((s) => {
                 const actif = symptomesQuotidiens.includes(s.id);
                 return (
                   <button
@@ -236,7 +238,7 @@ export function ProfilPage() {
               Autres suivis proposés à l'étape 4
             </p>
             <div className="flex flex-wrap gap-2">
-              {AUTRES_SUIVIS.filter((s) => !s.masque).map((s) => {
+              {autresSuivis.filter((s) => !s.masque).map((s) => {
                 const actif = suivisQuotidiens.includes(s.id);
                 return (
                   <button

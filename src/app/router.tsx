@@ -10,6 +10,9 @@ const SymptomesListePage = lazy(() =>
 const SymptomeFormPage = lazy(() =>
   import("../features/symptomes/SymptomeFormPage").then((m) => ({ default: m.SymptomeFormPage })),
 );
+const GererSymptomesPage = lazy(() =>
+  import("../features/symptomes/GererSymptomesPage").then((m) => ({ default: m.GererSymptomesPage })),
+);
 const MedicamentsPage = lazy(() =>
   import("../features/medicaments/MedicamentsPage").then((m) => ({ default: m.MedicamentsPage })),
 );
@@ -21,6 +24,9 @@ const SuivisListePage = lazy(() =>
 );
 const SuiviFormPage = lazy(() =>
   import("../features/suivis/SuiviFormPage").then((m) => ({ default: m.SuiviFormPage })),
+);
+const GererSuivisPage = lazy(() =>
+  import("../features/suivis/GererSuivisPage").then((m) => ({ default: m.GererSuivisPage })),
 );
 const ParcoursQuotidienPage = lazy(() =>
   import("../features/parcours/ParcoursQuotidienPage").then((m) => ({ default: m.ParcoursQuotidienPage })),
@@ -46,10 +52,12 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <AccueilPage /> },
       { path: "symptomes", element: AvecChargement(<SymptomesListePage />) },
+      { path: "symptomes/gerer", element: AvecChargement(<GererSymptomesPage />) },
       { path: "symptomes/:id", element: AvecChargement(<SymptomeFormPage />) },
       { path: "medicaments", element: AvecChargement(<MedicamentsPage />) },
       { path: "medicaments/:id", element: AvecChargement(<MedicamentFormPage />) },
       { path: "suivis", element: AvecChargement(<SuivisListePage />) },
+      { path: "suivis/gerer", element: AvecChargement(<GererSuivisPage />) },
       { path: "suivis/:id", element: AvecChargement(<SuiviFormPage />) },
       { path: "parcours", element: AvecChargement(<ParcoursQuotidienPage />) },
       { path: "historique", element: AvecChargement(<HistoriquePage />) },

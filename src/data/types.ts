@@ -62,3 +62,27 @@ export interface RessourceNote {
   note?: string;
   createdAt: string;
 }
+
+export interface SymptomeDef {
+  id: string;
+  label: string;
+  icone: string;
+  /** Si vrai, le formulaire propose une sélection d'articulations/zones concernées. */
+  localisable?: boolean;
+  /** Position d'affichage dans la grille — les éléments par défaut gardent leur ordre d'origine, les ajouts arrivent en fin de liste. */
+  ordre: number;
+}
+
+export type TypeFormulaireSuivi = "severite" | "numerique" | "texte";
+
+export interface SuiviDef {
+  id: string;
+  label: string;
+  icone: string;
+  typeFormulaire: TypeFormulaireSuivi;
+  unite?: string;
+  placeholder?: string;
+  /** Si vrai, l'élément n'apparaît pas dans la grille "Suivre autre chose" — utilisé pour les entrées créées uniquement par un autre écran (ex. la note de fin du parcours quotidien), qui doivent tout de même rester consultables/éditables/supprimables normalement. */
+  masque?: boolean;
+  ordre: number;
+}
