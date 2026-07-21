@@ -20,6 +20,7 @@ import { SECTIONS } from "../../lib/sections";
 import { marquerSauvegardeExportee } from "../../lib/rappels";
 import { SectionSecurite } from "./SectionSecurite";
 import { SectionApparence } from "./SectionApparence";
+import { SectionSauvegardeAuto } from "./SectionSauvegardeAuto";
 import {
   exporterDonnees,
   telechargerSauvegardeJSON,
@@ -197,6 +198,8 @@ export function ProfilPage() {
           )}
         </div>
       </section>
+
+      <SectionSauvegardeAuto />
 
       <section className="mb-8">
         <h2 className="font-bold text-lg mb-3">Personnaliser le parcours quotidien</h2>

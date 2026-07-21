@@ -49,6 +49,10 @@ export interface Medicament {
   id: string;
   nom: string;
   createdAt: string;
+  /** Nombre de prises restantes, si l'utilisateur suit son stock pour ce médicament. */
+  stock?: number;
+  /** Seuil en dessous duquel une alerte de stock bas est affichée. */
+  seuilAlerte?: number;
 }
 
 export interface RessourceNote {

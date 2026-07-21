@@ -101,6 +101,16 @@ export async function supprimerEntree(id: string): Promise<void> {
   await db.entrees.delete(id);
 }
 
+/**
+ * Ré-insère une entrée précédemment supprimée, avec son id et ses
+ * horodatages d'origine — utilisé par le "Annuler" affiché juste après une
+ * suppression. Contourne volontairement le contrôle d'unicité quotidienne :
+ * l'entrée existait déjà à cette place avant sa suppression.
+ */
+export async function restaurerEntree(entree: Entree): Promise<void> {
+  await db.entrees.add(entree);
+}
+
 export async function obtenirEntree(id: string): Promise<Entree | undefined> {
   return db.entrees.get(id);
 }

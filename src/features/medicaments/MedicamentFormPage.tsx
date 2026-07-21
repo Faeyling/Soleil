@@ -12,10 +12,12 @@ import { CHARGEMENT } from "../../hooks/chargement";
 import {
   renommerMedicament,
   supprimerMedicament,
+  definirStock,
 } from "../../data/repositories/medicamentsRepository";
 import { modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
+import { proposerAnnulation } from "../../lib/toastAnnulerStore";
 import { dateDepuisDatetimeLocal, datetimeLocalValue, formatDateTimeLisible, isoDepuisDatetimeLocal } from "../../lib/date";
-import type { EntreePriseMedicament } from "../../data/types";
+import type { EntreePriseMedicament, Medicament } from "../../data/types";
 
 export function MedicamentFormPage() {
   const { id = "" } = useParams();
@@ -42,7 +44,7 @@ export function MedicamentFormPage() {
   return (
     <GestionMedicament
       medicamentId={id}
-      medicamentNom={medicamentBrut?.nom}
+      medicament={medicamentBrut}
       prises={prises}
       onSupprime={() => navigate("/medicaments")}
     />
@@ -51,23 +53,27 @@ export function MedicamentFormPage() {
 
 interface GestionMedicamentProps {
   medicamentId: string;
-  medicamentNom: string | undefined;
+  medicament: Medicament | undefined;
   prises: EntreePriseMedicament[];
   onSupprime: () => void;
 }
 
-function GestionMedicament({ medicamentId, medicamentNom, prises, onSupprime }: GestionMedicamentProps) {
+function GestionMedicament({ medicamentId, medicament, prises, onSupprime }: GestionMedicamentProps) {
   const navigate = useNavigate();
-  const [nom, setNom] = useState(medicamentNom ?? "");
+  const [nom, setNom] = useState(medicament?.nom ?? "");
+  const [stock, setStock] = useState("");
+  const [seuilAlerte, setSeuilAlerte] = useState("");
   const [suppressionDemandee, setSuppressionDemandee] = useState(false);
-  const [nomChargePour, setNomChargePour] = useState<string | undefined>();
+  const [chargePour, setChargePour] = useState<string | undefined>();
 
-  if (medicamentNom !== undefined && nomChargePour !== medicamentId) {
-    setNomChargePour(medicamentId);
-    setNom(medicamentNom);
+  if (medicament !== undefined && chargePour !== medicamentId) {
+    setChargePour(medicamentId);
+    setNom(medicament.nom);
+    setStock(medicament.stock != null ? String(medicament.stock) : "");
+    setSeuilAlerte(medicament.seuilAlerte != null ? String(medicament.seuilAlerte) : "");
   }
 
-  if (medicamentNom === undefined) {
+  if (medicament === undefined) {
     return <p>Médicament introuvable.</p>;
   }
 
@@ -76,14 +82,25 @@ function GestionMedicament({ medicamentId, medicamentNom, prises, onSupprime }: 
     await renommerMedicament(medicamentId, nom);
   };
 
+  const enregistrerStock = async () => {
+    await definirStock(
+      medicamentId,
+      stock.trim() === "" ? undefined : Number(stock),
+      seuilAlerte.trim() === "" ? undefined : Number(seuilAlerte),
+    );
+  };
+
   const supprimer = async () => {
     await supprimerMedicament(medicamentId);
     onSupprime();
   };
 
+  const stockBas =
+    medicament.stock != null && medicament.seuilAlerte != null && medicament.stock <= medicament.seuilAlerte;
+
   return (
     <div>
-      <EnTete titre={medicamentNom} couleur={SECTIONS.medicaments.couleurFonce} />
+      <EnTete titre={medicament.nom} couleur={SECTIONS.medicaments.couleurFonce} />
 
       <Champ label="Nom du médicament">
         <div className="flex gap-2">
@@ -92,6 +109,43 @@ function GestionMedicament({ medicamentId, medicamentNom, prises, onSupprime }: 
             Renommer
           </Bouton>
         </div>
+      </Champ>
+
+      {stockBas && (
+        <div className="mb-4 rounded-xl bg-terracotta-clair text-terracotta-fonce px-4 py-3 text-sm">
+          <span aria-hidden="true">⚠️ </span>
+          Il reste {medicament.stock} prise{medicament.stock === 1 ? "" : "s"} de "{medicament.nom}" —
+          pense à renouveler ton ordonnance.
+        </div>
+      )}
+
+      <Champ label="Stock restant" optionnel>
+        <div className="flex gap-2 items-start flex-wrap">
+          <input
+            type="number"
+            min="0"
+            className={`${classesInput} w-28`}
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            placeholder="Ex. 20"
+            aria-label="Stock restant"
+          />
+          <input
+            type="number"
+            min="0"
+            className={`${classesInput} w-36`}
+            value={seuilAlerte}
+            onChange={(e) => setSeuilAlerte(e.target.value)}
+            placeholder="Alerte si moins de"
+            aria-label="Seuil d'alerte"
+          />
+          <Bouton couleur={SECTIONS.medicaments.couleur} onClick={enregistrerStock}>
+            Enregistrer
+          </Bouton>
+        </div>
+        <p className="text-xs text-texte-doux mt-1">
+          Décrémenté d'une unité à chaque prise enregistrée. Laisse vide pour ne pas suivre le stock.
+        </p>
       </Champ>
 
       <h2 className="font-bold text-lg mt-6 mb-2">Historique des prises</h2>
@@ -124,7 +178,7 @@ function GestionMedicament({ medicamentId, medicamentNom, prises, onSupprime }: 
       {suppressionDemandee && (
         <Confirmation
           titre="Supprimer ce médicament ?"
-          message={`"${medicamentNom}" et tout son historique de prises seront définitivement supprimés.`}
+          message={`"${medicament.nom}" et tout son historique de prises seront définitivement supprimés.`}
           onConfirmer={supprimer}
           onAnnuler={() => setSuppressionDemandee(false)}
         />
@@ -177,6 +231,7 @@ function EditionPrise({ entree, medicamentNom }: EditionPriseProps) {
 
   const supprimer = async () => {
     await supprimerEntree(entree.id);
+    proposerAnnulation(entree, `Prise de "${entree.medicationName}" supprimée`);
     navigate(-1);
   };
 

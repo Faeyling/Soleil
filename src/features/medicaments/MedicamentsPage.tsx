@@ -5,7 +5,7 @@ import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
 import { SECTIONS } from "../../lib/sections";
 import { useMedicaments } from "../../hooks/useMedicaments";
-import { ajouterMedicament } from "../../data/repositories/medicamentsRepository";
+import { ajouterMedicament, decrementerStock } from "../../data/repositories/medicamentsRepository";
 import { creerEntree } from "../../data/repositories/entreesRepository";
 import { dateDepuisDatetimeLocal, datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
 
@@ -36,6 +36,7 @@ export function MedicamentsPage() {
         date: dateDepuisDatetimeLocal(datetime),
         datetime: iso,
       });
+      await decrementerStock(medicament.id);
       setNom("");
       setDose("");
       setNote("");

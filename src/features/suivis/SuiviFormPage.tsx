@@ -18,6 +18,7 @@ import {
 } from "../../data/repositories/entreesRepository";
 import { useEntree } from "../../hooks/useEntrees";
 import { CHARGEMENT } from "../../hooks/chargement";
+import { proposerAnnulation } from "../../lib/toastAnnulerStore";
 
 export function SuiviFormPage() {
   const { id = "" } = useParams();
@@ -121,6 +122,7 @@ export function SuiviFormPage() {
   const supprimer = async () => {
     if (entreeExistante) {
       await supprimerEntree(entreeExistante.id);
+      proposerAnnulation(entreeExistante, `Entrée "${suivi.label}" supprimée`);
     }
     navigate("/");
   };

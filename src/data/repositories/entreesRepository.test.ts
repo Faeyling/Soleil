@@ -5,6 +5,8 @@ import {
   modifierEntreeAvecUnicite,
   enregistrerOuMettreAJour,
   trouverEntreeDuJour,
+  supprimerEntree,
+  restaurerEntree,
 } from "./entreesRepository";
 
 beforeEach(async () => {
@@ -150,6 +152,27 @@ describe("modifierEntreeAvecUnicite", () => {
     expect(resultat.modifiee).toBe(true);
     const relue = await db.entrees.get(entree.id);
     expect(relue?.date).toBe("2026-07-21");
+  });
+});
+
+describe("restaurerEntree", () => {
+  it("ré-insère une entrée supprimée avec son id d'origine, pour le \"Annuler\"", async () => {
+    const { entree } = await creerEntree({
+      type: "symptom",
+      item: "douleur",
+      date: "2026-07-20",
+      datetime: "2026-07-20T18:00:00.000Z",
+      severity: "haut",
+    });
+
+    await supprimerEntree(entree.id);
+    expect(await db.entrees.count()).toBe(0);
+
+    await restaurerEntree(entree);
+
+    expect(await db.entrees.count()).toBe(1);
+    const relue = await db.entrees.get(entree.id);
+    expect(relue?.id).toBe(entree.id);
   });
 });
 

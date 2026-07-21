@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToutesLesEntrees } from "../../hooks/useEntrees";
+import { useMedicaments } from "../../hooks/useMedicaments";
 import { CHARGEMENT } from "../../hooks/chargement";
 import type { Entree } from "../../data/types";
 import { ActionRonde } from "../../components/ui/ActionRonde";
@@ -12,11 +13,15 @@ import { BanniereRappel } from "../../components/ui/BanniereRappel";
 import { Mascotte } from "../../components/mascotte/Mascotte";
 import { SECTIONS } from "../../lib/sections";
 import { dateDuJour, formatDateLisible } from "../../lib/date";
+import { medicamentsStockBas } from "../../lib/stock";
+import { synchroniserSauvegardeAutoSiPossible } from "../../lib/sauvegardeAuto";
 import {
   doitRappelerParcoursDuJour,
   masquerRappelParcoursAujourdhui,
   doitRappelerSauvegarde,
   masquerRappelSauvegardePendantQuelquesJours,
+  doitAlerterStockBas,
+  masquerAlerteStockPendantQuelquesJours,
 } from "../../lib/rappels";
 
 // Référence stable (ne change pas d'identité entre les rendus), pour ne pas
@@ -32,8 +37,25 @@ export function AccueilPage() {
   // inconditionnels (règle des hooks) ; le rendu "chargement" est décidé
   // après tous les hooks, pour ne jamais confondre "en cours" et "vide".
   const entrees = entreesBrutes === CHARGEMENT ? AUCUNE_ENTREE : entreesBrutes;
+  const tousLesMedicaments = useMedicaments();
   const [rappelParcoursMasque, setRappelParcoursMasque] = useState(false);
   const [rappelSauvegardeMasque, setRappelSauvegardeMasque] = useState(false);
+  const [alerteStockMasquee, setAlerteStockMasquee] = useState(false);
+
+  // Tente une écriture silencieuse vers le fichier de sauvegarde automatique
+  // (si configuré et déjà autorisé) plutôt que d'attendre que l'utilisateur
+  // exporte manuellement — le bandeau de rappel reste le filet de sécurité
+  // pour qui n'a pas activé cette fonctionnalité.
+  useEffect(() => {
+    if (!doitRappelerSauvegarde()) return;
+    let annule = false;
+    void synchroniserSauvegardeAutoSiPossible().then((reussi) => {
+      if (reussi && !annule) setRappelSauvegardeMasque(true);
+    });
+    return () => {
+      annule = true;
+    };
+  }, []);
 
   const entreesParJour = useMemo(() => {
     const carte = new Map<string, typeof entrees>();
@@ -54,6 +76,9 @@ export function AccueilPage() {
   const afficherRappelParcours =
     !rappelParcoursMasque && doitRappelerParcoursDuJour(entreesAujourdhui.length === 0);
   const afficherRappelSauvegarde = !rappelSauvegardeMasque && doitRappelerSauvegarde();
+  const medicamentsStockBasListe = medicamentsStockBas(tousLesMedicaments);
+  const afficherAlerteStock =
+    !alerteStockMasquee && doitAlerterStockBas(medicamentsStockBasListe.length);
 
   if (entreesBrutes === CHARGEMENT) {
     return <ChargementEcran />;
@@ -137,6 +162,21 @@ export function AccueilPage() {
           }}
           couleur="var(--color-sauge-fonce)"
           couleurClaire="var(--color-sauge-clair)"
+        />
+      )}
+
+      {afficherAlerteStock && (
+        <BanniereRappel
+          icone="💊"
+          texte={`Stock bas pour ${medicamentsStockBasListe.map((m) => m.nom).join(", ")}. Pense à renouveler ton ordonnance.`}
+          labelAction="Voir mes médicaments"
+          onAction={() => navigate("/medicaments")}
+          onIgnorer={() => {
+            masquerAlerteStockPendantQuelquesJours();
+            setAlerteStockMasquee(true);
+          }}
+          couleur={SECTIONS.medicaments.couleurFonce}
+          couleurClaire={SECTIONS.medicaments.couleurClaire}
         />
       )}
 

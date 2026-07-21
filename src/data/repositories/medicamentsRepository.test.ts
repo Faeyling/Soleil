@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../db";
-import { ajouterMedicament, supprimerMedicament } from "./medicamentsRepository";
+import { ajouterMedicament, supprimerMedicament, definirStock, decrementerStock } from "./medicamentsRepository";
 import { creerEntree } from "./entreesRepository";
 
 beforeEach(async () => {
@@ -15,6 +15,36 @@ describe("ajouterMedicament", () => {
 
     expect(second.id).toBe(premier.id);
     expect(await db.medicaments.count()).toBe(1);
+  });
+});
+
+describe("decrementerStock", () => {
+  it("décrémente le stock d'une unité à chaque appel", async () => {
+    const medicament = await ajouterMedicament("Ibuprofène");
+    await definirStock(medicament.id, 3, 1);
+
+    await decrementerStock(medicament.id);
+    expect((await db.medicaments.get(medicament.id))?.stock).toBe(2);
+
+    await decrementerStock(medicament.id);
+    expect((await db.medicaments.get(medicament.id))?.stock).toBe(1);
+  });
+
+  it("ne descend jamais sous zéro", async () => {
+    const medicament = await ajouterMedicament("Ibuprofène");
+    await definirStock(medicament.id, 0, 1);
+
+    await decrementerStock(medicament.id);
+
+    expect((await db.medicaments.get(medicament.id))?.stock).toBe(0);
+  });
+
+  it("ne fait rien si le stock n'est pas suivi pour ce médicament", async () => {
+    const medicament = await ajouterMedicament("Ibuprofène");
+
+    await decrementerStock(medicament.id);
+
+    expect((await db.medicaments.get(medicament.id))?.stock).toBeUndefined();
   });
 });
 

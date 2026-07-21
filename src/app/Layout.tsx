@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { EcranVerrouillage } from "../components/ui/EcranVerrouillage";
+import { ToastAnnulerEntree } from "../components/ui/ToastAnnulerEntree";
+import { NotificationMiseAJour } from "../components/ui/NotificationMiseAJour";
 import { estDeverrouille } from "../lib/verrouillage";
 
 const ONGLETS = [
@@ -19,6 +21,7 @@ export function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-fond">
+      <NotificationMiseAJour />
       <main className="flex-1 pb-24 max-w-2xl w-full mx-auto px-4 pt-6">
         <Outlet />
       </main>
@@ -43,6 +46,7 @@ export function Layout() {
           ))}
         </div>
       </nav>
+      <ToastAnnulerEntree />
     </div>
   );
 }

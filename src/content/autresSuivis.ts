@@ -14,6 +14,9 @@ export interface SuiviDef {
 // Ordre alphabétique, tel que spécifié.
 export const AUTRES_SUIVIS: SuiviDef[] = [
   { id: "activite", label: "Activité / exercice", icone: "🚶‍♀️", typeFormulaire: "severite" },
+  { id: "danse", label: "Danse", icone: "💃", typeFormulaire: "severite" },
+  { id: "kine", label: "Kinésithérapie", icone: "🧑‍⚕️", typeFormulaire: "severite" },
+  { id: "travail", label: "Travail", icone: "💼", typeFormulaire: "severite" },
   { id: "selles", label: "Selles", icone: "🌀", typeFormulaire: "severite" },
   { id: "energie", label: "Énergie", icone: "⚡", typeFormulaire: "severite" },
   {

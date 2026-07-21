@@ -18,6 +18,7 @@ import {
 } from "../../data/repositories/entreesRepository";
 import { useEntree } from "../../hooks/useEntrees";
 import { CHARGEMENT } from "../../hooks/chargement";
+import { proposerAnnulation } from "../../lib/toastAnnulerStore";
 
 export function SymptomeFormPage() {
   const { id = "" } = useParams();
@@ -128,6 +129,7 @@ export function SymptomeFormPage() {
   const supprimer = async () => {
     if (entreeExistante) {
       await supprimerEntree(entreeExistante.id);
+      proposerAnnulation(entreeExistante, `Entrée "${symptome.label}" supprimée`);
     }
     navigate("/");
   };

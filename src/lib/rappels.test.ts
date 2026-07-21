@@ -6,6 +6,8 @@ import {
   masquerRappelSauvegardePendantQuelquesJours,
   doitRappelerParcoursDuJour,
   masquerRappelParcoursAujourdhui,
+  doitAlerterStockBas,
+  masquerAlerteStockPendantQuelquesJours,
 } from "./rappels";
 
 beforeEach(() => {
@@ -64,5 +66,21 @@ describe("rappel du parcours quotidien", () => {
     expect(doitRappelerParcoursDuJour(true)).toBe(true);
     masquerRappelParcoursAujourdhui();
     expect(doitRappelerParcoursDuJour(true)).toBe(false);
+  });
+});
+
+describe("alerte de stock bas", () => {
+  it("n'alerte pas s'il n'y a aucun médicament en stock bas", () => {
+    expect(doitAlerterStockBas(0)).toBe(false);
+  });
+
+  it("alerte s'il y a au moins un médicament en stock bas", () => {
+    expect(doitAlerterStockBas(2)).toBe(true);
+  });
+
+  it("respecte le masquage temporaire après un \"plus tard\"", () => {
+    expect(doitAlerterStockBas(1)).toBe(true);
+    masquerAlerteStockPendantQuelquesJours();
+    expect(doitAlerterStockBas(1)).toBe(false);
   });
 });

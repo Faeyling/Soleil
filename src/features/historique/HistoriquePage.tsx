@@ -10,6 +10,7 @@ import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { TableauSemaine } from "./TableauSemaine";
 import { GraphiqueEvolution } from "./GraphiqueEvolution";
 import { FrequenceArticulations } from "./FrequenceArticulations";
+import { Correlations } from "./Correlations";
 import { PERIODES, dateDebutPeriode, type Periode } from "../../lib/periode";
 import { formatDateLisible } from "../../lib/date";
 
@@ -104,6 +105,11 @@ export function HistoriquePage() {
           Luxations et subluxations, sur la période « {PERIODES.find((p) => p.id === periode)?.label} ».
         </p>
         <FrequenceArticulations entrees={entrees} dateDebut={dateDebut} />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="font-bold text-lg mb-3">Corrélations</h2>
+        <Correlations entrees={entrees} periode={periode} />
       </section>
     </div>
   );
