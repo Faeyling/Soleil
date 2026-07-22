@@ -285,7 +285,7 @@ export function ProfilPage() {
             aria-hidden="true"
             style={{
               background:
-                "repeating-linear-gradient(135deg, var(--color-severite-haut) 0 12px, var(--color-texte) 12px 24px)",
+                "repeating-linear-gradient(135deg, var(--color-severite-crise) 0 12px, var(--color-texte) 12px 24px)",
             }}
           />
           <div className="p-4">

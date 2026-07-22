@@ -21,9 +21,9 @@ export const SECTIONS: Record<SectionId, SectionTheme> = {
   medicaments: {
     id: "medicaments",
     label: "Médicaments",
-    couleur: "var(--color-ardoise)",
-    couleurFonce: "var(--color-ardoise-fonce)",
-    couleurClaire: "var(--color-ardoise-clair)",
+    couleur: "var(--color-rose)",
+    couleurFonce: "var(--color-rose-fonce)",
+    couleurClaire: "var(--color-rose-clair)",
     icone: "💊",
   },
   suivis: {
