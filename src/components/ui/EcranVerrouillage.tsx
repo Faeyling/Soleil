@@ -1,6 +1,7 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { Mascotte } from "../mascotte/Mascotte";
 import { verifierCode, marquerSessionDeverrouillee } from "../../lib/verrouillage";
+import { biometrieActivee, verifierBiometrie } from "../../lib/biometrie";
 
 interface EcranVerrouillageProps {
   onDeverrouille: () => void;
@@ -10,6 +11,37 @@ export function EcranVerrouillage({ onDeverrouille }: EcranVerrouillageProps) {
   const [code, setCode] = useState("");
   const [erreur, setErreur] = useState(false);
   const [enCours, setEnCours] = useState(false);
+  const [erreurEmpreinte, setErreurEmpreinte] = useState(false);
+
+  const tenterEmpreinte = async () => {
+    const ok = await verifierBiometrie();
+    if (ok) {
+      marquerSessionDeverrouillee();
+      onDeverrouille();
+    } else {
+      setErreurEmpreinte(true);
+    }
+  };
+
+  // Propose l'empreinte automatiquement à l'ouverture de l'écran, si activée
+  // — la vérification elle-même (via l'API WebAuthn) est le système externe
+  // synchronisé ici ; aucun setState synchrone avant l'attente asynchrone.
+  useEffect(() => {
+    if (!biometrieActivee()) return;
+    let annule = false;
+    void verifierBiometrie().then((ok) => {
+      if (annule) return;
+      if (ok) {
+        marquerSessionDeverrouillee();
+        onDeverrouille();
+      } else {
+        setErreurEmpreinte(true);
+      }
+    });
+    return () => {
+      annule = true;
+    };
+  }, [onDeverrouille]);
 
   const soumettre = async (valeur: string) => {
     setEnCours(true);
@@ -55,6 +87,26 @@ export function EcranVerrouillage({ onDeverrouille }: EcranVerrouillageProps) {
       <p className="text-sm text-terracotta-fonce h-5" role="alert">
         {erreur ? "Code incorrect, réessaie." : ""}
       </p>
+
+      {biometrieActivee() && (
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              setErreurEmpreinte(false);
+              void tenterEmpreinte();
+            }}
+            className="flex items-center gap-2 mx-auto px-4 py-2 rounded-full border border-bordure text-sm font-semibold cursor-pointer hover:bg-fond-douce"
+          >
+            <span aria-hidden="true">🔓</span> Déverrouiller avec mon empreinte
+          </button>
+          {erreurEmpreinte && (
+            <p className="text-sm text-terracotta-fonce mt-2" role="alert">
+              Empreinte non reconnue — réessaie ou utilise ton code.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

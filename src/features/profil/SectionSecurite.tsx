@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { Bouton } from "../../components/ui/Bouton";
 import { classesInput } from "../../components/ui/Champ";
 import {
@@ -8,6 +8,12 @@ import {
   supprimerCode,
   verrouillerMaintenant,
 } from "../../lib/verrouillage";
+import {
+  biometrieDisponible,
+  biometrieActivee,
+  activerBiometrie,
+  desactiverBiometrie,
+} from "../../lib/biometrie";
 
 type Etape =
   | { type: "repos" }
@@ -21,6 +27,33 @@ export function SectionSecurite() {
   const [saisie, setSaisie] = useState("");
   const [erreur, setErreur] = useState<string | undefined>();
   const [succes, setSucces] = useState<string | undefined>();
+
+  const [empreinteDisponible, setEmpreinteDisponible] = useState(false);
+  const [empreinteActive, setEmpreinteActive] = useState(biometrieActivee);
+  const [erreurEmpreinte, setErreurEmpreinte] = useState<string | undefined>();
+  const [enregistrementEmpreinteEnCours, setEnregistrementEmpreinteEnCours] = useState(false);
+
+  useEffect(() => {
+    void biometrieDisponible().then(setEmpreinteDisponible);
+  }, []);
+
+  const basculerEmpreinte = async () => {
+    setErreurEmpreinte(undefined);
+    if (empreinteActive) {
+      desactiverBiometrie();
+      setEmpreinteActive(false);
+      return;
+    }
+    setEnregistrementEmpreinteEnCours(true);
+    try {
+      await activerBiometrie();
+      setEmpreinteActive(true);
+    } catch {
+      setErreurEmpreinte("Impossible d'enregistrer ton empreinte. Réessaie, ou vérifie que ton appareil propose un capteur biométrique.");
+    } finally {
+      setEnregistrementEmpreinteEnCours(false);
+    }
+  };
 
   const reinitialiser = () => {
     setEtape({ type: "repos" });
@@ -40,7 +73,9 @@ export function SectionSecurite() {
       }
       if (etape.suite === "desactiver") {
         supprimerCode();
+        desactiverBiometrie();
         setActif(false);
+        setEmpreinteActive(false);
         setSucces("Verrouillage désactivé.");
         reinitialiser();
         return;
@@ -162,6 +197,27 @@ export function SectionSecurite() {
           >
             Activer un code de verrouillage
           </Bouton>
+        )}
+
+        {actif && empreinteDisponible && !libelleEtape && (
+          <div className="pt-3 border-t border-bordure">
+            <p className="text-sm text-texte-doux mb-2">
+              <span aria-hidden="true">🔓 </span>
+              Ton appareil propose aussi un capteur biométrique (empreinte, visage...) — active-le pour
+              déverrouiller Soleil sans taper ton code. Rien n'est transmis à Soleil : seuls ton
+              navigateur et ton appareil savent que c'est bien toi.
+            </p>
+            {erreurEmpreinte && (
+              <p className="text-sm text-terracotta-fonce mb-2">{erreurEmpreinte}</p>
+            )}
+            <Bouton
+              variante={empreinteActive ? "contour" : "discret"}
+              onClick={() => void basculerEmpreinte()}
+              disabled={enregistrementEmpreinteEnCours}
+            >
+              {empreinteActive ? "Désactiver l'empreinte" : "Activer le déverrouillage par empreinte"}
+            </Bouton>
+          </div>
         )}
       </div>
     </section>
