@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useToutesLesEntrees } from "../../hooks/useEntrees";
 import { CHARGEMENT } from "../../hooks/chargement";
 import { useMedicaments } from "../../hooks/useMedicaments";
@@ -8,6 +8,7 @@ import { PERIODES, dateDebutPeriode, type Periode } from "../../lib/periode";
 import { dateDuJour } from "../../lib/date";
 import { genererRapportPDF } from "../../lib/exportPdf";
 import { telechargerCSV } from "../../lib/exportCsv";
+import { libelle } from "../../lib/libelleItem";
 import { useSymptomes } from "../../content/symptomes";
 import { useSuivis } from "../../content/autresSuivis";
 import {
@@ -28,10 +29,15 @@ import {
   importerDonnees,
   supprimerToutesLesDonnees,
 } from "../../data/repositories/sauvegardeRepository";
+import type { Entree } from "../../data/types";
+
+// Référence stable (ne change pas d'identité entre les rendus), pour ne pas
+// invalider le useMemo des courbes disponibles à chaque rendu pendant le chargement.
+const AUCUNE_ENTREE: Entree[] = [];
 
 export function ProfilPage() {
   const entreesBrutes = useToutesLesEntrees();
-  const entrees = entreesBrutes === CHARGEMENT ? [] : entreesBrutes;
+  const entrees = entreesBrutes === CHARGEMENT ? AUCUNE_ENTREE : entreesBrutes;
   const medicaments = useMedicaments();
   const symptomes = useSymptomes();
   const autresSuivis = useSuivis();
@@ -42,6 +48,25 @@ export function ProfilPage() {
   const [inclureMedicaments, setInclureMedicaments] = useState(true);
   const [inclureEvenements, setInclureEvenements] = useState(true);
   const [inclureNotesImportantes, setInclureNotesImportantes] = useState(true);
+  const [inclureGraphiques, setInclureGraphiques] = useState(false);
+  const [itemsGraphiques, setItemsGraphiques] = useState<string[]>([]);
+
+  const dateDebutRapport = dateDebutPeriode(periode);
+  // Éléments avec au moins une entrée de sévérité sur la période choisie —
+  // seuls ceux-là peuvent apparaître sur le graphique du PDF.
+  const itemsGraphiquesDisponibles = useMemo(() => {
+    const vus = new Map<string, { label: string; icone: string }>();
+    for (const e of entrees) {
+      if (e.date < dateDebutRapport || !("severity" in e) || !e.severity) continue;
+      const cle = `${e.type}:${e.item}`;
+      if (!vus.has(cle)) vus.set(cle, libelle(e.item, medicaments));
+    }
+    return [...vus.entries()].map(([cle, info]) => ({ cle, ...info }));
+  }, [entrees, dateDebutRapport, medicaments]);
+
+  const basculerItemGraphique = (cle: string) => {
+    setItemsGraphiques((prev) => (prev.includes(cle) ? prev.filter((c) => c !== cle) : [...prev, cle]));
+  };
 
   const [messageImport, setMessageImport] = useState<{ texte: string; erreur: boolean } | undefined>();
   const [confirmationImport, setConfirmationImport] = useState<File | undefined>();
@@ -72,7 +97,9 @@ export function ProfilPage() {
       inclureMedicaments,
       inclureEvenements,
       inclureNotesImportantes,
-      dateDebut: dateDebutPeriode(periode),
+      inclureGraphiques,
+      itemsGraphiques,
+      dateDebut: dateDebutRapport,
       dateFin: dateDuJour(),
     });
     doc.save(`soleil-rapport-${dateDuJour()}.pdf`);
@@ -157,7 +184,41 @@ export function ProfilPage() {
             <CaseSection label="Médicaments et doses" valeur={inclureMedicaments} onChange={setInclureMedicaments} />
             <CaseSection label="Événements notables (subluxations, hématomes...)" valeur={inclureEvenements} onChange={setInclureEvenements} />
             <CaseSection label="Notes marquées importantes" valeur={inclureNotesImportantes} onChange={setInclureNotesImportantes} />
+            <CaseSection label="Graphique d'évolution" valeur={inclureGraphiques} onChange={setInclureGraphiques} />
           </div>
+
+          {inclureGraphiques && (
+            <div className="mb-4">
+              <p className="text-sm font-semibold mb-1">Courbes à afficher sur le graphique</p>
+              {itemsGraphiquesDisponibles.length === 0 ? (
+                <p className="text-xs text-texte-doux">
+                  Aucun symptôme ou suivi avec un niveau de sévérité enregistré sur cette période.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {itemsGraphiquesDisponibles.map((item) => {
+                    const actif = itemsGraphiques.includes(item.cle);
+                    return (
+                      <button
+                        key={item.cle}
+                        type="button"
+                        onClick={() => basculerItemGraphique(item.cle)}
+                        aria-pressed={actif}
+                        className="px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors"
+                        style={{
+                          borderColor: "var(--color-ardoise)",
+                          background: actif ? "var(--color-ardoise)" : "transparent",
+                          color: actif ? "var(--color-texte-sur-accent)" : "var(--color-ardoise-fonce)",
+                        }}
+                      >
+                        {item.icone} {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           <Bouton className="w-full" onClick={genererPdf}>
             <span aria-hidden="true">📄</span> Générer le rapport PDF
