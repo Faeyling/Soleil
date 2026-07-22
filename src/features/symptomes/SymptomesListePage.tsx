@@ -23,15 +23,17 @@ export function SymptomesListePage() {
         }
       />
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {symptomes.map((s) => (
-          <CarteElement
-            key={s.id}
-            icone={s.icone}
-            label={s.label}
-            couleur={SECTIONS.symptomes.couleurClaire}
-            onClick={() => navigate(`/symptomes/${s.id}`)}
-          />
-        ))}
+        {symptomes
+          .filter((s) => !s.desactive)
+          .map((s) => (
+            <CarteElement
+              key={s.id}
+              icone={s.icone}
+              label={s.label}
+              couleur={SECTIONS.symptomes.couleurClaire}
+              onClick={() => navigate(`/symptomes/${s.id}`)}
+            />
+          ))}
       </div>
     </div>
   );

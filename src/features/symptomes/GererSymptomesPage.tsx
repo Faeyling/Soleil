@@ -2,10 +2,9 @@ import { useState } from "react";
 import { EnTete } from "../../components/ui/EnTete";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
-import { Confirmation } from "../../components/ui/Confirmation";
 import { SECTIONS } from "../../lib/sections";
 import { useSymptomes } from "../../content/symptomes";
-import { ajouterSymptome, modifierSymptome, supprimerSymptome } from "../../data/repositories/contenuRepository";
+import { ajouterSymptome, modifierSymptome } from "../../data/repositories/contenuRepository";
 import type { SymptomeDef } from "../../data/types";
 
 type TypeFormulaireSymptome = "severite" | "ouinon";
@@ -25,10 +24,11 @@ const LABEL_TYPE: Record<TypeFormulaireSymptome, string> = {
 };
 
 export function GererSymptomesPage() {
-  const symptomes = useSymptomes();
+  const symptomesTous = useSymptomes();
+  const symptomesActifs = symptomesTous.filter((s) => !s.desactive);
+  const symptomesDesactives = symptomesTous.filter((s) => s.desactive);
   const [edition, setEdition] = useState<string | "nouveau" | undefined>();
   const [formulaire, setFormulaire] = useState<FormulaireSymptome>(FORMULAIRE_VIDE);
-  const [suppressionDemandee, setSuppressionDemandee] = useState<SymptomeDef | undefined>();
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
 
   const ouvrirNouveau = () => {
@@ -69,11 +69,8 @@ export function GererSymptomesPage() {
     }
   };
 
-  const confirmerSuppression = async () => {
-    if (!suppressionDemandee) return;
-    await supprimerSymptome(suppressionDemandee.id);
-    setSuppressionDemandee(undefined);
-    if (edition === suppressionDemandee.id) fermer();
+  const basculerActivation = async (s: SymptomeDef) => {
+    await modifierSymptome(s.id, { desactive: !s.desactive });
   };
 
   return (
@@ -81,8 +78,9 @@ export function GererSymptomesPage() {
       <EnTete titre="Gérer les symptômes" couleur={SECTIONS.symptomes.couleurFonce} />
 
       <p className="text-sm text-texte-doux mb-4">
-        Ajoute, renomme ou retire des symptômes de ta liste. Les entrées déjà enregistrées restent
-        conservées même si tu supprimes un symptôme de cette liste.
+        Ajoute, renomme ou désactive des symptômes de ta liste. Désactiver un symptôme le retire
+        de la grille et du parcours quotidien, mais il reste modifiable, réactivable à tout
+        moment, et les entrées déjà enregistrées restent pleinement visibles dans ton historique.
       </p>
 
       {edition === undefined && (
@@ -152,7 +150,7 @@ export function GererSymptomesPage() {
       )}
 
       <div className="divide-y divide-bordure">
-        {symptomes.map((s) => (
+        {symptomesActifs.map((s) => (
           <div key={s.id} className="flex items-center gap-3 py-3">
             <span className="text-xl" aria-hidden="true">
               {s.icone}
@@ -166,23 +164,48 @@ export function GererSymptomesPage() {
               ✏️
             </button>
             <button
-              onClick={() => setSuppressionDemandee(s)}
-              aria-label={`Supprimer ${s.label}`}
+              onClick={() => void basculerActivation(s)}
+              aria-label={`Désactiver ${s.label}`}
               className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fond-douce cursor-pointer text-base"
             >
-              🗑️
+              🚫
             </button>
           </div>
         ))}
       </div>
 
-      {suppressionDemandee && (
-        <Confirmation
-          titre="Supprimer ce symptôme ?"
-          message={`"${suppressionDemandee.label}" sera retiré de ta liste. Les entrées déjà enregistrées avec ce symptôme resteront visibles dans ton historique.`}
-          onConfirmer={confirmerSuppression}
-          onAnnuler={() => setSuppressionDemandee(undefined)}
-        />
+      {symptomesDesactives.length > 0 && (
+        <section className="mt-8">
+          <h2 className="font-bold text-lg mb-1">Désactivés</h2>
+          <p className="text-xs text-texte-doux mb-3">
+            N'apparaissent plus dans la grille ni le parcours quotidien. Réactive-les à tout
+            moment.
+          </p>
+          <div className="divide-y divide-bordure">
+            {symptomesDesactives.map((s) => (
+              <div key={s.id} className="flex items-center gap-3 py-3 opacity-70">
+                <span className="text-xl" aria-hidden="true">
+                  {s.icone}
+                </span>
+                <span className="flex-1 font-medium">{s.label}</span>
+                <button
+                  onClick={() => ouvrirEdition(s)}
+                  aria-label={`Modifier ${s.label}`}
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fond-douce cursor-pointer text-base"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={() => void basculerActivation(s)}
+                  aria-label={`Réactiver ${s.label}`}
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fond-douce cursor-pointer text-base"
+                >
+                  ✅
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

@@ -1,13 +1,14 @@
 import { db } from "../db";
-import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef } from "../types";
+import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef, MedecinDef } from "../types";
 import { TYPES_UNIQUES } from "./entreesRepository";
 
 // v1 : entrees/medicaments/ressourcesNotes uniquement. v2 : ajoute les
 // listes personnalisées de symptômes et d'activités (voir GererSymptomesPage
 // / GererSuivisPage) — sans elles, restaurer une sauvegarde sur un autre
 // appareil perdait silencieusement les symptômes/activités ajoutés,
-// renommés ou retirés par la personne qui utilise l'app.
-const VERSION_SAUVEGARDE = 2;
+// renommés ou retirés par la personne qui utilise l'app. v3 : ajoute le
+// carnet d'adresses des médecins (voir RessourcesPage).
+const VERSION_SAUVEGARDE = 3;
 
 export interface Sauvegarde {
   app: "soleil";
@@ -19,15 +20,18 @@ export interface Sauvegarde {
   /** Absent dans les sauvegardes v1 — le contenu par défaut reste alors en place. */
   symptomes?: SymptomeDef[];
   autresSuivis?: SuiviDef[];
+  /** Absent dans les sauvegardes v1/v2 — les médecins déjà enregistrés sur l'appareil restent alors en place. */
+  medecins?: MedecinDef[];
 }
 
 export async function exporterDonnees(): Promise<Sauvegarde> {
-  const [entrees, medicaments, ressourcesNotes, symptomes, autresSuivis] = await Promise.all([
+  const [entrees, medicaments, ressourcesNotes, symptomes, autresSuivis, medecins] = await Promise.all([
     db.entrees.toArray(),
     db.medicaments.toArray(),
     db.ressourcesNotes.toArray(),
     db.symptomes.toArray(),
     db.autresSuivis.toArray(),
+    db.medecins.toArray(),
   ]);
   return {
     app: "soleil",
@@ -38,6 +42,7 @@ export async function exporterDonnees(): Promise<Sauvegarde> {
     ressourcesNotes,
     symptomes,
     autresSuivis,
+    medecins,
   };
 }
 
@@ -65,7 +70,8 @@ export function estSauvegardeValide(data: unknown): data is Sauvegarde {
     Array.isArray(d.medicaments) &&
     Array.isArray(d.ressourcesNotes) &&
     (d.symptomes === undefined || Array.isArray(d.symptomes)) &&
-    (d.autresSuivis === undefined || Array.isArray(d.autresSuivis))
+    (d.autresSuivis === undefined || Array.isArray(d.autresSuivis)) &&
+    (d.medecins === undefined || Array.isArray(d.medecins))
   );
 }
 
@@ -103,7 +109,7 @@ function dedupliquerEntrees(entrees: Entree[]): Entree[] {
 export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
   await db.transaction(
     "rw",
-    [db.entrees, db.medicaments, db.ressourcesNotes, db.symptomes, db.autresSuivis],
+    [db.entrees, db.medicaments, db.ressourcesNotes, db.symptomes, db.autresSuivis, db.medecins],
     async () => {
       await Promise.all([
         db.entrees.clear(),
@@ -111,6 +117,7 @@ export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
         db.ressourcesNotes.clear(),
         ...(sauvegarde.symptomes ? [db.symptomes.clear()] : []),
         ...(sauvegarde.autresSuivis ? [db.autresSuivis.clear()] : []),
+        ...(sauvegarde.medecins ? [db.medecins.clear()] : []),
       ]);
       await Promise.all([
         db.entrees.bulkAdd(dedupliquerEntrees(sauvegarde.entrees)),
@@ -118,6 +125,7 @@ export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
         db.ressourcesNotes.bulkAdd(sauvegarde.ressourcesNotes),
         ...(sauvegarde.symptomes ? [db.symptomes.bulkAdd(sauvegarde.symptomes)] : []),
         ...(sauvegarde.autresSuivis ? [db.autresSuivis.bulkAdd(sauvegarde.autresSuivis)] : []),
+        ...(sauvegarde.medecins ? [db.medecins.bulkAdd(sauvegarde.medecins)] : []),
       ]);
     },
   );
@@ -126,12 +134,13 @@ export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
 export async function supprimerToutesLesDonnees(): Promise<void> {
   await db.transaction(
     "rw",
-    [db.entrees, db.medicaments, db.ressourcesNotes],
+    [db.entrees, db.medicaments, db.ressourcesNotes, db.medecins],
     async () => {
       await Promise.all([
         db.entrees.clear(),
         db.medicaments.clear(),
         db.ressourcesNotes.clear(),
+        db.medecins.clear(),
       ]);
     },
   );

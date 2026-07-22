@@ -9,6 +9,7 @@ beforeEach(async () => {
   await db.ressourcesNotes.clear();
   await db.symptomes.clear();
   await db.autresSuivis.clear();
+  await db.medecins.clear();
 });
 
 function entreeSymptome(overrides: Partial<EntreeSymptome>): EntreeSymptome {
@@ -185,6 +186,41 @@ describe("importerDonnees", () => {
 
     expect(await db.symptomes.toArray()).toEqual(sauvegarde.symptomes);
     expect(await db.autresSuivis.toArray()).toEqual(sauvegarde.autresSuivis);
+  });
+
+  it("restaure les médecins d'une sauvegarde v3", async () => {
+    const sauvegarde: Sauvegarde = {
+      app: "soleil",
+      version: 3,
+      exporteLe: "2026-07-20T00:00:00.000Z",
+      entrees: [],
+      medicaments: [],
+      ressourcesNotes: [],
+      medecins: [{ id: "dr-martin", nom: "Dr. Martin", specialite: "Rhumatologue", createdAt: "2026-07-20T00:00:00.000Z" }],
+    };
+
+    await importerDonnees(sauvegarde);
+
+    expect(await db.medecins.toArray()).toEqual(sauvegarde.medecins);
+  });
+
+  it("laisse les médecins déjà enregistrés inchangés pour une sauvegarde sans le champ medecins", async () => {
+    await db.medecins.add({ id: "deja-la", nom: "Dr. Déjà-là", createdAt: "2026-07-20T00:00:00.000Z" });
+
+    const sauvegarde: Sauvegarde = {
+      app: "soleil",
+      version: 2,
+      exporteLe: "2026-07-20T00:00:00.000Z",
+      entrees: [],
+      medicaments: [],
+      ressourcesNotes: [],
+    };
+
+    await importerDonnees(sauvegarde);
+
+    const medecins = await db.medecins.toArray();
+    expect(medecins).toHaveLength(1);
+    expect(medecins[0].id).toBe("deja-la");
   });
 
   it("laisse le contenu personnalisé actuel inchangé pour une sauvegarde v1 (sans symptomes/autresSuivis)", async () => {

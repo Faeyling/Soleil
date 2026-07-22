@@ -277,7 +277,7 @@ export function ProfilPage() {
               pré-rempli s'ils ont déjà une entrée aujourd'hui.
             </p>
             <div className="flex flex-wrap gap-2">
-              {symptomes.map((s) => {
+              {symptomes.filter((s) => !s.desactive).map((s) => {
                 const actif = symptomesQuotidiens.includes(s.id);
                 return (
                   <button

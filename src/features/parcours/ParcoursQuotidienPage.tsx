@@ -202,7 +202,7 @@ export function ParcoursQuotidienPage() {
           {etape === 2 && <EtapeHumeur valeur={humeur} onChange={setHumeur} />}
           {etape === 3 && (
             <EtapeMedicaments
-              medicaments={medicaments}
+              medicaments={medicaments.filter((m) => !m.desactive)}
               coches={medicamentsCoches}
               onToggle={(id) =>
                 setMedicamentsCoches((prev) => {
@@ -274,7 +274,7 @@ function EtapeSymptomes({
       <div className="flex flex-col gap-5">
         {ids.map((id) => {
           const def = trouverSymptome(id);
-          if (!def) return null;
+          if (!def || def.desactive) return null;
           const zones = localisations[id] ?? [];
           const basculerZone = (zoneId: string) =>
             onChangeLocalisation(id, zones.includes(zoneId) ? zones.filter((z) => z !== zoneId) : [...zones, zoneId]);

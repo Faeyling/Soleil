@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../db";
-import { ajouterMedicament, supprimerMedicament, definirStock, decrementerStock } from "./medicamentsRepository";
+import {
+  ajouterMedicament,
+  supprimerMedicament,
+  definirStock,
+  decrementerStock,
+  desactiverMedicament,
+  reactiverMedicament,
+} from "./medicamentsRepository";
 import { creerEntree } from "./entreesRepository";
 
 beforeEach(async () => {
@@ -15,6 +22,40 @@ describe("ajouterMedicament", () => {
 
     expect(second.id).toBe(premier.id);
     expect(await db.medicaments.count()).toBe(1);
+  });
+
+  it("réactive automatiquement un médicament désactivé en enregistrant une nouvelle prise", async () => {
+    const medicament = await ajouterMedicament("Ibuprofène");
+    await desactiverMedicament(medicament.id);
+    expect((await db.medicaments.get(medicament.id))?.desactive).toBe(true);
+
+    const relogue = await ajouterMedicament("Ibuprofène");
+
+    expect(relogue.id).toBe(medicament.id);
+    expect(relogue.desactive).toBe(false);
+    expect((await db.medicaments.get(medicament.id))?.desactive).toBe(false);
+  });
+});
+
+describe("desactiverMedicament / reactiverMedicament", () => {
+  it("désactive puis réactive un médicament sans toucher à son historique de prises", async () => {
+    const medicament = await ajouterMedicament("Ibuprofène");
+    await creerEntree({
+      type: "medication_intake",
+      item: medicament.id,
+      medicationId: medicament.id,
+      medicationName: medicament.nom,
+      date: "2026-07-20",
+      datetime: "2026-07-20T08:00:00.000Z",
+    });
+
+    await desactiverMedicament(medicament.id);
+    expect((await db.medicaments.get(medicament.id))?.desactive).toBe(true);
+    expect(await db.entrees.count()).toBe(1);
+
+    await reactiverMedicament(medicament.id);
+    expect((await db.medicaments.get(medicament.id))?.desactive).toBe(false);
+    expect(await db.entrees.count()).toBe(1);
   });
 });
 

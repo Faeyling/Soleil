@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef } from "./types";
+import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef, MedecinDef } from "./types";
 
 export interface Parametre {
   cle: string;
@@ -13,6 +13,7 @@ export class SoleilDatabase extends Dexie {
   parametres!: Table<Parametre, string>;
   symptomes!: Table<SymptomeDef, string>;
   autresSuivis!: Table<SuiviDef, string>;
+  medecins!: Table<MedecinDef, string>;
 
   constructor() {
     super("soleil-db");
@@ -34,6 +35,11 @@ export class SoleilDatabase extends Dexie {
     this.version(3).stores({
       symptomes: "id, ordre",
       autresSuivis: "id, ordre",
+    });
+    // Carnet d'adresses des médecins (Ressources), indépendant du contenu
+    // éditable ci-dessus.
+    this.version(4).stores({
+      medecins: "id, createdAt",
     });
   }
 }

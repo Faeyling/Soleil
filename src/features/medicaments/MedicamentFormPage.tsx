@@ -11,7 +11,8 @@ import { useEntree, usePrisesMedicament } from "../../hooks/useEntrees";
 import { CHARGEMENT } from "../../hooks/chargement";
 import {
   renommerMedicament,
-  supprimerMedicament,
+  desactiverMedicament,
+  reactiverMedicament,
   definirStock,
 } from "../../data/repositories/medicamentsRepository";
 import { modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
@@ -22,7 +23,6 @@ import type { EntreePriseMedicament, Medicament } from "../../data/types";
 export function MedicamentFormPage() {
   const { id = "" } = useParams();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const entreeId = searchParams.get("entreeId") ?? undefined;
 
   const medicamentBrut = useMedicament(id);
@@ -41,29 +41,20 @@ export function MedicamentFormPage() {
     return <EditionPrise entree={entree} medicamentNom={medicamentBrut?.nom} />;
   }
 
-  return (
-    <GestionMedicament
-      medicamentId={id}
-      medicament={medicamentBrut}
-      prises={prises}
-      onSupprime={() => navigate("/medicaments")}
-    />
-  );
+  return <GestionMedicament medicamentId={id} medicament={medicamentBrut} prises={prises} />;
 }
 
 interface GestionMedicamentProps {
   medicamentId: string;
   medicament: Medicament | undefined;
   prises: EntreePriseMedicament[];
-  onSupprime: () => void;
 }
 
-function GestionMedicament({ medicamentId, medicament, prises, onSupprime }: GestionMedicamentProps) {
+function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicamentProps) {
   const navigate = useNavigate();
   const [nom, setNom] = useState(medicament?.nom ?? "");
   const [stock, setStock] = useState("");
   const [seuilAlerte, setSeuilAlerte] = useState("");
-  const [suppressionDemandee, setSuppressionDemandee] = useState(false);
   const [chargePour, setChargePour] = useState<string | undefined>();
 
   if (medicament !== undefined && chargePour !== medicamentId) {
@@ -90,9 +81,12 @@ function GestionMedicament({ medicamentId, medicament, prises, onSupprime }: Ges
     );
   };
 
-  const supprimer = async () => {
-    await supprimerMedicament(medicamentId);
-    onSupprime();
+  const basculerActivation = async () => {
+    if (medicament.desactive) {
+      await reactiverMedicament(medicamentId);
+    } else {
+      await desactiverMedicament(medicamentId);
+    }
   };
 
   const stockBas =
@@ -171,17 +165,20 @@ function GestionMedicament({ medicamentId, medicament, prises, onSupprime }: Ges
         </div>
       )}
 
-      <Bouton variante="danger" onClick={() => setSuppressionDemandee(true)}>
-        Supprimer ce médicament
-      </Bouton>
-
-      {suppressionDemandee && (
-        <Confirmation
-          titre="Supprimer ce médicament ?"
-          message={`"${medicament.nom}" et tout son historique de prises seront définitivement supprimés.`}
-          onConfirmer={supprimer}
-          onAnnuler={() => setSuppressionDemandee(false)}
-        />
+      {medicament.desactive ? (
+        <div>
+          <p className="text-sm text-texte-doux mb-2">
+            Ce médicament est désactivé : il n'apparaît plus dans "Mes médicaments" ni le parcours
+            quotidien, mais son historique de prises reste intact.
+          </p>
+          <Bouton couleur={SECTIONS.medicaments.couleur} onClick={() => void basculerActivation()}>
+            Réactiver ce médicament
+          </Bouton>
+        </div>
+      ) : (
+        <Bouton variante="contour" couleur={SECTIONS.medicaments.couleur} onClick={() => void basculerActivation()}>
+          Désactiver ce médicament
+        </Bouton>
       )}
     </div>
   );

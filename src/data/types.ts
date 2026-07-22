@@ -53,6 +53,19 @@ export interface Medicament {
   stock?: number;
   /** Seuil en dessous duquel une alerte de stock bas est affichée. */
   seuilAlerte?: number;
+  /** Si vrai, le médicament est désactivé : il n'apparaît plus dans la liste active ni pour enregistrer une nouvelle prise, mais reste éditable, réactivable, et ses prises déjà enregistrées restent pleinement consultables. */
+  desactive?: boolean;
+}
+
+export interface MedecinDef {
+  id: string;
+  nom: string;
+  specialite?: string;
+  telephone?: string;
+  email?: string;
+  adresse?: string;
+  note?: string;
+  createdAt: string;
 }
 
 export interface RessourceNote {
@@ -71,6 +84,8 @@ export interface SymptomeDef {
   localisable?: boolean;
   /** Échelle de saisie : "severite" (Bas/Moyen/Haut, par défaut) ou "ouinon" — ex. luxation/subluxation, un événement plutôt qu'une intensité. */
   typeFormulaire?: "severite" | "ouinon";
+  /** Si vrai, le symptôme est désactivé : il n'apparaît plus dans la grille "Signaler un symptôme" ni dans le parcours quotidien, mais reste éditable, réactivable, et ses entrées déjà enregistrées restent pleinement consultables. */
+  desactive?: boolean;
   /** Position d'affichage dans la grille — les éléments par défaut gardent leur ordre d'origine, les ajouts arrivent en fin de liste. */
   ordre: number;
 }

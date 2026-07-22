@@ -16,7 +16,16 @@ export async function ajouterMedicament(nom: string): Promise<Medicament> {
   const existant = await db.medicaments
     .filter((m) => m.nom.toLowerCase() === nomPropre.toLowerCase())
     .first();
-  if (existant) return existant;
+  if (existant) {
+    // Enregistrer une nouvelle prise pour un médicament désactivé le
+    // réactive implicitement — sinon la prise fraîchement enregistrée
+    // référencerait un médicament resté invisible dans "Mes médicaments".
+    if (existant.desactive) {
+      await db.medicaments.update(existant.id, { desactive: false });
+      return { ...existant, desactive: false };
+    }
+    return existant;
+  }
 
   const medicament: Medicament = {
     id: uuid(),
@@ -55,4 +64,13 @@ export async function supprimerMedicament(id: string): Promise<void> {
     .filter((e) => e.type === "medication_intake")
     .primaryKeys();
   await db.entrees.bulkDelete(prises);
+}
+
+/** Désactive un médicament : disparaît de la liste active et du parcours quotidien, mais reste éditable, réactivable, et son historique de prises reste intact. */
+export async function desactiverMedicament(id: string): Promise<void> {
+  await db.medicaments.update(id, { desactive: true });
+}
+
+export async function reactiverMedicament(id: string): Promise<void> {
+  await db.medicaments.update(id, { desactive: false });
 }
