@@ -392,7 +392,7 @@ function EtapeAutresSuivis({
       <div className="flex flex-col gap-5">
         {ids.map((id) => {
           const def = trouverSuivi(id);
-          if (!def) return null;
+          if (!def || def.desactive) return null;
           return (
             <div key={id}>
               <p className="font-semibold text-sm mb-2">

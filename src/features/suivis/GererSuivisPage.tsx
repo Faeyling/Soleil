@@ -2,10 +2,9 @@ import { useState } from "react";
 import { EnTete } from "../../components/ui/EnTete";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
-import { Confirmation } from "../../components/ui/Confirmation";
 import { SECTIONS } from "../../lib/sections";
 import { useSuivis } from "../../content/autresSuivis";
-import { ajouterSuivi, modifierSuivi, supprimerSuivi } from "../../data/repositories/contenuRepository";
+import { ajouterSuivi, modifierSuivi } from "../../data/repositories/contenuRepository";
 import type { SuiviDef, TypeFormulaireSuivi } from "../../data/types";
 
 interface FormulaireSuivi {
@@ -33,10 +32,11 @@ const LABEL_TYPE: Record<TypeFormulaireSuivi, string> = {
 
 export function GererSuivisPage() {
   const suivisTous = useSuivis();
-  const suivis = suivisTous.filter((s) => !s.masque);
+  const suivisVisibles = suivisTous.filter((s) => !s.masque);
+  const suivisActifs = suivisVisibles.filter((s) => !s.desactive);
+  const suivisDesactives = suivisVisibles.filter((s) => s.desactive);
   const [edition, setEdition] = useState<string | "nouveau" | undefined>();
   const [formulaire, setFormulaire] = useState<FormulaireSuivi>(FORMULAIRE_VIDE);
-  const [suppressionDemandee, setSuppressionDemandee] = useState<SuiviDef | undefined>();
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
 
   const ouvrirNouveau = () => {
@@ -82,11 +82,8 @@ export function GererSuivisPage() {
     }
   };
 
-  const confirmerSuppression = async () => {
-    if (!suppressionDemandee) return;
-    await supprimerSuivi(suppressionDemandee.id);
-    setSuppressionDemandee(undefined);
-    if (edition === suppressionDemandee.id) fermer();
+  const basculerActivation = async (s: SuiviDef) => {
+    await modifierSuivi(s.id, { desactive: !s.desactive });
   };
 
   return (
@@ -94,8 +91,10 @@ export function GererSuivisPage() {
       <EnTete titre="Gérer les activités" couleur={SECTIONS.suivis.couleurFonce} />
 
       <p className="text-sm text-texte-doux mb-4">
-        Ajoute, renomme ou retire des éléments de tes Activités. Les entrées déjà enregistrées
-        restent conservées même si tu supprimes un élément de cette liste.
+        Ajoute, renomme ou désactive des éléments de tes Activités. Désactiver une activité la
+        retire de la grille et du parcours quotidien, mais elle reste modifiable, réactivable à
+        tout moment, et les entrées déjà enregistrées restent pleinement visibles dans ton
+        historique.
       </p>
 
       {edition === undefined && (
@@ -174,7 +173,7 @@ export function GererSuivisPage() {
       )}
 
       <div className="divide-y divide-bordure">
-        {suivis.map((s) => (
+        {suivisActifs.map((s) => (
           <div key={s.id} className="flex items-center gap-3 py-3">
             <span className="text-xl" aria-hidden="true">
               {s.icone}
@@ -188,23 +187,48 @@ export function GererSuivisPage() {
               ✏️
             </button>
             <button
-              onClick={() => setSuppressionDemandee(s)}
-              aria-label={`Supprimer ${s.label}`}
+              onClick={() => void basculerActivation(s)}
+              aria-label={`Désactiver ${s.label}`}
               className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fond-douce cursor-pointer text-base"
             >
-              🗑️
+              🚫
             </button>
           </div>
         ))}
       </div>
 
-      {suppressionDemandee && (
-        <Confirmation
-          titre="Supprimer cette activité ?"
-          message={`"${suppressionDemandee.label}" sera retiré de ta liste. Les entrées déjà enregistrées resteront visibles dans ton historique.`}
-          onConfirmer={confirmerSuppression}
-          onAnnuler={() => setSuppressionDemandee(undefined)}
-        />
+      {suivisDesactives.length > 0 && (
+        <section className="mt-8">
+          <h2 className="font-bold text-lg mb-1">Désactivées</h2>
+          <p className="text-xs text-texte-doux mb-3">
+            N'apparaissent plus dans la grille ni le parcours quotidien. Réactive-les à tout
+            moment.
+          </p>
+          <div className="divide-y divide-bordure">
+            {suivisDesactives.map((s) => (
+              <div key={s.id} className="flex items-center gap-3 py-3 opacity-70">
+                <span className="text-xl" aria-hidden="true">
+                  {s.icone}
+                </span>
+                <span className="flex-1 font-medium">{s.label}</span>
+                <button
+                  onClick={() => ouvrirEdition(s)}
+                  aria-label={`Modifier ${s.label}`}
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fond-douce cursor-pointer text-base"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={() => void basculerActivation(s)}
+                  aria-label={`Réactiver ${s.label}`}
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fond-douce cursor-pointer text-base"
+                >
+                  ✅
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

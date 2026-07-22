@@ -24,7 +24,7 @@ export function SuivisListePage() {
       />
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {suivis
-          .filter((s) => !s.masque)
+          .filter((s) => !s.masque && !s.desactive)
           .map((s) => (
             <CarteElement
               key={s.id}

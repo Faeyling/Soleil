@@ -81,4 +81,16 @@ describe("ajouterSuivi / modifierSuivi / supprimerSuivi", () => {
 
     expect(await db.autresSuivis.get(suivi.id)).toBeUndefined();
   });
+
+  it("désactive puis réactive un suivi sans le supprimer", async () => {
+    const suivi = await ajouterSuivi({ icone: "🏊", label: "Piscine", typeFormulaire: "severite" });
+
+    await modifierSuivi(suivi.id, { desactive: true });
+    expect((await db.autresSuivis.get(suivi.id))?.desactive).toBe(true);
+
+    await modifierSuivi(suivi.id, { desactive: false });
+    const relu = await db.autresSuivis.get(suivi.id);
+    expect(relu?.desactive).toBe(false);
+    expect(relu?.label).toBe("Piscine");
+  });
 });

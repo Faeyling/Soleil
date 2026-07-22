@@ -309,7 +309,7 @@ export function ProfilPage() {
               type de saisie qui lui est propre (sévérité, valeur numérique ou texte libre).
             </p>
             <div className="flex flex-wrap gap-2">
-              {autresSuivis.filter((s) => !s.masque).map((s) => {
+              {autresSuivis.filter((s) => !s.masque && !s.desactive).map((s) => {
                 const actif = suivisQuotidiens.includes(s.id);
                 return (
                   <button

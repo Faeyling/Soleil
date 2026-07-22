@@ -86,5 +86,7 @@ export interface SuiviDef {
   placeholder?: string;
   /** Si vrai, l'élément n'apparaît pas dans la grille "Activités" — utilisé pour les entrées créées uniquement par un autre écran (ex. la note de fin du parcours quotidien), qui doivent tout de même rester consultables/éditables/supprimables normalement. */
   masque?: boolean;
+  /** Si vrai, l'activité est désactivée : elle n'apparaît plus dans la grille "Activités" ni dans le parcours quotidien, mais reste éditable, réactivable, et ses entrées déjà enregistrées restent pleinement consultables (Historique, corrélations...). */
+  desactive?: boolean;
   ordre: number;
 }
