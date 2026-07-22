@@ -2,7 +2,8 @@
 
 /*
  * Palette fournie par l'utilisatrice (7 teintes, chacune associée à un ou
- * plusieurs rôles précis) :
+ * plusieurs rôles précis), utilisées telles quelles — sans assombrissement —
+ * pour "couleur"/"-clair" :
  * - #b60000 → niveau de sévérité "Sévère"
  * - #F2D8F2 → Médicaments (--color-rose)
  * - #84B8D9 → niveau "Crise" + rayures de la Zone de danger (--color-severite-crise)
@@ -11,20 +12,22 @@
  * - #D97855 → mise en valeur transverse (--color-ardoise, ex-bleu)
  * - #D97855 → couleur de fond (dérivée en teinte très claire)
  *
+ * Ces teintes étant des pastels clairs, le texte posé dessus (boutons,
+ * badges) est en marron (--color-texte-sur-accent) plutôt qu'en blanc, pour
+ * rester lisible sans dénaturer les couleurs fournies. Les "-fonce" (textes
+ * de titres sur fond blanc/crème, hors bouton) restent des teintes plus
+ * sombres dérivées de la même couleur, pour un contraste correct.
+ *
  * Les noms de variables CSS (terracotta, ardoise, ocre, sauge...) datent
  * d'une palette précédente et ne correspondent plus littéralement à leur
  * teinte — les renommer entraînerait un renommage en cascade des classes
  * Tailwind générées (bg-terracotta, text-ardoise...) dans des dizaines de
  * fichiers ; on garde donc les noms et on change seulement les valeurs.
  *
- * Vérifié WCAG 2.1 AA (script Python luminance relative / ratio de contraste) :
- * - Chaque "-fonce"/"couleur" utilisé comme texte ou fond de bouton (texte
- *   blanc dessus) vise ≥ 4.5:1.
- * - Les teintes "-clair" ne portent jamais de texte blanc, seulement le
- *   texte sombre standard ou aucun texte (fonds de carte, pastilles) — visé
- *   ≥ 4.5:1 quand du texte y est posé, ≥ 3:1 sinon (pastilles/pointillés).
- * - #b60000 et #84B8D9 sont utilisés tels quels (le premier a déjà un
- *   contraste élevé, le second ne porte jamais de texte blanc direct).
+ * Les niveaux de sévérité "Bas"/"Moyen" (--color-severite-bas/-moyen)
+ * gardent une teinte plus soutenue que Symptômes/Activités : ils servent
+ * aussi de couleur de TEXTE direct (corrélations, légendes de graphique),
+ * où les teintes pastel d'origine seraient illisibles.
  */
 @theme {
   --color-fond: #fcf6f3;
@@ -34,34 +37,33 @@
   --color-texte-doux: #6b5a4e;
   --color-bordure: #e7cfb5;
   /* Couleur du texte posé sur un fond "accent" plein (boutons, badges) —
-     blanc en clair, texte sombre en sombre (les teintes vives du thème sombre
-     sont trop claires pour porter du texte blanc lisible). */
-  --color-texte-sur-accent: #ffffff;
+     marron en clair (les teintes de la palette fournie sont des pastels
+     clairs : le blanc n'y est pas assez lisible), texte sombre en sombre. */
+  --color-texte-sur-accent: #3a2e26;
 
-  /* Symptômes + niveau "Bas" — vert sauge (#C5D9A7 donné, assombri pour servir de couleur/texte). */
-  --color-terracotta: #617e36;
+  /* Symptômes + niveau "Bas" — vert sauge, exactement la teinte fournie. */
+  --color-terracotta: #c5d9a7;
   --color-terracotta-fonce: #51682d;
   --color-terracotta-clair: #c5d9a7;
 
   /* Mise en valeur transverse (bouton principal, focus, sélections actives,
-     "aujourd'hui" du calendrier) — terracotta (#D97855 donné, assombri pour
-     porter du texte blanc). */
-  --color-ardoise: #c1532b;
+     "aujourd'hui" du calendrier) — terracotta, exactement la teinte fournie. */
+  --color-ardoise: #d97855;
   --color-ardoise-fonce: #9f4424;
-  --color-ardoise-clair: #df8c6e;
+  --color-ardoise-clair: #d97855;
 
-  /* Médicaments — rose/mauve (#F2D8F2 donné, assombri pour servir de couleur/texte). */
-  --color-rose: #bb3ebb;
+  /* Médicaments — rose/mauve, exactement la teinte fournie. */
+  --color-rose: #f2d8f2;
   --color-rose-fonce: #9c349c;
   --color-rose-clair: #f2d8f2;
 
-  /* Activités + niveau "Moyen" — orange (#F2A663 donné, assombri pour servir de couleur/texte). */
-  --color-ocre: #b25b0f;
+  /* Activités + niveau "Moyen" — orange, exactement la teinte fournie. */
+  --color-ocre: #f2a663;
   --color-ocre-fonce: #964d0c;
   --color-ocre-clair: #f2a663;
 
   /* Accent vert sauge — confirmations, Ressources, 4e teinte des graphiques : même teinte que Symptômes. */
-  --color-sauge: #617e36;
+  --color-sauge: #c5d9a7;
   --color-sauge-fonce: #51682d;
   --color-sauge-clair: #c5d9a7;
 
