@@ -4,7 +4,9 @@ import { trouverSymptome } from "../../content/symptomes";
 import { EnTete } from "../../components/ui/EnTete";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
+import { SelecteurOuiNon } from "../../components/ui/SelecteurOuiNon";
 import { SchemaCorporel } from "../../components/ui/SchemaCorporel";
+import { versSeverite, depuisSeverite } from "../../lib/ouinon";
 import { Bouton } from "../../components/ui/Bouton";
 import { Confirmation } from "../../components/ui/Confirmation";
 import { CaseImportante } from "../../components/ui/CaseImportante";
@@ -68,7 +70,9 @@ export function SymptomeFormPage() {
   const enregistrer = async () => {
     if (enregistrementEnCours) return;
     if (!severite) {
-      setErreur("Choisis une sévérité pour continuer.");
+      setErreur(
+        symptome.typeFormulaire === "ouinon" ? "Choisis Oui ou Non pour continuer." : "Choisis une sévérité pour continuer.",
+      );
       return;
     }
     setEnregistrementEnCours(true);
@@ -145,9 +149,15 @@ export function SymptomeFormPage() {
         </div>
       )}
 
-      <Champ label="Sévérité">
-        <SelecteurSeverite valeur={severite} onChange={setSeverite} itemId={symptome.id} />
-      </Champ>
+      {symptome.typeFormulaire === "ouinon" ? (
+        <Champ label="Réponse">
+          <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(r ? versSeverite(r) : undefined)} />
+        </Champ>
+      ) : (
+        <Champ label="Sévérité">
+          <SelecteurSeverite valeur={severite} onChange={setSeverite} itemId={symptome.id} />
+        </Champ>
+      )}
 
       <Champ label="Date et heure">
         <input

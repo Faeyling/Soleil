@@ -240,7 +240,7 @@ export function ProfilPage() {
 
           <div>
             <p className="text-sm font-semibold mb-1">
-              Autres suivis proposés à l'étape 4
+              Activités proposées à l'étape 4
             </p>
             <p className="text-xs text-texte-doux mb-2">
               Avant-dernière étape du parcours guidé (après symptômes, humeur et médicaments,
@@ -272,7 +272,7 @@ export function ProfilPage() {
 
           <p className="text-xs text-texte-doux">
             Les éléments non sélectionnés restent accessibles depuis « Signaler un symptôme » et
-            « Suivre autre chose » — ils sont juste retirés du parcours guidé quotidien.
+            « Activités » — ils sont juste retirés du parcours guidé quotidien.
           </p>
         </div>
       </section>
@@ -297,6 +297,22 @@ export function ProfilPage() {
               Supprimer toutes mes données
             </Bouton>
           </div>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="rounded-[var(--rayon-grand)] bg-fond-douce p-4 text-sm text-texte-doux text-center">
+          <p>
+            <span aria-hidden="true">☀️ </span>
+            Soleil a été imaginée et créée par sa maman, Faëyling — une personne concernée par le
+            SEDh, pour toutes les personnes concernées par le SEDh.
+          </p>
+          <p className="mt-1">
+            Une question, une suggestion ?{" "}
+            <a href="mailto:Faeyling@proton.me" className="underline">
+              Faeyling@proton.me
+            </a>
+          </p>
         </div>
       </section>
 

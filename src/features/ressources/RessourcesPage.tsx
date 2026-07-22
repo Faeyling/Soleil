@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { RUBRIQUES_RESSOURCES, LIENS_EXTERNES, AVERTISSEMENT_RESSOURCES } from "../../content/ressources";
+import {
+  RUBRIQUES_RESSOURCES,
+  LIENS_EXTERNES,
+  AVERTISSEMENT_RESSOURCES,
+  INTRO_CRITERES_HEDS,
+  CRITERES_DIAGNOSTIC_HEDS,
+} from "../../content/ressources";
 import { Bouton } from "../../components/ui/Bouton";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Confirmation } from "../../components/ui/Confirmation";
+import { CalculateurBeighton } from "./CalculateurBeighton";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../data/db";
 import {
@@ -37,6 +44,31 @@ export function RessourcesPage() {
       <h1 className="text-2xl font-bold mb-1">Ressources</h1>
       <p className="text-sm text-texte-doux mb-5">La recherche sur le SEDh en quelques repères</p>
 
+      <div className="rounded-[var(--rayon)] bg-fond-douce p-4 mb-6 text-xs text-texte-doux leading-relaxed">
+        <span aria-hidden="true">ℹ️ </span>
+        {AVERTISSEMENT_RESSOURCES}
+      </div>
+
+      <section className="mb-8">
+        <h2 className="font-bold text-lg mb-2">Calculateur du score de Beighton</h2>
+        <CalculateurBeighton />
+      </section>
+
+      <section className="mb-8">
+        <h2 className="font-bold text-lg mb-2">Critères diagnostiques actuels du SEDh</h2>
+        <p className="text-sm text-texte-doux mb-3 leading-relaxed">{INTRO_CRITERES_HEDS}</p>
+        <div className="flex flex-col gap-4">
+          {CRITERES_DIAGNOSTIC_HEDS.map((c) => (
+            <div key={c.titre} className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4">
+              <h3 className="font-bold text-base mb-1.5" style={{ color: "var(--color-sauge-fonce)" }}>
+                {c.titre}
+              </h3>
+              <p className="text-sm text-texte leading-relaxed">{c.texte}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <div className="flex flex-col gap-4 mb-6">
         {RUBRIQUES_RESSOURCES.map((r) => (
           <div key={r.titre} className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4">
@@ -46,11 +78,6 @@ export function RessourcesPage() {
             <p className="text-sm text-texte leading-relaxed">{r.texte}</p>
           </div>
         ))}
-      </div>
-
-      <div className="rounded-[var(--rayon)] bg-fond-douce p-4 mb-6 text-xs text-texte-doux leading-relaxed">
-        <span aria-hidden="true">ℹ️ </span>
-        {AVERTISSEMENT_RESSOURCES}
       </div>
 
       <section className="mb-8">
@@ -64,7 +91,9 @@ export function RessourcesPage() {
               rel="noreferrer"
               className="text-sauge-fonce underline text-sm"
             >
-              {lien.titre} <span aria-hidden="true">↗</span>
+              {lien.titre}{" "}
+              <span className="text-texte-doux text-xs">({lien.langue === "fr" ? "francophone" : "anglophone"})</span>{" "}
+              <span aria-hidden="true">↗</span>
             </a>
           ))}
         </div>

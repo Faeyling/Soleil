@@ -126,3 +126,14 @@ export function joursDepuis(nbJours: number): string[] {
   }
   return jours;
 }
+
+/** Liste des jours (YYYY-MM-DD) de `debut` à `fin` inclus, dans l'ordre chronologique. */
+export function joursEntre(debut: string, fin: string): string[] {
+  const jours: string[] = [];
+  let jour = debut;
+  while (jour <= fin) {
+    jours.push(jour);
+    jour = ajouterJours(jour, 1);
+  }
+  return jours;
+}

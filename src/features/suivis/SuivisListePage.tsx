@@ -10,7 +10,7 @@ export function SuivisListePage() {
   return (
     <div>
       <EnTete
-        titre="Suivre autre chose"
+        titre="Activités"
         couleur={SECTIONS.suivis.couleurFonce}
         action={
           <button

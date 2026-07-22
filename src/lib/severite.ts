@@ -1,4 +1,5 @@
 import { trouverSuivi } from "../content/autresSuivis";
+import { trouverSymptome } from "../content/symptomes";
 
 export type Severite = "bas" | "moyen" | "haut" | "crise";
 
@@ -30,9 +31,9 @@ const DESCRIPTIONS_PERSONNALISEES: Record<string, string> = {
   "sommeil-suivi": "Bas = sommeil réparateur · Moyen = sommeil acceptable · Sévère = sommeil non réparateur / pas dormi.",
 };
 
-/** Un suivi à échelle "Oui/Non" plutôt que "Bas/Moyen/Haut" (voir lib/ouinon.ts). */
+/** Un symptôme ou suivi à échelle "Oui/Non" plutôt que "Bas/Moyen/Haut" (voir lib/ouinon.ts). */
 export function estOuiNon(itemId: string): boolean {
-  return trouverSuivi(itemId)?.typeFormulaire === "ouinon";
+  return trouverSuivi(itemId)?.typeFormulaire === "ouinon" || trouverSymptome(itemId)?.typeFormulaire === "ouinon";
 }
 
 /**

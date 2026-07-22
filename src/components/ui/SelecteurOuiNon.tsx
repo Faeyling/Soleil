@@ -4,12 +4,14 @@ import { versSeverite } from "../../lib/ouinon";
 
 interface SelecteurOuiNonProps {
   valeur?: "oui" | "non";
-  onChange: (reponse: "oui" | "non") => void;
+  onChange: (reponse: "oui" | "non" | undefined) => void;
+  /** Si vrai, cliquer sur la réponse déjà sélectionnée la désélectionne (parcours quotidien). */
+  permettreDeselection?: boolean;
 }
 
 const OPTIONS: ("oui" | "non")[] = ["oui", "non"];
 
-export function SelecteurOuiNon({ valeur, onChange }: SelecteurOuiNonProps) {
+export function SelecteurOuiNon({ valeur, onChange, permettreDeselection = false }: SelecteurOuiNonProps) {
   const indexActif = valeur ? OPTIONS.indexOf(valeur) : 0;
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -37,7 +39,7 @@ export function SelecteurOuiNon({ valeur, onChange }: SelecteurOuiNonProps) {
             role="radio"
             aria-checked={actif}
             tabIndex={index === indexActif ? 0 : -1}
-            onClick={() => onChange(reponse)}
+            onClick={() => onChange(permettreDeselection && actif ? undefined : reponse)}
             onKeyDown={(e) => onKeyDown(e, index)}
             className="flex-1 min-w-[70px] flex flex-col items-center gap-2 rounded-[var(--rayon)] border-2 py-3 transition-transform active:scale-95 cursor-pointer"
             style={{

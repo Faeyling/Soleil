@@ -91,22 +91,22 @@ export function GererSuivisPage() {
 
   return (
     <div>
-      <EnTete titre="Gérer les autres suivis" couleur={SECTIONS.suivis.couleurFonce} />
+      <EnTete titre="Gérer les activités" couleur={SECTIONS.suivis.couleurFonce} />
 
       <p className="text-sm text-texte-doux mb-4">
-        Ajoute, renomme ou retire des éléments de "Suivre autre chose". Les entrées déjà enregistrées
+        Ajoute, renomme ou retire des éléments de tes Activités. Les entrées déjà enregistrées
         restent conservées même si tu supprimes un élément de cette liste.
       </p>
 
       {edition === undefined && (
         <Bouton className="w-full mb-5" couleur={SECTIONS.suivis.couleur} onClick={ouvrirNouveau}>
-          <span aria-hidden="true">➕</span> Ajouter un suivi
+          <span aria-hidden="true">➕</span> Ajouter une activité
         </Bouton>
       )}
 
       {edition !== undefined && (
         <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4 mb-5">
-          <h2 className="font-bold mb-3">{edition === "nouveau" ? "Nouveau suivi" : "Modifier ce suivi"}</h2>
+          <h2 className="font-bold mb-3">{edition === "nouveau" ? "Nouvelle activité" : "Modifier cette activité"}</h2>
           <Champ label="Icône (emoji)">
             <input
               className={classesInput}
@@ -116,7 +116,7 @@ export function GererSuivisPage() {
               placeholder="📈"
             />
           </Champ>
-          <Champ label="Nom du suivi">
+          <Champ label="Nom de l'activité">
             <input
               className={classesInput}
               value={formulaire.label}
@@ -200,7 +200,7 @@ export function GererSuivisPage() {
 
       {suppressionDemandee && (
         <Confirmation
-          titre="Supprimer ce suivi ?"
+          titre="Supprimer cette activité ?"
           message={`"${suppressionDemandee.label}" sera retiré de ta liste. Les entrées déjà enregistrées resteront visibles dans ton historique.`}
           onConfirmer={confirmerSuppression}
           onAnnuler={() => setSuppressionDemandee(undefined)}

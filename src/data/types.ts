@@ -69,6 +69,8 @@ export interface SymptomeDef {
   icone: string;
   /** Si vrai, le formulaire propose une sélection d'articulations/zones concernées. */
   localisable?: boolean;
+  /** Échelle de saisie : "severite" (Bas/Moyen/Haut, par défaut) ou "ouinon" — ex. luxation/subluxation, un événement plutôt qu'une intensité. */
+  typeFormulaire?: "severite" | "ouinon";
   /** Position d'affichage dans la grille — les éléments par défaut gardent leur ordre d'origine, les ajouts arrivent en fin de liste. */
   ordre: number;
 }
@@ -82,7 +84,7 @@ export interface SuiviDef {
   typeFormulaire: TypeFormulaireSuivi;
   unite?: string;
   placeholder?: string;
-  /** Si vrai, l'élément n'apparaît pas dans la grille "Suivre autre chose" — utilisé pour les entrées créées uniquement par un autre écran (ex. la note de fin du parcours quotidien), qui doivent tout de même rester consultables/éditables/supprimables normalement. */
+  /** Si vrai, l'élément n'apparaît pas dans la grille "Activités" — utilisé pour les entrées créées uniquement par un autre écran (ex. la note de fin du parcours quotidien), qui doivent tout de même rester consultables/éditables/supprimables normalement. */
   masque?: boolean;
   ordre: number;
 }

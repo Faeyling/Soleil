@@ -125,7 +125,7 @@ export function AccueilPage() {
         />
         <ActionRonde
           icone="📈"
-          label="Suivre autre chose"
+          label="Activités"
           couleur={SECTIONS.suivis.couleur}
           onClick={() => navigate("/suivis")}
         />
@@ -233,10 +233,10 @@ export function AccueilPage() {
 
       <section className="mt-6">
         <h2 className="font-bold text-lg mb-1" style={{ color: SECTIONS.suivis.couleur }}>
-          Autres suivis
+          Activités
         </h2>
         {suivis.length === 0 ? (
-          <p className="text-sm text-texte-doux py-2">Aucun autre suivi pour l'instant.</p>
+          <p className="text-sm text-texte-doux py-2">Aucune activité pour l'instant.</p>
         ) : (
           <div className="divide-y divide-bordure">
             {suivis.map((e) => (
@@ -267,7 +267,7 @@ function BoutonsAction() {
       />
       <ActionRonde
         icone="📈"
-        label="Suivre autre chose"
+        label="Activités"
         couleur={SECTIONS.suivis.couleur}
         onClick={() => navigate("/suivis")}
       />

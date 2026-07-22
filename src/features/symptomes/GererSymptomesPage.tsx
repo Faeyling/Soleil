@@ -8,13 +8,21 @@ import { useSymptomes } from "../../content/symptomes";
 import { ajouterSymptome, modifierSymptome, supprimerSymptome } from "../../data/repositories/contenuRepository";
 import type { SymptomeDef } from "../../data/types";
 
+type TypeFormulaireSymptome = "severite" | "ouinon";
+
 interface FormulaireSymptome {
   icone: string;
   label: string;
   localisable: boolean;
+  typeFormulaire: TypeFormulaireSymptome;
 }
 
-const FORMULAIRE_VIDE: FormulaireSymptome = { icone: "🩹", label: "", localisable: false };
+const FORMULAIRE_VIDE: FormulaireSymptome = { icone: "🩹", label: "", localisable: false, typeFormulaire: "severite" };
+
+const LABEL_TYPE: Record<TypeFormulaireSymptome, string> = {
+  severite: "Niveau (Bas / Moyen / Haut)",
+  ouinon: "Oui / Non",
+};
 
 export function GererSymptomesPage() {
   const symptomes = useSymptomes();
@@ -29,7 +37,12 @@ export function GererSymptomesPage() {
   };
 
   const ouvrirEdition = (s: SymptomeDef) => {
-    setFormulaire({ icone: s.icone, label: s.label, localisable: s.localisable ?? false });
+    setFormulaire({
+      icone: s.icone,
+      label: s.label,
+      localisable: s.localisable ?? false,
+      typeFormulaire: s.typeFormulaire ?? "severite",
+    });
     setEdition(s.id);
   };
 
@@ -43,6 +56,7 @@ export function GererSymptomesPage() {
         icone: formulaire.icone.trim() || "🩹",
         label: formulaire.label.trim(),
         localisable: formulaire.localisable,
+        typeFormulaire: formulaire.typeFormulaire,
       };
       if (edition === "nouveau") {
         await ajouterSymptome(donnees);
@@ -96,6 +110,21 @@ export function GererSymptomesPage() {
               onChange={(e) => setFormulaire((f) => ({ ...f, label: e.target.value }))}
               placeholder="Ex. Migraine"
             />
+          </Champ>
+          <Champ label="Type de saisie">
+            <select
+              className={classesInput}
+              value={formulaire.typeFormulaire}
+              onChange={(e) =>
+                setFormulaire((f) => ({ ...f, typeFormulaire: e.target.value as TypeFormulaireSymptome }))
+              }
+            >
+              {(Object.keys(LABEL_TYPE) as TypeFormulaireSymptome[]).map((t) => (
+                <option key={t} value={t}>
+                  {LABEL_TYPE[t]}
+                </option>
+              ))}
+            </select>
           </Champ>
           <label className="flex items-center gap-2 mb-4 cursor-pointer select-none text-sm">
             <input

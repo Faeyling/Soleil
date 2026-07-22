@@ -4,6 +4,7 @@ import { EnTete } from "../../components/ui/EnTete";
 import { BarreProgression } from "../../components/ui/BarreProgression";
 import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
 import { SelecteurOuiNon } from "../../components/ui/SelecteurOuiNon";
+import { SchemaCorporel } from "../../components/ui/SchemaCorporel";
 import { versSeverite, depuisSeverite } from "../../lib/ouinon";
 import { Bouton } from "../../components/ui/Bouton";
 import { Champ, classesInput } from "../../components/ui/Champ";
@@ -31,6 +32,7 @@ export function ParcoursQuotidienPage() {
   const [etape, setEtape] = useState(1);
   const [termine, setTermine] = useState(false);
   const [symptomeValeurs, setSymptomeValeurs] = useState<Record<string, Severite | undefined>>({});
+  const [localisationValeurs, setLocalisationValeurs] = useState<Record<string, string[]>>({});
   const [humeur, setHumeur] = useState<Severite | undefined>();
   const [medicamentsCoches, setMedicamentsCoches] = useState<Set<string>>(new Set());
   const [medicamentsDejaCoches, setMedicamentsDejaCoches] = useState<Set<string>>(new Set());
@@ -44,12 +46,16 @@ export function ParcoursQuotidienPage() {
   if (!preremplissageFait && entreesJour.length > 0) {
     setPreremplissageFait(true);
     const symptomes: Record<string, Severite | undefined> = {};
+    const localisations: Record<string, string[]> = {};
     for (const e of entreesJour) {
       if (e.type === "symptom" && idsSymptomesQuotidiens.includes(e.item)) {
         symptomes[e.item] = (e as EntreeSymptome).severity;
+        const zones = (e as EntreeSymptome).location;
+        if (zones) localisations[e.item] = zones;
       }
     }
     setSymptomeValeurs((prev) => ({ ...prev, ...symptomes }));
+    setLocalisationValeurs((prev) => ({ ...prev, ...localisations }));
 
     const humeurEntree = entreesJour.find((e) => e.type === "track_something" && e.item === "humeur") as
       | EntreeSuivi
@@ -93,10 +99,12 @@ export function ParcoursQuotidienPage() {
   const terminerParcours = async () => {
     for (const [item, severity] of Object.entries(symptomeValeurs)) {
       if (!severity) continue;
+      const def = trouverSymptome(item);
       await enregistrerOuMettreAJour({
         type: "symptom",
         item,
         severity,
+        location: def?.localisable ? localisationValeurs[item] : undefined,
         date: dateJour,
         datetime: maintenantISO(),
       });
@@ -187,6 +195,8 @@ export function ParcoursQuotidienPage() {
               ids={idsSymptomesQuotidiens}
               valeurs={symptomeValeurs}
               onChange={(id, s) => setSymptomeValeurs((prev) => ({ ...prev, [id]: s }))}
+              localisations={localisationValeurs}
+              onChangeLocalisation={(id, zones) => setLocalisationValeurs((prev) => ({ ...prev, [id]: zones }))}
             />
           )}
           {etape === 2 && <EtapeHumeur valeur={humeur} onChange={setHumeur} />}
@@ -242,10 +252,14 @@ function EtapeSymptomes({
   ids,
   valeurs,
   onChange,
+  localisations,
+  onChangeLocalisation,
 }: {
   ids: string[];
   valeurs: Record<string, Severite | undefined>;
-  onChange: (id: string, s: Severite) => void;
+  onChange: (id: string, s: Severite | undefined) => void;
+  localisations: Record<string, string[]>;
+  onChangeLocalisation: (id: string, zones: string[]) => void;
 }) {
   return (
     <div>
@@ -261,12 +275,36 @@ function EtapeSymptomes({
         {ids.map((id) => {
           const def = trouverSymptome(id);
           if (!def) return null;
+          const zones = localisations[id] ?? [];
+          const basculerZone = (zoneId: string) =>
+            onChangeLocalisation(id, zones.includes(zoneId) ? zones.filter((z) => z !== zoneId) : [...zones, zoneId]);
           return (
             <div key={id}>
               <p className="font-semibold text-sm mb-2">
                 <span aria-hidden="true">{def.icone}</span> {def.label}
               </p>
-              <SelecteurSeverite valeur={valeurs[id]} onChange={(s) => onChange(id, s)} itemId={id} />
+              {def.typeFormulaire === "ouinon" ? (
+                <SelecteurOuiNon
+                  valeur={depuisSeverite(valeurs[id])}
+                  onChange={(r) => onChange(id, r ? versSeverite(r) : undefined)}
+                  permettreDeselection
+                />
+              ) : (
+                <SelecteurSeverite
+                  valeur={valeurs[id]}
+                  onChange={(s) => onChange(id, s)}
+                  itemId={id}
+                  permettreDeselection
+                />
+              )}
+              {def.localisable && valeurs[id] && (
+                <div className="mt-3">
+                  <span className="block text-xs font-semibold mb-1.5 text-texte-doux">
+                    Zone(s) concernée(s) (optionnel)
+                  </span>
+                  <SchemaCorporel zonesSelectionnees={zones} onToggleZone={basculerZone} />
+                </div>
+              )}
             </div>
           );
         })}
@@ -275,13 +313,19 @@ function EtapeSymptomes({
   );
 }
 
-function EtapeHumeur({ valeur, onChange }: { valeur?: Severite; onChange: (s: Severite) => void }) {
+function EtapeHumeur({
+  valeur,
+  onChange,
+}: {
+  valeur?: Severite;
+  onChange: (s: Severite | undefined) => void;
+}) {
   return (
     <div>
       <h2 className="font-bold text-lg mb-4" style={{ color: SECTIONS.suivis.couleurFonce }}>
         Et ton humeur ?
       </h2>
-      <SelecteurSeverite valeur={valeur} onChange={onChange} itemId="humeur" />
+      <SelecteurSeverite valeur={valeur} onChange={onChange} itemId="humeur" permettreDeselection />
     </div>
   );
 }
@@ -357,13 +401,15 @@ function EtapeAutresSuivis({
               {def.typeFormulaire === "severite" ? (
                 <SelecteurSeverite
                   valeur={valeurs[id] as Severite | undefined}
-                  onChange={(s) => onChange(id, s)}
+                  onChange={(s) => onChange(id, s ?? "")}
                   itemId={id}
+                  permettreDeselection
                 />
               ) : def.typeFormulaire === "ouinon" ? (
                 <SelecteurOuiNon
                   valeur={depuisSeverite(valeurs[id] as Severite | undefined)}
-                  onChange={(r) => onChange(id, versSeverite(r))}
+                  onChange={(r) => onChange(id, r ? versSeverite(r) : "")}
+                  permettreDeselection
                 />
               ) : (
                 <input

@@ -102,7 +102,9 @@ export function HistoriquePage() {
       <section className="mt-8">
         <h2 className="font-bold text-lg mb-3">Articulations les plus touchées</h2>
         <p className="text-xs text-texte-doux mb-3">
-          Luxations et subluxations, sur la période « {PERIODES.find((p) => p.id === periode)?.label} ».
+          Douleurs, luxations et subluxations localisées, sur la période «{" "}
+          {PERIODES.find((p) => p.id === periode)?.label} ». Filtre disponible pour voir l'effet d'une
+          activité le jour même ou le lendemain.
         </p>
         <FrequenceArticulations entrees={entrees} dateDebut={dateDebut} />
       </section>

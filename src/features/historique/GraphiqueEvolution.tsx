@@ -9,7 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import type { Entree } from "../../data/types";
-import { joursDepuis, dateDuJour, formatDateLisible } from "../../lib/date";
+import { joursEntre, ajouterJours, dateDuJour, formatDateLisible } from "../../lib/date";
 import { ordreSeverite, LABEL_SEVERITE, labelSeverite, type Severite } from "../../lib/severite";
 import { libelleEntree, iconeEntree } from "../../lib/libelleEntree";
 import { dateDebutPeriode, type Periode } from "../../lib/periode";
@@ -32,12 +32,30 @@ interface GraphiqueEvolutionProps {
 
 export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps) {
   const [masques, setMasques] = useState<Set<string>>(new Set());
+  // Nombre de périodes complètes en arrière par rapport à aujourd'hui (0 =
+  // la plus récente). Non applicable à "Tout", qui n'a pas de longueur fixe.
+  const [decalage, setDecalage] = useState(0);
+  // Revient à la période la plus récente quand on change de longueur de
+  // période (7j/30j/3mois/tout) — ajustement d'état pendant le rendu plutôt
+  // qu'un effet, pour éviter un rendu supplémentaire.
+  const [periodePrecedente, setPeriodePrecedente] = useState(periode);
+  if (periode !== periodePrecedente) {
+    setPeriodePrecedente(periode);
+    setDecalage(0);
+  }
 
-  const dateDebutSelection = dateDebutPeriode(periode);
+  const longueurPeriode = periode === "tout" ? undefined : Number(periode);
+  const dateFinSelection = longueurPeriode ? ajouterJours(dateDuJour(), -longueurPeriode * decalage) : dateDuJour();
+  const dateDebutSelection = longueurPeriode
+    ? ajouterJours(dateFinSelection, -(longueurPeriode - 1))
+    : dateDebutPeriode(periode);
 
   const entreesAvecSeverite = useMemo(
-    () => entrees.filter((e) => "severity" in e && e.severity && e.date >= dateDebutSelection),
-    [entrees, dateDebutSelection],
+    () =>
+      entrees.filter(
+        (e) => "severity" in e && e.severity && e.date >= dateDebutSelection && e.date <= dateFinSelection,
+      ),
+    [entrees, dateDebutSelection, dateFinSelection],
   );
 
   const items = useMemo(() => {
@@ -65,12 +83,8 @@ export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps
           ? entreesAvecSeverite.reduce((min, e) => (e.date < min ? e.date : min), entreesAvecSeverite[0].date)
           : dateDuJour();
     }
-    const nbJours = Math.max(
-      1,
-      Math.round((new Date(dateDuJour()).getTime() - new Date(debut).getTime()) / 86400000) + 1,
-    );
-    return joursDepuis(nbJours);
-  }, [dateDebutSelection, periode, entreesAvecSeverite]);
+    return joursEntre(debut, dateFinSelection);
+  }, [dateDebutSelection, dateFinSelection, periode, entreesAvecSeverite]);
 
   const donnees = useMemo(() => {
     // Index (date -> item -> sévérité) construit en un seul passage, pour
@@ -103,12 +117,33 @@ export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps
     });
   };
 
-  if (items.size === 0) {
-    return <p className="text-sm text-texte-doux">Pas encore de données à afficher sur cette période.</p>;
-  }
-
   return (
     <div>
+      {longueurPeriode && (
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <button
+            onClick={() => setDecalage((d) => d + 1)}
+            className="px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer bg-fond-douce text-texte-doux hover:opacity-80"
+          >
+            <span aria-hidden="true">◀</span> Période précédente
+          </button>
+          <p className="text-xs text-texte-doux text-center flex-shrink-0">
+            {formatDateLisible(dateDebutSelection)} – {formatDateLisible(dateFinSelection)}
+          </p>
+          <button
+            onClick={() => setDecalage((d) => Math.max(0, d - 1))}
+            disabled={decalage === 0}
+            className="px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer bg-fond-douce text-texte-doux hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Période suivante <span aria-hidden="true">▶</span>
+          </button>
+        </div>
+      )}
+
+      {items.size === 0 ? (
+        <p className="text-sm text-texte-doux">Pas encore de données à afficher sur cette période.</p>
+      ) : (
+        <>
       <div className="flex flex-wrap gap-2 mb-3">
         {[...items.entries()].map(([cle, info]) => {
           const masque = masques.has(cle);
@@ -180,6 +215,8 @@ export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps
           )}
         </LineChart>
       </ResponsiveContainer>
+        </>
+      )}
     </div>
   );
 }

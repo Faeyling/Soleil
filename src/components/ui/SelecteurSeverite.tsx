@@ -3,12 +3,14 @@ import { labelSeverite, descriptionSeverite, couleurSeverite, severitesDisponibl
 
 interface SelecteurSeveriteProps {
   valeur?: Severite;
-  onChange: (s: Severite) => void;
+  onChange: (s: Severite | undefined) => void;
   /** Slug de l'élément suivi (ex. "sommeil") — détermine le libellé personnalisé et l'ajout du niveau "Crise". */
   itemId?: string;
+  /** Si vrai, cliquer sur le niveau déjà sélectionné le désélectionne (parcours quotidien). */
+  permettreDeselection?: boolean;
 }
 
-export function SelecteurSeverite({ valeur, onChange, itemId }: SelecteurSeveriteProps) {
+export function SelecteurSeverite({ valeur, onChange, itemId, permettreDeselection = false }: SelecteurSeveriteProps) {
   const options = severitesDisponibles(itemId);
   const description = descriptionSeverite(itemId);
 
@@ -47,7 +49,7 @@ export function SelecteurSeverite({ valeur, onChange, itemId }: SelecteurSeverit
               role="radio"
               aria-checked={actif}
               tabIndex={index === indexActif ? 0 : -1}
-              onClick={() => onChange(s)}
+              onClick={() => onChange(permettreDeselection && actif ? undefined : s)}
               onKeyDown={(e) => onKeyDown(e, index)}
               className="flex-1 min-w-[70px] flex flex-col items-center gap-2 rounded-[var(--rayon)] border-2 py-3 transition-transform active:scale-95 cursor-pointer"
               style={{

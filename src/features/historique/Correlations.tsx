@@ -1,24 +1,15 @@
 import { useMemo, useState } from "react";
-import type { Entree, Medicament } from "../../data/types";
-import { useSuivis, trouverSuivi } from "../../content/autresSuivis";
-import { useSymptomes, trouverSymptome } from "../../content/symptomes";
+import type { Entree } from "../../data/types";
+import { useSuivis } from "../../content/autresSuivis";
+import { useSymptomes } from "../../content/symptomes";
 import { useMedicaments } from "../../hooks/useMedicaments";
 import { calculerCorrelation } from "../../lib/correlations";
 import { severitesDisponibles } from "../../lib/severite";
 import { dateDebutPeriode, type Periode } from "../../lib/periode";
+import { libelle } from "../../lib/libelleItem";
 
 const CLE_ACTIVITE = "soleil-correlation-activite";
 const CLE_CIBLE = "soleil-correlation-cible";
-
-function libelle(id: string, medicaments: Medicament[]): { label: string; icone: string } {
-  const suivi = trouverSuivi(id);
-  if (suivi) return { label: suivi.label, icone: suivi.icone };
-  const symptome = trouverSymptome(id);
-  if (symptome) return { label: symptome.label, icone: symptome.icone };
-  const medicament = medicaments.find((m) => m.id === id);
-  if (medicament) return { label: medicament.nom, icone: "💊" };
-  return { label: id, icone: "•" };
-}
 
 function couleurMoyenne(valeur: number, max: number): string {
   if (valeur <= max * 0.5) return "var(--severite-bas)";
@@ -142,7 +133,7 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
             </optgroup>
           )}
           {suivisSelectionnables.length > 0 && (
-            <optgroup label="Autres suivis">
+            <optgroup label="Activités">
               {suivisSelectionnables.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.icone} {s.label}
@@ -176,7 +167,7 @@ export function Correlations({ entrees, periode }: CorrelationsProps) {
             </optgroup>
           )}
           {suivisAvecSeverite.length > 0 && (
-            <optgroup label="Autres suivis">
+            <optgroup label="Activités">
               {suivisAvecSeverite.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.icone} {s.label}

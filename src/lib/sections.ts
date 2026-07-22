@@ -28,7 +28,7 @@ export const SECTIONS: Record<SectionId, SectionTheme> = {
   },
   suivis: {
     id: "suivis",
-    label: "Autres suivis",
+    label: "Activités",
     couleur: "var(--color-ocre)",
     couleurFonce: "var(--color-ocre-fonce)",
     couleurClaire: "var(--color-ocre-clair)",

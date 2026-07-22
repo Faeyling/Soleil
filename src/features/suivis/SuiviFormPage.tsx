@@ -149,7 +149,7 @@ export function SuiviFormPage() {
 
       {suivi.typeFormulaire === "ouinon" && (
         <Champ label="Réponse">
-          <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(versSeverite(r))} />
+          <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(r ? versSeverite(r) : undefined)} />
         </Champ>
       )}
 
