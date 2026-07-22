@@ -41,7 +41,7 @@ function Barre({ label, valeur, max }: BarreProps) {
           style={{ width: `${(valeur / max) * 100}%`, background: couleurMoyenne(valeur, max) }}
         />
       </div>
-      <p className="text-sm font-bold" style={{ color: couleurMoyenne(valeur, max) }}>
+      <p className="text-sm font-bold text-texte">
         {valeur.toFixed(1)} / {max}
       </p>
     </div>

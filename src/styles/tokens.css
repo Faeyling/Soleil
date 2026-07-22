@@ -24,10 +24,10 @@
  * Tailwind générées (bg-terracotta, text-ardoise...) dans des dizaines de
  * fichiers ; on garde donc les noms et on change seulement les valeurs.
  *
- * Les niveaux de sévérité "Bas"/"Moyen" (--color-severite-bas/-moyen)
- * gardent une teinte plus soutenue que Symptômes/Activités : ils servent
- * aussi de couleur de TEXTE direct (corrélations, légendes de graphique),
- * où les teintes pastel d'origine seraient illisibles.
+ * Les niveaux de sévérité "Bas"/"Moyen" reprennent exactement la même
+ * teinte que Symptômes/Activités (#C5D9A7/#F2A663) — là où ce pastel sert
+ * de couleur de TEXTE direct (corrélations), le composant utilise
+ * --color-texte plutôt que la couleur de sévérité elle-même.
  */
 @theme {
   --color-fond: #fcf6f3;
@@ -39,7 +39,11 @@
   /* Couleur du texte posé sur un fond "accent" plein (boutons, badges) —
      marron en clair (les teintes de la palette fournie sont des pastels
      clairs : le blanc n'y est pas assez lisible), texte sombre en sombre. */
-  --color-texte-sur-accent: #3a2e26;
+  --color-texte-sur-accent: #4e433c;
+  /* Cas particulier du bouton "danger" (fond rouge "Sévère", pas un pastel
+     clair) : blanc en clair, comme --color-texte-sur-accent avant l'ajout
+     du marron. */
+  --color-texte-sur-danger: #ffffff;
 
   /* Symptômes + niveau "Bas" — vert sauge, exactement la teinte fournie. */
   --color-terracotta: #c5d9a7;
@@ -71,10 +75,13 @@
   --color-marine: #2f3e52;
   --color-caramel: #a86337;
 
-  /* Sévérité : vert (Bas) → orange (Moyen) → rouge (Haut = "Sévère") → bleu (Crise).
+  /* Sévérité : vert (Bas) → orange (Moyen) → rouge (Haut = "Sévère") → bleu (Crise) —
+     exactement les teintes fournies, mêmes que Symptômes/Activités. Le texte
+     qui a besoin d'afficher une valeur (corrélations) reste en --color-texte
+     plutôt que dans la couleur de sévérité elle-même, trop claire pour du texte.
      Cas particulier du sommeil (labels "Sévère" au lieu de "Haut"), voir src/lib/severite.ts. */
-  --color-severite-bas: #617e36;
-  --color-severite-moyen: #b25b0f;
+  --color-severite-bas: #c5d9a7;
+  --color-severite-moyen: #f2a663;
   --color-severite-haut: #b60000;
   /* Niveau "Crise" — bleu donné, utilisé tel quel (jamais de texte blanc direct dessus). */
   --color-severite-crise: #84b8d9;
@@ -99,6 +106,7 @@
   --color-texte-doux: #c9b9aa;
   --color-bordure: #4a3c2e;
   --color-texte-sur-accent: #1e1712;
+  --color-texte-sur-danger: #1e1712;
 
   --color-terracotta: #c5d9a7;
   --color-terracotta-fonce: #c5d9a7;

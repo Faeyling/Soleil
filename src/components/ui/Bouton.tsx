@@ -27,7 +27,10 @@ export function Bouton({
   } else if (variante === "discret") {
     styleVariante = { background: "var(--color-fond-douce)", color: "var(--color-texte)" };
   } else if (variante === "danger") {
-    styleVariante = { background: "var(--color-severite-haut)", color: "var(--color-texte-sur-accent)" };
+    // --color-texte-sur-danger plutôt que -sur-accent (marron) : le rouge
+    // de "Sévère" est une teinte foncée, pas un pastel clair — le marron y
+    // serait illisible.
+    styleVariante = { background: "var(--color-severite-haut)", color: "var(--color-texte-sur-danger)" };
   }
 
   return (
