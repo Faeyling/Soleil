@@ -7,6 +7,8 @@ beforeEach(async () => {
   await db.entrees.clear();
   await db.medicaments.clear();
   await db.ressourcesNotes.clear();
+  await db.symptomes.clear();
+  await db.autresSuivis.clear();
 });
 
 function entreeSymptome(overrides: Partial<EntreeSymptome>): EntreeSymptome {
@@ -40,6 +42,24 @@ describe("estSauvegardeValide", () => {
     expect(estSauvegardeValide({ app: "soleil" })).toBe(false);
     expect(estSauvegardeValide(null)).toBe(false);
     expect(estSauvegardeValide("texte")).toBe(false);
+  });
+
+  it("accepte une sauvegarde v2 avec symptômes et activités personnalisés", () => {
+    const sauvegarde: Sauvegarde = {
+      app: "soleil",
+      version: 2,
+      exporteLe: "2026-07-20T00:00:00.000Z",
+      entrees: [],
+      medicaments: [],
+      ressourcesNotes: [],
+      symptomes: [],
+      autresSuivis: [],
+    };
+    expect(estSauvegardeValide(sauvegarde)).toBe(true);
+  });
+
+  it("rejette une sauvegarde où symptomes/autresSuivis ne sont pas des tableaux", () => {
+    expect(estSauvegardeValide({ app: "soleil", entrees: [], medicaments: [], ressourcesNotes: [], symptomes: "oups" })).toBe(false);
   });
 });
 
@@ -147,5 +167,42 @@ describe("importerDonnees", () => {
     const entrees = await db.entrees.toArray();
     expect(entrees).toHaveLength(1);
     expect(entrees[0].id).toBe("apres-import");
+  });
+
+  it("restaure les symptômes et activités personnalisés d'une sauvegarde v2", async () => {
+    const sauvegarde: Sauvegarde = {
+      app: "soleil",
+      version: 2,
+      exporteLe: "2026-07-20T00:00:00.000Z",
+      entrees: [],
+      medicaments: [],
+      ressourcesNotes: [],
+      symptomes: [{ id: "migraine", label: "Migraine", icone: "🩹", ordre: 0 }],
+      autresSuivis: [{ id: "piscine", label: "Piscine", icone: "🏊", typeFormulaire: "severite", ordre: 0 }],
+    };
+
+    await importerDonnees(sauvegarde);
+
+    expect(await db.symptomes.toArray()).toEqual(sauvegarde.symptomes);
+    expect(await db.autresSuivis.toArray()).toEqual(sauvegarde.autresSuivis);
+  });
+
+  it("laisse le contenu personnalisé actuel inchangé pour une sauvegarde v1 (sans symptomes/autresSuivis)", async () => {
+    await db.symptomes.add({ id: "deja-la", label: "Déjà là", icone: "🩹", ordre: 0 });
+
+    const sauvegarde: Sauvegarde = {
+      app: "soleil",
+      version: 1,
+      exporteLe: "2026-07-20T00:00:00.000Z",
+      entrees: [],
+      medicaments: [],
+      ressourcesNotes: [],
+    };
+
+    await importerDonnees(sauvegarde);
+
+    const symptomes = await db.symptomes.toArray();
+    expect(symptomes).toHaveLength(1);
+    expect(symptomes[0].id).toBe("deja-la");
   });
 });

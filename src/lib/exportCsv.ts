@@ -18,8 +18,15 @@ const ENTETES = [
   "Importante",
 ];
 
+// Point-virgule plutôt que virgule : Excel en locale française (celle de la
+// quasi-totalité du public visé par Soleil) n'ouvre correctement un .csv en
+// colonnes, par simple double-clic, qu'avec ce séparateur — la virgule y
+// est déjà le séparateur décimal. Reste un CSV valide pour tous les autres
+// tableurs (LibreOffice, Google Sheets, Numbers), qui détectent le délimiteur.
+const SEPARATEUR = ";";
+
 function echapperCellule(valeur: string): string {
-  if (/[",\n;]/.test(valeur)) {
+  if (/["\n,;]/.test(valeur)) {
     return `"${valeur.replace(/"/g, '""')}"`;
   }
   return valeur;
@@ -32,7 +39,7 @@ const LABEL_TYPE: Record<Entree["type"], string> = {
 };
 
 export function genererCSV(entrees: Entree[]): string {
-  const lignes = [ENTETES.join(",")];
+  const lignes = [ENTETES.join(SEPARATEUR)];
 
   for (const e of entrees) {
     const [date, heure] = e.datetime.split("T");
@@ -49,7 +56,7 @@ export function genererCSV(entrees: Entree[]): string {
       e.note ?? "",
       e.important ? "Oui" : "",
     ];
-    lignes.push(cellules.map(echapperCellule).join(","));
+    lignes.push(cellules.map(echapperCellule).join(SEPARATEUR));
   }
 
   return lignes.join("\n");
