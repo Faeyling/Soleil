@@ -174,7 +174,7 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
       </Champ>
 
       {stockBas && (
-        <div className="mb-4 rounded-xl bg-terracotta-clair text-terracotta-fonce px-4 py-3 text-sm">
+        <div className="mb-4 rounded-xl bg-terracotta-clair text-texte px-4 py-3 text-sm">
           <span aria-hidden="true">⚠️ </span>
           Il reste {medicament.stock} prise{medicament.stock === 1 ? "" : "s"} de "{medicament.nom}" —
           pense à renouveler ton ordonnance.
@@ -213,7 +213,7 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
       <h2 className="font-bold text-lg mt-6 mb-2">Enregistrer une prise</h2>
 
       {confirmationPrise && (
-        <div className="mb-4 rounded-xl bg-sauge-clair text-sauge-fonce px-4 py-3 text-sm">
+        <div className="mb-4 rounded-xl bg-sauge-clair text-texte px-4 py-3 text-sm">
           <span aria-hidden="true">✓ </span>
           Prise enregistrée !
         </div>

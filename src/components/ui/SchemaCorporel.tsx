@@ -161,7 +161,7 @@ export function SchemaCorporel({ zonesSelectionnees, onToggleZone }: SchemaCorpo
             color:
               autresZonesSelectionnees.length > 0
                 ? "var(--color-texte-sur-accent)"
-                : SECTIONS.symptomes.couleurFonce,
+                : "var(--color-texte)",
           }}
         >
           Autre zone

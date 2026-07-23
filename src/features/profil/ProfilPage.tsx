@@ -150,7 +150,7 @@ export function ProfilPage() {
     <div className="pb-4">
       <h1 className="text-2xl font-bold mb-4">Profil & données</h1>
 
-      <div className="rounded-[var(--rayon-grand)] bg-sauge-clair text-sauge-fonce p-4 mb-6 text-sm">
+      <div className="rounded-[var(--rayon-grand)] bg-sauge-clair text-texte p-4 mb-6 text-sm">
         <span aria-hidden="true">🔒 </span>
         Toutes tes données restent sur cet appareil, dans ton navigateur. Rien n'est jamais
         envoyé à un serveur. Pense à faire une sauvegarde régulière si tu changes d'appareil.
@@ -252,7 +252,7 @@ export function ProfilPage() {
           {messageImport && (
             <p
               className={`text-sm rounded-xl px-3 py-2 ${
-                messageImport.erreur ? "bg-terracotta-clair text-terracotta-fonce" : "bg-sauge-clair text-sauge-fonce"
+                messageImport.erreur ? "bg-terracotta-clair text-texte" : "bg-sauge-clair text-texte"
               }`}
             >
               {!messageImport.erreur && <span aria-hidden="true">✓ </span>}
@@ -289,7 +289,7 @@ export function ProfilPage() {
                     style={{
                       borderColor: SECTIONS.symptomes.couleur,
                       background: actif ? SECTIONS.symptomes.couleur : "transparent",
-                      color: actif ? "var(--color-texte-sur-accent)" : SECTIONS.symptomes.couleurFonce,
+                      color: actif ? "var(--color-texte-sur-accent)" : "var(--color-texte)",
                     }}
                   >
                     {s.label}
@@ -321,7 +321,7 @@ export function ProfilPage() {
                     style={{
                       borderColor: SECTIONS.suivis.couleur,
                       background: actif ? SECTIONS.suivis.couleur : "transparent",
-                      color: actif ? "var(--color-texte-sur-accent)" : SECTIONS.suivis.couleurFonce,
+                      color: actif ? "var(--color-texte-sur-accent)" : "var(--color-texte)",
                     }}
                   >
                     {s.label}

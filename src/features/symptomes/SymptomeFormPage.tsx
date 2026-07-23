@@ -150,7 +150,7 @@ export function SymptomeFormPage() {
       <EnTete titre={symptome.label} couleur={SECTIONS.symptomes.couleurFonce} />
 
       {erreur && (
-        <div className="mb-4 rounded-xl bg-terracotta-clair text-terracotta-fonce px-4 py-3 text-sm">
+        <div className="mb-4 rounded-xl bg-terracotta-clair text-texte px-4 py-3 text-sm">
           {erreur}
         </div>
       )}

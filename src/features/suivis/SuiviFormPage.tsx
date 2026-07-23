@@ -138,7 +138,7 @@ export function SuiviFormPage() {
       <EnTete titre={suivi.label} couleur={SECTIONS.suivis.couleurFonce} />
 
       {erreur && (
-        <div className="mb-4 rounded-xl bg-ocre-clair text-ocre-fonce px-4 py-3 text-sm">{erreur}</div>
+        <div className="mb-4 rounded-xl bg-ocre-clair text-texte px-4 py-3 text-sm">{erreur}</div>
       )}
 
       {suivi.typeFormulaire === "severite" && (

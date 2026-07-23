@@ -139,7 +139,7 @@ export function SectionSecurite() {
         </p>
 
         {succes && (
-          <p className="text-sm rounded-xl px-3 py-2 bg-sauge-clair text-sauge-fonce">
+          <p className="text-sm rounded-xl px-3 py-2 bg-sauge-clair text-texte">
             <span aria-hidden="true">✓ </span>
             {succes}
           </p>
@@ -159,7 +159,7 @@ export function SectionSecurite() {
               className={`${classesInput} text-center text-2xl tracking-[0.5em] max-w-[10rem]`}
               aria-label={libelleEtape}
             />
-            {erreur && <p className="text-sm text-terracotta-fonce mt-2">{erreur}</p>}
+            {erreur && <p className="text-sm text-texte mt-2">{erreur}</p>}
             <Bouton variante="discret" className="mt-3" onClick={reinitialiser}>
               Annuler
             </Bouton>
@@ -208,7 +208,7 @@ export function SectionSecurite() {
               navigateur et ton appareil savent que c'est bien toi.
             </p>
             {erreurEmpreinte && (
-              <p className="text-sm text-terracotta-fonce mb-2">{erreurEmpreinte}</p>
+              <p className="text-sm text-texte mb-2">{erreurEmpreinte}</p>
             )}
             <Bouton
               variante={empreinteActive ? "contour" : "discret"}

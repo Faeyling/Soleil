@@ -84,7 +84,7 @@ export function EcranVerrouillage({ onDeverrouille }: EcranVerrouillageProps) {
         className="w-40 text-center text-3xl tracking-[0.5em] rounded-2xl border-2 py-3 px-4 focus:outline-none"
         style={{ borderColor: erreur ? "var(--color-terracotta)" : "var(--color-bordure)" }}
       />
-      <p className="text-sm text-terracotta-fonce h-5" role="alert">
+      <p className="text-sm text-texte h-5" role="alert">
         {erreur ? "Code incorrect, réessaie." : ""}
       </p>
 
@@ -101,7 +101,7 @@ export function EcranVerrouillage({ onDeverrouille }: EcranVerrouillageProps) {
             <span aria-hidden="true">🔓</span> Déverrouiller avec mon empreinte
           </button>
           {erreurEmpreinte && (
-            <p className="text-sm text-terracotta-fonce mt-2" role="alert">
+            <p className="text-sm text-texte mt-2" role="alert">
               Empreinte non reconnue — réessaie ou utilise ton code.
             </p>
           )}

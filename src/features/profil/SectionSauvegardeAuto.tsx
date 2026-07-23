@@ -101,7 +101,7 @@ export function SectionSauvegardeAuto() {
               Fichier configuré : <span className="font-semibold">{nomFichier}</span>
             </p>
             {etatPermission === "accordee" && (
-              <p className="text-sm rounded-xl px-3 py-2 bg-sauge-clair text-sauge-fonce">
+              <p className="text-sm rounded-xl px-3 py-2 bg-sauge-clair text-texte">
                 <span aria-hidden="true">✓ </span>
                 Sauvegarde automatique active.
               </p>
@@ -112,7 +112,7 @@ export function SectionSauvegardeAuto() {
               </Bouton>
             )}
             {etatPermission === "refusee" && (
-              <p className="text-sm rounded-xl px-3 py-2 bg-terracotta-clair text-terracotta-fonce">
+              <p className="text-sm rounded-xl px-3 py-2 bg-terracotta-clair text-texte">
                 Permission refusée par le navigateur. Choisis à nouveau un fichier pour réessayer.
               </p>
             )}

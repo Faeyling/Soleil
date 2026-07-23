@@ -144,7 +144,7 @@ export function RessourcesPage() {
               href={lien.url}
               target="_blank"
               rel="noreferrer"
-              className="text-sauge-fonce underline text-sm"
+              className="text-texte underline text-sm"
             >
               {lien.titre}{" "}
               <span className="text-texte-doux text-xs">({lien.langue === "fr" ? "francophone" : "anglophone"})</span>{" "}
@@ -235,7 +235,7 @@ export function RessourcesPage() {
                     <button
                       onClick={() => ouvrirEditionMedecin(m)}
                       aria-label={`Modifier ${m.nom}`}
-                      className="text-texte-doux hover:text-sauge-fonce cursor-pointer text-lg leading-none"
+                      className="text-texte-doux hover:text-texte cursor-pointer text-lg leading-none"
                     >
                       ✏️
                     </button>
@@ -249,12 +249,12 @@ export function RessourcesPage() {
                   </div>
                 </div>
                 {m.telephone && (
-                  <a href={`tel:${m.telephone}`} className="text-sauge-fonce underline text-sm block mt-1">
+                  <a href={`tel:${m.telephone}`} className="text-texte underline text-sm block mt-1">
                     📞 {m.telephone}
                   </a>
                 )}
                 {m.email && (
-                  <a href={`mailto:${m.email}`} className="text-sauge-fonce underline text-sm block mt-1">
+                  <a href={`mailto:${m.email}`} className="text-texte underline text-sm block mt-1">
                     ✉️ {m.email}
                   </a>
                 )}
@@ -330,7 +330,7 @@ export function RessourcesPage() {
                   </button>
                 </div>
                 {n.url && (
-                  <a href={n.url} target="_blank" rel="noreferrer" className="text-sauge-fonce underline text-sm block mt-1">
+                  <a href={n.url} target="_blank" rel="noreferrer" className="text-texte underline text-sm block mt-1">
                     {n.url} <span aria-hidden="true">↗</span>
                   </a>
                 )}

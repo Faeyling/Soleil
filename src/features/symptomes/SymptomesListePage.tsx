@@ -16,7 +16,7 @@ export function SymptomesListePage() {
           <button
             onClick={() => navigate("/symptomes/gerer")}
             className="text-sm font-semibold cursor-pointer underline"
-            style={{ color: SECTIONS.symptomes.couleurFonce }}
+            style={{ color: "var(--color-texte)" }}
           >
             Gérer
           </button>

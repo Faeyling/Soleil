@@ -16,7 +16,7 @@ export function SuivisListePage() {
           <button
             onClick={() => navigate("/suivis/gerer")}
             className="text-sm font-semibold cursor-pointer underline"
-            style={{ color: SECTIONS.suivis.couleurFonce }}
+            style={{ color: "var(--color-texte)" }}
           >
             Gérer
           </button>
