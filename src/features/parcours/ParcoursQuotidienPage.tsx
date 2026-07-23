@@ -31,7 +31,7 @@ export function ParcoursQuotidienPage() {
 
   const [etape, setEtape] = useState(1);
   const [termine, setTermine] = useState(false);
-  const [symptomeValeurs, setSymptomeValeurs] = useState<Record<string, Severite | undefined>>({});
+  const [symptomeValeurs, setSymptomeValeurs] = useState<Record<string, string>>({});
   const [localisationValeurs, setLocalisationValeurs] = useState<Record<string, string[]>>({});
   const [humeur, setHumeur] = useState<Severite | undefined>();
   const [medicamentsCoches, setMedicamentsCoches] = useState<Set<string>>(new Set());
@@ -45,12 +45,14 @@ export function ParcoursQuotidienPage() {
   const [preremplissageFait, setPreremplissageFait] = useState(false);
   if (!preremplissageFait && entreesJour.length > 0) {
     setPreremplissageFait(true);
-    const symptomes: Record<string, Severite | undefined> = {};
+    const symptomes: Record<string, string> = {};
     const localisations: Record<string, string[]> = {};
     for (const e of entreesJour) {
       if (e.type === "symptom" && idsSymptomesQuotidiens.includes(e.item)) {
-        symptomes[e.item] = (e as EntreeSymptome).severity;
-        const zones = (e as EntreeSymptome).location;
+        const symptomeEntree = e as EntreeSymptome;
+        const def = trouverSymptome(e.item);
+        symptomes[e.item] = def?.typeFormulaire === "texte" ? (symptomeEntree.note ?? "") : (symptomeEntree.severity ?? "");
+        const zones = symptomeEntree.location;
         if (zones) localisations[e.item] = zones;
       }
     }
@@ -66,7 +68,7 @@ export function ParcoursQuotidienPage() {
     for (const e of entreesJour) {
       if (e.type === "track_something" && idsSuivisQuotidiens.includes(e.item)) {
         const suivi = e as EntreeSuivi;
-        suivis[e.item] = suivi.severity ?? (suivi.value != null ? String(suivi.value) : "");
+        suivis[e.item] = suivi.severity ?? (suivi.value != null ? String(suivi.value) : (suivi.note ?? ""));
       }
     }
     setSuivisValeurs((prev) => ({ ...prev, ...suivis }));
@@ -97,13 +99,15 @@ export function ParcoursQuotidienPage() {
   const precedent = () => setEtape((e) => Math.max(e - 1, 1));
 
   const terminerParcours = async () => {
-    for (const [item, severity] of Object.entries(symptomeValeurs)) {
-      if (!severity) continue;
+    for (const [item, valeurBrute] of Object.entries(symptomeValeurs)) {
+      if (!valeurBrute) continue;
       const def = trouverSymptome(item);
+      const estTexte = def?.typeFormulaire === "texte";
       await enregistrerOuMettreAJour({
         type: "symptom",
         item,
-        severity,
+        severity: estTexte ? undefined : (valeurBrute as Severite),
+        note: estTexte ? valeurBrute : undefined,
         location: def?.localisable ? localisationValeurs[item] : undefined,
         date: dateJour,
         datetime: maintenantISO(),
@@ -150,6 +154,7 @@ export function ParcoursQuotidienPage() {
             : undefined,
         value: suivi.typeFormulaire === "numerique" ? Number(valeurBrute) : undefined,
         unit: suivi.typeFormulaire === "numerique" ? suivi.unite : undefined,
+        note: suivi.typeFormulaire === "texte" ? valeurBrute : undefined,
         date: dateJour,
         datetime: maintenantISO(),
       });
@@ -256,8 +261,8 @@ function EtapeSymptomes({
   onChangeLocalisation,
 }: {
   ids: string[];
-  valeurs: Record<string, Severite | undefined>;
-  onChange: (id: string, s: Severite | undefined) => void;
+  valeurs: Record<string, string>;
+  onChange: (id: string, v: string) => void;
   localisations: Record<string, string[]>;
   onChangeLocalisation: (id: string, zones: string[]) => void;
 }) {
@@ -285,14 +290,22 @@ function EtapeSymptomes({
               </p>
               {def.typeFormulaire === "ouinon" ? (
                 <SelecteurOuiNon
-                  valeur={depuisSeverite(valeurs[id])}
-                  onChange={(r) => onChange(id, r ? versSeverite(r) : undefined)}
+                  valeur={depuisSeverite(valeurs[id] as Severite | undefined)}
+                  onChange={(r) => onChange(id, r ? versSeverite(r) : "")}
                   permettreDeselection
+                />
+              ) : def.typeFormulaire === "texte" ? (
+                <textarea
+                  className={classesInput}
+                  rows={2}
+                  value={valeurs[id] ?? ""}
+                  onChange={(e) => onChange(id, e.target.value)}
+                  placeholder="Décris ce symptôme..."
                 />
               ) : (
                 <SelecteurSeverite
-                  valeur={valeurs[id]}
-                  onChange={(s) => onChange(id, s)}
+                  valeur={valeurs[id] as Severite | undefined}
+                  onChange={(s) => onChange(id, s ?? "")}
                   itemId={id}
                   permettreDeselection
                 />
@@ -411,11 +424,19 @@ function EtapeAutresSuivis({
                   onChange={(r) => onChange(id, r ? versSeverite(r) : "")}
                   permettreDeselection
                 />
-              ) : (
+              ) : def.typeFormulaire === "numerique" ? (
                 <input
                   type="number"
                   step="0.1"
                   className={classesInput}
+                  value={valeurs[id] ?? ""}
+                  onChange={(e) => onChange(id, e.target.value)}
+                  placeholder={def.placeholder}
+                />
+              ) : (
+                <textarea
+                  className={classesInput}
+                  rows={2}
                   value={valeurs[id] ?? ""}
                   onChange={(e) => onChange(id, e.target.value)}
                   placeholder={def.placeholder}

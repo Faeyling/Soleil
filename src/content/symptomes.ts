@@ -38,7 +38,7 @@ export const SYMPTOMES_PAR_DEFAUT: SymptomeDef[] = [
   { id: "douleur", label: "Douleur", icone: "⚡", localisable: true, ordre: 14 },
   { id: "sommeil", label: "Sommeil", icone: "🌙", ordre: 15 },
   { id: "vomissements", label: "Vomissements", icone: "🤢", ordre: 16 },
-  { id: "autre-symptome", label: "Autre", icone: "➕", ordre: 17 },
+  { id: "autre-symptome", label: "Autre", icone: "➕", typeFormulaire: "texte", ordre: 17 },
 ];
 
 // Store externe (façon useSyncExternalStore) tenu à jour par un liveQuery sur

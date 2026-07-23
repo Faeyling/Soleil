@@ -69,7 +69,12 @@ export function SymptomeFormPage() {
 
   const enregistrer = async () => {
     if (enregistrementEnCours) return;
-    if (!severite) {
+    if (symptome.typeFormulaire === "texte") {
+      if (!note.trim()) {
+        setErreur("Ajoute une petite description avant d'enregistrer.");
+        return;
+      }
+    } else if (!severite) {
       setErreur(
         symptome.typeFormulaire === "ouinon" ? "Choisis Oui ou Non pour continuer." : "Choisis une sévérité pour continuer.",
       );
@@ -79,10 +84,11 @@ export function SymptomeFormPage() {
     try {
       const iso = isoDepuisDatetimeLocal(datetime);
       const date = dateDepuisDatetimeLocal(datetime);
+      const severityFinale = symptome.typeFormulaire === "texte" ? undefined : severite;
 
       if (entreeExistante) {
         const resultat = await modifierEntreeAvecUnicite(entreeExistante, {
-          severity: severite,
+          severity: severityFinale,
           datetime: iso,
           date,
           location: symptome.localisable ? localisation : undefined,
@@ -105,7 +111,7 @@ export function SymptomeFormPage() {
         item: symptome.id,
         date,
         datetime: iso,
-        severity: severite,
+        severity: severityFinale,
         location: symptome.localisable ? localisation : undefined,
         note: note.trim() || undefined,
         important,
@@ -153,6 +159,16 @@ export function SymptomeFormPage() {
         <Champ label="Réponse">
           <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(r ? versSeverite(r) : undefined)} />
         </Champ>
+      ) : symptome.typeFormulaire === "texte" ? (
+        <Champ label="Description">
+          <textarea
+            className={classesInput}
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Décris ce symptôme..."
+          />
+        </Champ>
       ) : (
         <Champ label="Sévérité">
           <SelecteurSeverite valeur={severite} onChange={setSeverite} itemId={symptome.id} />
@@ -178,15 +194,17 @@ export function SymptomeFormPage() {
         </div>
       )}
 
-      <Champ label="Note" optionnel>
-        <textarea
-          className={classesInput}
-          rows={3}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Décris ce que tu ressens, le contexte..."
-        />
-      </Champ>
+      {symptome.typeFormulaire !== "texte" && (
+        <Champ label="Note" optionnel>
+          <textarea
+            className={classesInput}
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Décris ce que tu ressens, le contexte..."
+          />
+        </Champ>
+      )}
 
       <CaseImportante valeur={important} onChange={setImportant} />
 

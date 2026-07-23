@@ -296,8 +296,9 @@ export function genererRapportPDF(
       for (const e of evenements) {
         if (e.type !== "symptom") continue;
         const zones = e.location?.map(labelArticulation).join(", ");
+        const niveau = e.severity ? ` (${labelSeverite(e.severity, e.item)})` : "";
         paragraphe(
-          `${formatDateTimeLisible(e.datetime)} — ${libelleEntree(e)} (${labelSeverite(e.severity, e.item)})${
+          `${formatDateTimeLisible(e.datetime)} — ${libelleEntree(e)}${niveau}${
             zones ? ` — Zone(s) : ${zones}` : ""
           }${e.note ? ` — ${e.note}` : ""}`,
           9.5,

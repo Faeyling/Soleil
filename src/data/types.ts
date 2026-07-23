@@ -15,7 +15,8 @@ interface EntreeBase {
 export interface EntreeSymptome extends EntreeBase {
   type: "symptom";
   item: string; // slug du symptôme
-  severity: Severite;
+  /** Absent pour un symptôme en saisie "texte" (ex. "Autre") — la description vit alors dans `note`. */
+  severity?: Severite;
   location?: string[];
 }
 
@@ -82,8 +83,8 @@ export interface SymptomeDef {
   icone: string;
   /** Si vrai, le formulaire propose une sélection d'articulations/zones concernées. */
   localisable?: boolean;
-  /** Échelle de saisie : "severite" (Bas/Moyen/Haut, par défaut) ou "ouinon" — ex. luxation/subluxation, un événement plutôt qu'une intensité. */
-  typeFormulaire?: "severite" | "ouinon";
+  /** Échelle de saisie : "severite" (Bas/Moyen/Haut, par défaut), "ouinon" — ex. luxation/subluxation, un événement plutôt qu'une intensité — ou "texte" — description libre, ex. "Autre". */
+  typeFormulaire?: "severite" | "ouinon" | "texte";
   /** Si vrai, le symptôme est désactivé : il n'apparaît plus dans la grille "Signaler un symptôme" ni dans le parcours quotidien, mais reste éditable, réactivable, et ses entrées déjà enregistrées restent pleinement consultables. */
   desactive?: boolean;
   /** Position d'affichage dans la grille — les éléments par défaut gardent leur ordre d'origine, les ajouts arrivent en fin de liste. */
