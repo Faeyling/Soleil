@@ -7,7 +7,7 @@
  * - #b60000 → niveau de sévérité "Sévère"
  * - #F2D8F2 → foncé en #E9BDE9 → Médicaments (--color-rose)
  * - #84B8D9 → niveau "Crise" + rayures de la Zone de danger (--color-severite-crise)
- * - #C5D9A7 → foncé en #B5CE8E → Symptômes + niveau "Bas" (--color-terracotta, réutilisé pour --color-sauge)
+ * - #C5D9A7 → foncé en #A5C375 → Symptômes + niveau "Bas" (--color-terracotta, réutilisé pour --color-sauge)
  * - #F2A663 → Activités + niveau "Moyen" (--color-ocre)
  * - #D97855 → mise en valeur transverse (--color-ardoise, ex-bleu)
  * - #D97855 → couleur de fond (dérivée en teinte très claire)
@@ -25,7 +25,7 @@
  * fichiers ; on garde donc les noms et on change seulement les valeurs.
  *
  * Les niveaux de sévérité "Bas"/"Moyen" reprennent exactement la même
- * teinte que Symptômes/Activités (#B5CE8E/#F2A663) — là où ce pastel sert
+ * teinte que Symptômes/Activités (#A5C375/#F2A663) — là où ce pastel sert
  * de couleur de TEXTE direct (corrélations), le composant utilise
  * --color-texte plutôt que la couleur de sévérité elle-même.
  */
@@ -45,10 +45,10 @@
      du marron. */
   --color-texte-sur-danger: #ffffff;
 
-  /* Symptômes + niveau "Bas" — vert sauge, légèrement foncé par rapport à la teinte fournie (#c5d9a7). */
-  --color-terracotta: #b5ce8e;
+  /* Symptômes + niveau "Bas" — vert sauge, foncé en deux passes par rapport à la teinte fournie (#c5d9a7). */
+  --color-terracotta: #a5c375;
   --color-terracotta-fonce: #51682d;
-  --color-terracotta-clair: #b5ce8e;
+  --color-terracotta-clair: #a5c375;
 
   /* Mise en valeur transverse (bouton principal, focus, sélections actives,
      "aujourd'hui" du calendrier) — terracotta, exactement la teinte fournie. */
@@ -67,9 +67,9 @@
   --color-ocre-clair: #f2a663;
 
   /* Accent vert sauge — confirmations, Ressources, 4e teinte des graphiques : même teinte que Symptômes. */
-  --color-sauge: #b5ce8e;
+  --color-sauge: #a5c375;
   --color-sauge-fonce: #51682d;
-  --color-sauge-clair: #b5ce8e;
+  --color-sauge-clair: #a5c375;
 
   --color-sable: #cbb08a;
   --color-marine: #2f3e52;
@@ -80,7 +80,7 @@
      qui a besoin d'afficher une valeur (corrélations) reste en --color-texte
      plutôt que dans la couleur de sévérité elle-même, trop claire pour du texte.
      Cas particulier du sommeil (labels "Sévère" au lieu de "Haut"), voir src/lib/severite.ts. */
-  --color-severite-bas: #b5ce8e;
+  --color-severite-bas: #a5c375;
   --color-severite-moyen: #f2a663;
   --color-severite-haut: #b60000;
   /* Niveau "Crise" — bleu donné, utilisé tel quel (jamais de texte blanc direct dessus). */
@@ -108,9 +108,9 @@
   --color-texte-sur-accent: #1e1712;
   --color-texte-sur-danger: #1e1712;
 
-  --color-terracotta: #b5ce8e;
-  --color-terracotta-fonce: #b5ce8e;
-  --color-terracotta-clair: color-mix(in srgb, #b5ce8e 20%, #1e1712);
+  --color-terracotta: #a5c375;
+  --color-terracotta-fonce: #a5c375;
+  --color-terracotta-clair: color-mix(in srgb, #a5c375 20%, #1e1712);
 
   --color-ardoise: #d97855;
   --color-ardoise-fonce: #e2997f;
@@ -124,15 +124,15 @@
   --color-ocre-fonce: #f2a663;
   --color-ocre-clair: color-mix(in srgb, #f2a663 20%, #1e1712);
 
-  --color-sauge: #b5ce8e;
-  --color-sauge-fonce: #b5ce8e;
-  --color-sauge-clair: color-mix(in srgb, #b5ce8e 20%, #1e1712);
+  --color-sauge: #a5c375;
+  --color-sauge-fonce: #a5c375;
+  --color-sauge-clair: color-mix(in srgb, #a5c375 20%, #1e1712);
 
   --color-sable: #cbb08a;
   --color-marine: #91adca;
   --color-caramel: #ca9572;
 
-  --color-severite-bas: #b5ce8e;
+  --color-severite-bas: #a5c375;
   --color-severite-moyen: #f2a663;
   --color-severite-haut: #ff2222;
   --color-severite-crise: #84b8d9;
