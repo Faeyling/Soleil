@@ -22,7 +22,7 @@ import { proposerAnnulation } from "../../lib/toastAnnulerStore";
 import {
   dateDepuisDatetimeLocal,
   datetimeLocalValue,
-  formatDateTimeLisible,
+  formatDateLisible,
   isoDepuisDatetimeLocal,
   maintenantISO,
 } from "../../lib/date";
@@ -268,7 +268,7 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
               className="w-full flex items-center justify-between py-3 text-left cursor-pointer hover:bg-fond-douce rounded-lg px-2"
             >
               <span>
-                <span className="block text-sm font-semibold">{formatDateTimeLisible(p.datetime)}</span>
+                <span className="block text-sm font-semibold">{formatDateLisible(p.date)}</span>
                 {p.dose && <span className="block text-xs text-texte-doux">Dose : {p.dose}</span>}
               </span>
               <span className="text-texte-doux" aria-hidden="true">
