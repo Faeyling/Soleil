@@ -4,7 +4,7 @@ import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
 import { SECTIONS } from "../../lib/sections";
 import { useSuivis } from "../../content/autresSuivis";
-import { ajouterSuivi, modifierSuivi } from "../../data/repositories/contenuRepository";
+import { ajouterSuivi, modifierSuivi, deplacerSuivi } from "../../data/repositories/contenuRepository";
 import type { SuiviDef, TypeFormulaireSuivi } from "../../data/types";
 
 interface FormulaireSuivi {
@@ -173,8 +173,26 @@ export function GererSuivisPage() {
       )}
 
       <div className="divide-y divide-bordure">
-        {suivisActifs.map((s) => (
+        {suivisActifs.map((s, i) => (
           <div key={s.id} className="flex items-center gap-3 py-3">
+            <div className="flex flex-col">
+              <button
+                onClick={() => void deplacerSuivi(s.id, "haut")}
+                disabled={i === 0}
+                aria-label={`Monter ${s.label}`}
+                className="w-6 h-5 flex items-center justify-center text-texte-doux hover:text-texte cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
+              >
+                ▲
+              </button>
+              <button
+                onClick={() => void deplacerSuivi(s.id, "bas")}
+                disabled={i === suivisActifs.length - 1}
+                aria-label={`Descendre ${s.label}`}
+                className="w-6 h-5 flex items-center justify-center text-texte-doux hover:text-texte cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
+              >
+                ▼
+              </button>
+            </div>
             <span className="text-xl" aria-hidden="true">
               {s.icone}
             </span>

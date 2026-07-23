@@ -7,6 +7,8 @@ import {
   decrementerStock,
   desactiverMedicament,
   reactiverMedicament,
+  deplacerMedicament,
+  listerMedicaments,
 } from "./medicamentsRepository";
 import { creerEntree } from "./entreesRepository";
 
@@ -140,5 +142,55 @@ describe("supprimerMedicament", () => {
     expect(await db.entrees.count()).toBe(1);
     const restante = await db.entrees.toArray();
     expect(restante[0].item).toBe(b.id);
+  });
+});
+
+describe("deplacerMedicament", () => {
+  it("échange l'ordre avec le voisin du dessus", async () => {
+    const a = await ajouterMedicament("Ibuprofène");
+    const b = await ajouterMedicament("Magnésium");
+
+    await deplacerMedicament(b.id, "haut");
+
+    const liste = await listerMedicaments();
+    expect(liste.map((m) => m.id)).toEqual([b.id, a.id]);
+  });
+
+  it("ne fait rien si le médicament est déjà en dernière position", async () => {
+    await ajouterMedicament("Ibuprofène");
+    const b = await ajouterMedicament("Magnésium");
+
+    await deplacerMedicament(b.id, "bas");
+
+    const liste = await listerMedicaments();
+    expect(liste.map((m) => m.nom)).toEqual(["Ibuprofène", "Magnésium"]);
+  });
+
+  it("normalise l'ordre alphabétique des médicaments sans `ordre` (ex. restaurés depuis une ancienne sauvegarde)", async () => {
+    await db.medicaments.bulkAdd([
+      { id: "m-zolpidem", nom: "Zolpidem", createdAt: "2026-07-20T00:00:00.000Z" },
+      { id: "m-aspirine", nom: "Aspirine", createdAt: "2026-07-20T00:00:00.000Z" },
+    ]);
+
+    // Sans `ordre` explicite, la liste part de l'ordre alphabétique.
+    const avant = await listerMedicaments();
+    expect(avant.map((m) => m.nom)).toEqual(["Aspirine", "Zolpidem"]);
+
+    await deplacerMedicament("m-zolpidem", "haut");
+
+    const apres = await listerMedicaments();
+    expect(apres.map((m) => m.nom)).toEqual(["Zolpidem", "Aspirine"]);
+  });
+
+  it("ignore les médicaments désactivés lors du calcul des voisins", async () => {
+    const a = await ajouterMedicament("Aspirine");
+    const b = await ajouterMedicament("Ibuprofène");
+    const c = await ajouterMedicament("Magnésium");
+    await desactiverMedicament(b.id);
+
+    await deplacerMedicament(c.id, "haut");
+
+    const liste = await listerMedicaments();
+    expect(liste.filter((m) => !m.desactive).map((m) => m.id)).toEqual([c.id, a.id]);
   });
 });

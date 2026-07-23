@@ -8,6 +8,8 @@ import {
   ajouterSuivi,
   modifierSuivi,
   supprimerSuivi,
+  deplacerSymptome,
+  deplacerSuivi,
 } from "./contenuRepository";
 import { SYMPTOMES_PAR_DEFAUT } from "../../content/symptomes";
 import { AUTRES_SUIVIS_PAR_DEFAUT } from "../../content/autresSuivis";
@@ -92,5 +94,60 @@ describe("ajouterSuivi / modifierSuivi / supprimerSuivi", () => {
     const relu = await db.autresSuivis.get(suivi.id);
     expect(relu?.desactive).toBe(false);
     expect(relu?.label).toBe("Piscine");
+  });
+});
+
+describe("deplacerSymptome", () => {
+  it("échange l'ordre avec le voisin du dessus", async () => {
+    const a = await ajouterSymptome({ icone: "🩹", label: "A" });
+    const b = await ajouterSymptome({ icone: "🩹", label: "B" });
+
+    await deplacerSymptome(b.id, "haut");
+
+    expect((await db.symptomes.get(a.id))?.ordre).toBe(b.ordre);
+    expect((await db.symptomes.get(b.id))?.ordre).toBe(a.ordre);
+  });
+
+  it("ne fait rien si l'élément est déjà en première position", async () => {
+    const a = await ajouterSymptome({ icone: "🩹", label: "A" });
+    await ajouterSymptome({ icone: "🩹", label: "B" });
+
+    await deplacerSymptome(a.id, "haut");
+
+    expect((await db.symptomes.get(a.id))?.ordre).toBe(a.ordre);
+  });
+
+  it("ignore les symptômes désactivés lors du calcul des voisins", async () => {
+    const a = await ajouterSymptome({ icone: "🩹", label: "A" });
+    const b = await ajouterSymptome({ icone: "🩹", label: "B" });
+    const c = await ajouterSymptome({ icone: "🩹", label: "C" });
+    await modifierSymptome(b.id, { desactive: true });
+
+    await deplacerSymptome(c.id, "haut");
+
+    expect((await db.symptomes.get(a.id))?.ordre).toBe(c.ordre);
+    expect((await db.symptomes.get(c.id))?.ordre).toBe(a.ordre);
+    expect((await db.symptomes.get(b.id))?.ordre).toBe(b.ordre);
+  });
+});
+
+describe("deplacerSuivi", () => {
+  it("échange l'ordre avec le voisin du dessous", async () => {
+    const a = await ajouterSuivi({ icone: "🏊", label: "A", typeFormulaire: "severite" });
+    const b = await ajouterSuivi({ icone: "🏊", label: "B", typeFormulaire: "severite" });
+
+    await deplacerSuivi(a.id, "bas");
+
+    expect((await db.autresSuivis.get(a.id))?.ordre).toBe(b.ordre);
+    expect((await db.autresSuivis.get(b.id))?.ordre).toBe(a.ordre);
+  });
+
+  it("ne fait rien si l'élément est déjà en dernière position", async () => {
+    await ajouterSuivi({ icone: "🏊", label: "A", typeFormulaire: "severite" });
+    const b = await ajouterSuivi({ icone: "🏊", label: "B", typeFormulaire: "severite" });
+
+    await deplacerSuivi(b.id, "bas");
+
+    expect((await db.autresSuivis.get(b.id))?.ordre).toBe(b.ordre);
   });
 });

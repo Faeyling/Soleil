@@ -1,4 +1,5 @@
 import { v4 as uuid } from "uuid";
+import type { Table } from "dexie";
 import { db } from "../db";
 import type { SymptomeDef, SuiviDef } from "../types";
 import { SYMPTOMES_PAR_DEFAUT } from "../../content/symptomes";
@@ -42,4 +43,33 @@ export async function modifierSuivi(id: string, changements: Partial<Omit<SuiviD
 
 export async function supprimerSuivi(id: string): Promise<void> {
   await db.autresSuivis.delete(id);
+}
+
+/** Échange la position (`ordre`) d'un élément actif avec son voisin dans la liste active (les éléments masqués, ex. la note de fin de journée, ne comptent pas comme voisins). */
+async function deplacerDansListe<T extends { id: string; ordre: number; desactive?: boolean; masque?: boolean }>(
+  table: Table<T, string>,
+  id: string,
+  direction: "haut" | "bas",
+): Promise<void> {
+  const actifs = (await table.toArray())
+    .filter((item) => !item.desactive && !item.masque)
+    .sort((a, b) => a.ordre - b.ordre);
+  const index = actifs.findIndex((item) => item.id === id);
+  if (index === -1) return;
+  const cible = direction === "haut" ? index - 1 : index + 1;
+  if (cible < 0 || cible >= actifs.length) return;
+  const a = actifs[index];
+  const b = actifs[cible];
+  await table.bulkPut([
+    { ...a, ordre: b.ordre },
+    { ...b, ordre: a.ordre },
+  ]);
+}
+
+export async function deplacerSymptome(id: string, direction: "haut" | "bas"): Promise<void> {
+  await deplacerDansListe(db.symptomes, id, direction);
+}
+
+export async function deplacerSuivi(id: string, direction: "haut" | "bas"): Promise<void> {
+  await deplacerDansListe(db.autresSuivis, id, direction);
 }

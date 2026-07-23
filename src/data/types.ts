@@ -52,6 +52,8 @@ export interface Medicament {
   createdAt: string;
   /** Dose habituelle, éditable à tout moment depuis la fiche du médicament — préremplit (sans l'imposer) la dose à chaque nouvelle prise enregistrée. */
   doseHabituelle?: string;
+  /** Position d'affichage dans "Mes médicaments" — absent pour les médicaments créés avant l'ajout du tri manuel (tri alphabétique de repli, voir medicamentsRepository). */
+  ordre?: number;
   /** Nombre de prises restantes, si l'utilisateur suit son stock pour ce médicament. */
   stock?: number;
   /** Seuil en dessous duquel une alerte de stock bas est affichée. */

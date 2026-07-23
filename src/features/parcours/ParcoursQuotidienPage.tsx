@@ -244,7 +244,7 @@ export function ParcoursQuotidienPage() {
             Suivant
           </Bouton>
         ) : (
-          <Bouton couleur={couleurEtape} onClick={terminerParcours}>
+          <Bouton couleur={couleurEtape} style={{ color: "#ffffff" }} onClick={terminerParcours}>
             Terminer
           </Bouton>
         )}

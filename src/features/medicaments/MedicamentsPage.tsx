@@ -5,7 +5,7 @@ import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
 import { SECTIONS } from "../../lib/sections";
 import { useMedicaments } from "../../hooks/useMedicaments";
-import { ajouterMedicament, reactiverMedicament } from "../../data/repositories/medicamentsRepository";
+import { ajouterMedicament, reactiverMedicament, deplacerMedicament } from "../../data/repositories/medicamentsRepository";
 
 export function MedicamentsPage() {
   const navigate = useNavigate();
@@ -92,23 +92,45 @@ export function MedicamentsPage() {
         <p className="text-sm text-texte-doux">Aucun médicament ajouté pour l'instant.</p>
       ) : (
         <div className="grid grid-cols-1 gap-2">
-          {medicamentsActifs.map((m) => (
-            <button
+          {medicamentsActifs.map((m, i) => (
+            <div
               key={m.id}
-              onClick={() => navigate(`/medicaments/${m.id}`)}
-              className="flex items-center gap-3 rounded-xl border border-bordure bg-surface px-4 py-3 text-left cursor-pointer hover:bg-fond-douce"
+              className="flex items-center gap-3 rounded-xl border border-bordure bg-surface px-4 py-3"
             >
-              <span className="text-xl" aria-hidden="true">
-                💊
-              </span>
-              <span className="flex-1 min-w-0">
-                <span className="block font-semibold">{m.nom}</span>
-                {m.doseHabituelle && <span className="block text-xs text-texte-doux truncate">{m.doseHabituelle}</span>}
-              </span>
-              <span className="text-texte-doux" aria-hidden="true">
-                ›
-              </span>
-            </button>
+              <div className="flex flex-col">
+                <button
+                  onClick={() => void deplacerMedicament(m.id, "haut")}
+                  disabled={i === 0}
+                  aria-label={`Monter ${m.nom}`}
+                  className="w-6 h-5 flex items-center justify-center text-texte-doux hover:text-texte cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
+                >
+                  ▲
+                </button>
+                <button
+                  onClick={() => void deplacerMedicament(m.id, "bas")}
+                  disabled={i === medicamentsActifs.length - 1}
+                  aria-label={`Descendre ${m.nom}`}
+                  className="w-6 h-5 flex items-center justify-center text-texte-doux hover:text-texte cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
+                >
+                  ▼
+                </button>
+              </div>
+              <button
+                onClick={() => navigate(`/medicaments/${m.id}`)}
+                className="flex-1 min-w-0 flex items-center gap-3 text-left cursor-pointer"
+              >
+                <span className="text-xl" aria-hidden="true">
+                  💊
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block font-semibold">{m.nom}</span>
+                  {m.doseHabituelle && <span className="block text-xs text-texte-doux truncate">{m.doseHabituelle}</span>}
+                </span>
+                <span className="text-texte-doux" aria-hidden="true">
+                  ›
+                </span>
+              </button>
+            </div>
           ))}
         </div>
       )}

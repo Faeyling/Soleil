@@ -97,7 +97,7 @@ export function AccueilPage() {
           remplis le suivi du jour en une fois.
         </p>
         <BoutonsAction />
-        <Bouton className="mt-2" style={{ color: "#000000" }} onClick={() => navigate("/parcours")}>
+        <Bouton className="mt-2" style={{ color: "#ffffff" }} onClick={() => navigate("/parcours")}>
           Remplir le suivi du jour
         </Bouton>
       </div>
@@ -132,7 +132,7 @@ export function AccueilPage() {
       </div>
 
       {!afficherRappelParcours && (
-        <Bouton className="w-full mb-6" style={{ color: "#000000" }} onClick={() => navigate("/parcours")}>
+        <Bouton className="w-full mb-6" style={{ color: "#ffffff" }} onClick={() => navigate("/parcours")}>
           <span aria-hidden="true">☀️</span> Remplir le suivi du jour
         </Bouton>
       )}

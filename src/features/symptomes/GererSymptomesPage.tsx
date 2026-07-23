@@ -4,7 +4,7 @@ import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
 import { SECTIONS } from "../../lib/sections";
 import { useSymptomes } from "../../content/symptomes";
-import { ajouterSymptome, modifierSymptome } from "../../data/repositories/contenuRepository";
+import { ajouterSymptome, modifierSymptome, deplacerSymptome } from "../../data/repositories/contenuRepository";
 import type { SymptomeDef } from "../../data/types";
 
 type TypeFormulaireSymptome = "severite" | "ouinon" | "texte";
@@ -151,8 +151,26 @@ export function GererSymptomesPage() {
       )}
 
       <div className="divide-y divide-bordure">
-        {symptomesActifs.map((s) => (
+        {symptomesActifs.map((s, i) => (
           <div key={s.id} className="flex items-center gap-3 py-3">
+            <div className="flex flex-col">
+              <button
+                onClick={() => void deplacerSymptome(s.id, "haut")}
+                disabled={i === 0}
+                aria-label={`Monter ${s.label}`}
+                className="w-6 h-5 flex items-center justify-center text-texte-doux hover:text-texte cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
+              >
+                ▲
+              </button>
+              <button
+                onClick={() => void deplacerSymptome(s.id, "bas")}
+                disabled={i === symptomesActifs.length - 1}
+                aria-label={`Descendre ${s.label}`}
+                className="w-6 h-5 flex items-center justify-center text-texte-doux hover:text-texte cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
+              >
+                ▼
+              </button>
+            </div>
             <span className="text-xl" aria-hidden="true">
               {s.icone}
             </span>

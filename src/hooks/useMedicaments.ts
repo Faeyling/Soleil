@@ -4,7 +4,15 @@ import type { Medicament } from "../data/types";
 import { CHARGEMENT, type OuChargement } from "./chargement";
 
 export function useMedicaments(): Medicament[] {
-  return useLiveQuery(() => db.medicaments.orderBy("nom").toArray(), []) ?? [];
+  return (
+    useLiveQuery(async () => {
+      const tous = await db.medicaments.toArray();
+      return [...tous].sort(
+        (a, b) =>
+          (a.ordre ?? Number.MAX_SAFE_INTEGER) - (b.ordre ?? Number.MAX_SAFE_INTEGER) || a.nom.localeCompare(b.nom, "fr"),
+      );
+    }, []) ?? []
+  );
 }
 
 export function useMedicament(id: string | undefined): OuChargement<Medicament | undefined> {
