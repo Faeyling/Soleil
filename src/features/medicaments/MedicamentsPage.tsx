@@ -5,9 +5,7 @@ import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
 import { SECTIONS } from "../../lib/sections";
 import { useMedicaments } from "../../hooks/useMedicaments";
-import { ajouterMedicament, decrementerStock, reactiverMedicament } from "../../data/repositories/medicamentsRepository";
-import { creerEntree } from "../../data/repositories/entreesRepository";
-import { dateDepuisDatetimeLocal, datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
+import { ajouterMedicament, reactiverMedicament } from "../../data/repositories/medicamentsRepository";
 
 export function MedicamentsPage() {
   const navigate = useNavigate();
@@ -16,35 +14,21 @@ export function MedicamentsPage() {
   const medicamentsDesactives = medicaments.filter((m) => m.desactive);
 
   const [nom, setNom] = useState("");
-  const [dose, setDose] = useState("");
-  const [note, setNote] = useState("");
-  const [datetime, setDatetime] = useState(datetimeLocalValue(maintenantISO()));
-  const [confirmation, setConfirmation] = useState(false);
+  const [doseHabituelle, setDoseHabituelle] = useState("");
+  const [afficherFormulaire, setAfficherFormulaire] = useState(false);
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
 
-  const enregistrerPrise = async () => {
+  const ajouter = async () => {
     if (enregistrementEnCours || !nom.trim()) return;
     setEnregistrementEnCours(true);
     try {
-      const medicament = await ajouterMedicament(nom);
-      const iso = isoDepuisDatetimeLocal(datetime);
-      await creerEntree({
-        type: "medication_intake",
-        item: medicament.id,
-        medicationId: medicament.id,
-        medicationName: medicament.nom,
-        dose: dose.trim() || undefined,
-        note: note.trim() || undefined,
-        date: dateDepuisDatetimeLocal(datetime),
-        datetime: iso,
-      });
-      await decrementerStock(medicament.id);
+      const medicament = await ajouterMedicament(nom, doseHabituelle);
       setNom("");
-      setDose("");
-      setNote("");
-      setDatetime(datetimeLocalValue(maintenantISO()));
-      setConfirmation(true);
-      setTimeout(() => setConfirmation(false), 2500);
+      setDoseHabituelle("");
+      setAfficherFormulaire(false);
+      // La prise elle-même ne se log que depuis la fiche du médicament — on
+      // y amène directement pour enchaîner si besoin.
+      navigate(`/medicaments/${medicament.id}`);
     } finally {
       setEnregistrementEnCours(false);
     }
@@ -52,67 +36,56 @@ export function MedicamentsPage() {
 
   return (
     <div>
-      <EnTete titre="Ajouter un médicament" couleur={SECTIONS.medicaments.couleurFonce} />
+      <EnTete titre="Mes médicaments" couleur={SECTIONS.medicaments.couleurFonce} />
 
-      {confirmation && (
-        <div className="mb-4 rounded-xl bg-sauge-clair text-sauge-fonce px-4 py-3 text-sm">
-          <span aria-hidden="true">✓ </span>
-          Prise enregistrée !
-        </div>
-      )}
+      <p className="text-sm text-texte-doux mb-4">
+        Ajoute un médicament à ta liste personnelle. Tu pourras ensuite enregistrer une prise,
+        suivre ton stock et modifier sa dose habituelle depuis sa fiche.
+      </p>
 
-      <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4 mb-6">
-        <Champ label="Nom du médicament / traitement">
-          <input
-            className={classesInput}
-            list="liste-medicaments"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            placeholder="Ex. Ibuprofène"
-          />
-          <datalist id="liste-medicaments">
-            {medicaments
-              .filter((m) => !m.desactive)
-              .map((m) => (
+      {afficherFormulaire ? (
+        <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4 mb-6">
+          <Champ label="Nom du médicament / traitement">
+            <input
+              className={classesInput}
+              list="liste-medicaments"
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              placeholder="Ex. Ibuprofène"
+            />
+            <datalist id="liste-medicaments">
+              {medicamentsActifs.map((m) => (
                 <option key={m.id} value={m.nom} />
               ))}
-          </datalist>
-        </Champ>
-        <Champ label="Dose" optionnel>
-          <input
-            className={classesInput}
-            value={dose}
-            onChange={(e) => setDose(e.target.value)}
-            placeholder="Ex. 400mg, 2 comprimés, 10 gouttes..."
-          />
-        </Champ>
-        <Champ label="Date et heure de la prise">
-          <input
-            type="datetime-local"
-            className={classesInput}
-            value={datetime}
-            max={datetimeLocalValue(maintenantISO())}
-            onChange={(e) => setDatetime(e.target.value)}
-          />
-        </Champ>
-        <Champ label="Note" optionnel>
-          <textarea
-            className={classesInput}
-            rows={2}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Fréquence, moment de prise, effet ressenti..."
-          />
-        </Champ>
-        <Bouton
-          className="w-full"
-          couleur={SECTIONS.medicaments.couleur}
-          onClick={enregistrerPrise}
-          disabled={!nom.trim() || enregistrementEnCours}
-        >
-          Enregistrer la prise
+            </datalist>
+          </Champ>
+          <Champ label="Dose habituelle" optionnel>
+            <input
+              className={classesInput}
+              value={doseHabituelle}
+              onChange={(e) => setDoseHabituelle(e.target.value)}
+              placeholder="Ex. 400mg, 2 comprimés, 10 gouttes..."
+            />
+          </Champ>
+          <div className="flex gap-3">
+            <Bouton
+              className="flex-1"
+              couleur={SECTIONS.medicaments.couleur}
+              onClick={ajouter}
+              disabled={!nom.trim() || enregistrementEnCours}
+            >
+              Ajouter à ma liste
+            </Bouton>
+            <Bouton variante="contour" couleur={SECTIONS.medicaments.couleur} onClick={() => setAfficherFormulaire(false)}>
+              Annuler
+            </Bouton>
+          </div>
+        </div>
+      ) : (
+        <Bouton className="w-full mb-6" couleur={SECTIONS.medicaments.couleur} onClick={() => setAfficherFormulaire(true)}>
+          <span aria-hidden="true">➕</span> Ajouter un médicament
         </Bouton>
-      </div>
+      )}
 
       <h2 className="font-bold text-lg mb-2">Mes médicaments</h2>
       {medicamentsActifs.length === 0 ? (
@@ -128,7 +101,13 @@ export function MedicamentsPage() {
               <span className="text-xl" aria-hidden="true">
                 💊
               </span>
-              <span className="font-semibold">{m.nom}</span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-semibold">{m.nom}</span>
+                {m.doseHabituelle && <span className="block text-xs text-texte-doux truncate">{m.doseHabituelle}</span>}
+              </span>
+              <span className="text-texte-doux" aria-hidden="true">
+                ›
+              </span>
             </button>
           ))}
         </div>
@@ -139,7 +118,8 @@ export function MedicamentsPage() {
           <h2 className="font-bold text-lg mb-1">Désactivés</h2>
           <p className="text-xs text-texte-doux mb-3">
             N'apparaissent plus ici ni dans le parcours quotidien. Réactive-les à tout moment, ou
-            enregistre simplement une nouvelle prise pour les réactiver automatiquement.
+            enregistre simplement une nouvelle prise depuis leur fiche pour les réactiver
+            automatiquement.
           </p>
           <div className="grid grid-cols-1 gap-2">
             {medicamentsDesactives.map((m) => (

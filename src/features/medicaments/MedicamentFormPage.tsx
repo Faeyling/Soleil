@@ -14,10 +14,18 @@ import {
   desactiverMedicament,
   reactiverMedicament,
   definirStock,
+  definirDoseHabituelle,
+  decrementerStock,
 } from "../../data/repositories/medicamentsRepository";
-import { modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
+import { creerEntree, modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
 import { proposerAnnulation } from "../../lib/toastAnnulerStore";
-import { dateDepuisDatetimeLocal, datetimeLocalValue, formatDateTimeLisible, isoDepuisDatetimeLocal } from "../../lib/date";
+import {
+  dateDepuisDatetimeLocal,
+  datetimeLocalValue,
+  formatDateTimeLisible,
+  isoDepuisDatetimeLocal,
+  maintenantISO,
+} from "../../lib/date";
 import type { EntreePriseMedicament, Medicament } from "../../data/types";
 
 export function MedicamentFormPage() {
@@ -53,15 +61,24 @@ interface GestionMedicamentProps {
 function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicamentProps) {
   const navigate = useNavigate();
   const [nom, setNom] = useState(medicament?.nom ?? "");
+  const [doseHabituelle, setDoseHabituelle] = useState("");
   const [stock, setStock] = useState("");
   const [seuilAlerte, setSeuilAlerte] = useState("");
   const [chargePour, setChargePour] = useState<string | undefined>();
 
+  const [dosePrise, setDosePrise] = useState("");
+  const [notePrise, setNotePrise] = useState("");
+  const [datetimePrise, setDatetimePrise] = useState(datetimeLocalValue(maintenantISO()));
+  const [confirmationPrise, setConfirmationPrise] = useState(false);
+  const [enregistrementPriseEnCours, setEnregistrementPriseEnCours] = useState(false);
+
   if (medicament !== undefined && chargePour !== medicamentId) {
     setChargePour(medicamentId);
     setNom(medicament.nom);
+    setDoseHabituelle(medicament.doseHabituelle ?? "");
     setStock(medicament.stock != null ? String(medicament.stock) : "");
     setSeuilAlerte(medicament.seuilAlerte != null ? String(medicament.seuilAlerte) : "");
+    setDosePrise(medicament.doseHabituelle ?? "");
   }
 
   if (medicament === undefined) {
@@ -71,6 +88,10 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
   const enregistrerNom = async () => {
     if (!nom.trim()) return;
     await renommerMedicament(medicamentId, nom);
+  };
+
+  const enregistrerDoseHabituelle = async () => {
+    await definirDoseHabituelle(medicamentId, doseHabituelle);
   };
 
   const enregistrerStock = async () => {
@@ -89,6 +110,36 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
     }
   };
 
+  const enregistrerNouvellePrise = async () => {
+    if (enregistrementPriseEnCours) return;
+    setEnregistrementPriseEnCours(true);
+    try {
+      // Enregistrer une prise pour un médicament désactivé le réactive
+      // implicitement — sinon la prise fraîchement enregistrée référencerait
+      // un médicament resté invisible dans "Mes médicaments".
+      if (medicament.desactive) await reactiverMedicament(medicamentId);
+      const iso = isoDepuisDatetimeLocal(datetimePrise);
+      await creerEntree({
+        type: "medication_intake",
+        item: medicamentId,
+        medicationId: medicamentId,
+        medicationName: medicament.nom,
+        dose: dosePrise.trim() || undefined,
+        note: notePrise.trim() || undefined,
+        date: dateDepuisDatetimeLocal(datetimePrise),
+        datetime: iso,
+      });
+      await decrementerStock(medicamentId);
+      setDosePrise(medicament.doseHabituelle ?? "");
+      setNotePrise("");
+      setDatetimePrise(datetimeLocalValue(maintenantISO()));
+      setConfirmationPrise(true);
+      setTimeout(() => setConfirmationPrise(false), 2500);
+    } finally {
+      setEnregistrementPriseEnCours(false);
+    }
+  };
+
   const stockBas =
     medicament.stock != null && medicament.seuilAlerte != null && medicament.stock <= medicament.seuilAlerte;
 
@@ -103,6 +154,23 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
             Renommer
           </Bouton>
         </div>
+      </Champ>
+
+      <Champ label="Dose habituelle" optionnel>
+        <div className="flex gap-2">
+          <input
+            className={classesInput}
+            value={doseHabituelle}
+            onChange={(e) => setDoseHabituelle(e.target.value)}
+            placeholder="Ex. 400mg, 2 comprimés, 10 gouttes..."
+          />
+          <Bouton couleur={SECTIONS.medicaments.couleur} onClick={enregistrerDoseHabituelle}>
+            Enregistrer
+          </Bouton>
+        </div>
+        <p className="text-xs text-texte-doux mt-1">
+          Préremplit (sans l'imposer) le champ dose à chaque nouvelle prise.
+        </p>
       </Champ>
 
       {stockBas && (
@@ -141,6 +209,52 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
           Décrémenté d'une unité à chaque prise enregistrée. Laisse vide pour ne pas suivre le stock.
         </p>
       </Champ>
+
+      <h2 className="font-bold text-lg mt-6 mb-2">Enregistrer une prise</h2>
+
+      {confirmationPrise && (
+        <div className="mb-4 rounded-xl bg-sauge-clair text-sauge-fonce px-4 py-3 text-sm">
+          <span aria-hidden="true">✓ </span>
+          Prise enregistrée !
+        </div>
+      )}
+
+      <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4 mb-6">
+        <Champ label="Dose" optionnel>
+          <input
+            className={classesInput}
+            value={dosePrise}
+            onChange={(e) => setDosePrise(e.target.value)}
+            placeholder="Ex. 400mg, 2 comprimés, 10 gouttes..."
+          />
+        </Champ>
+        <Champ label="Date et heure de la prise">
+          <input
+            type="datetime-local"
+            className={classesInput}
+            value={datetimePrise}
+            max={datetimeLocalValue(maintenantISO())}
+            onChange={(e) => setDatetimePrise(e.target.value)}
+          />
+        </Champ>
+        <Champ label="Note" optionnel>
+          <textarea
+            className={classesInput}
+            rows={2}
+            value={notePrise}
+            onChange={(e) => setNotePrise(e.target.value)}
+            placeholder="Fréquence, moment de prise, effet ressenti..."
+          />
+        </Champ>
+        <Bouton
+          className="w-full"
+          couleur={SECTIONS.medicaments.couleur}
+          onClick={enregistrerNouvellePrise}
+          disabled={enregistrementPriseEnCours}
+        >
+          Enregistrer la prise
+        </Bouton>
+      </div>
 
       <h2 className="font-bold text-lg mt-6 mb-2">Historique des prises</h2>
       {prises.length === 0 ? (

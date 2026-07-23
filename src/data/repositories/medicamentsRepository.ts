@@ -11,7 +11,7 @@ export async function obtenirMedicament(id: string): Promise<Medicament | undefi
   return db.medicaments.get(id);
 }
 
-export async function ajouterMedicament(nom: string): Promise<Medicament> {
+export async function ajouterMedicament(nom: string, doseHabituelle?: string): Promise<Medicament> {
   const nomPropre = nom.trim();
   const existant = await db.medicaments
     .filter((m) => m.nom.toLowerCase() === nomPropre.toLowerCase())
@@ -30,6 +30,7 @@ export async function ajouterMedicament(nom: string): Promise<Medicament> {
   const medicament: Medicament = {
     id: uuid(),
     nom: nomPropre,
+    doseHabituelle: doseHabituelle?.trim() || undefined,
     createdAt: maintenantISO(),
   };
   await db.medicaments.add(medicament);
@@ -38,6 +39,11 @@ export async function ajouterMedicament(nom: string): Promise<Medicament> {
 
 export async function renommerMedicament(id: string, nom: string): Promise<void> {
   await db.medicaments.update(id, { nom: nom.trim() });
+}
+
+/** Dose habituelle éditable à tout moment depuis la fiche du médicament, indépendamment de toute prise. */
+export async function definirDoseHabituelle(id: string, doseHabituelle: string): Promise<void> {
+  await db.medicaments.update(id, { doseHabituelle: doseHabituelle.trim() || undefined });
 }
 
 export async function definirStock(

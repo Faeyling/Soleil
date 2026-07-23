@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { Entree } from "../../data/types";
 import { libelleEntree, iconeEntree, sousTitreEntree } from "../../lib/libelleEntree";
-import { formatDateTimeLisible } from "../../lib/date";
+import { formatDateLisible } from "../../lib/date";
 import { Pastille } from "./Pastille";
 
 interface LigneEntreeProps {
@@ -32,7 +32,7 @@ export function LigneEntree({ entree }: LigneEntreeProps) {
       <span className="flex-1 min-w-0">
         <span className="block font-semibold text-sm truncate">{libelleEntree(entree)}</span>
         <span className="block text-xs text-texte-doux truncate">
-          {formatDateTimeLisible(entree.datetime)}
+          {formatDateLisible(entree.date)}
           {sousTitre ? ` · ${sousTitre}` : ""}
         </span>
       </span>

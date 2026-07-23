@@ -119,7 +119,7 @@ export function AccueilPage() {
         />
         <ActionRonde
           icone="💊"
-          label="Ajouter un médicament"
+          label="Médicaments"
           couleur={SECTIONS.medicaments.couleur}
           onClick={() => navigate("/medicaments")}
         />
@@ -131,9 +131,11 @@ export function AccueilPage() {
         />
       </div>
 
-      <Bouton className="w-full mb-6" onClick={() => navigate("/parcours")}>
-        <span aria-hidden="true">☀️</span> Remplir le suivi du jour
-      </Bouton>
+      {!afficherRappelParcours && (
+        <Bouton className="w-full mb-6" onClick={() => navigate("/parcours")}>
+          <span aria-hidden="true">☀️</span> Remplir le suivi du jour
+        </Bouton>
+      )}
 
       {afficherRappelParcours && (
         <BanniereRappel
@@ -261,7 +263,7 @@ function BoutonsAction() {
       />
       <ActionRonde
         icone="💊"
-        label="Ajouter un médicament"
+        label="Médicaments"
         couleur={SECTIONS.medicaments.couleur}
         onClick={() => navigate("/medicaments")}
       />
