@@ -37,11 +37,10 @@
   --color-texte-doux: #6b5a4e;
   --color-bordure: #e7cfb5;
   /* Couleur du texte posé sur un fond "accent" plein (boutons, badges) —
-     marron en clair (les teintes de la palette fournie sont des pastels
-     clairs : le blanc n'y est pas assez lisible), légèrement éclairci et
-     désaturé par rapport au marron d'origine (#4e433c), texte sombre en
+     marron foncé en clair (les teintes de la palette fournie sont des
+     pastels clairs : le blanc n'y est pas assez lisible), texte sombre en
      sombre. */
-  --color-texte-sur-accent: #575452;
+  --color-texte-sur-accent: #3a2e1c;
   /* Cas particulier du bouton "danger" (fond rouge "Sévère", pas un pastel
      clair) : blanc en clair, comme --color-texte-sur-accent avant l'ajout
      du marron. */
