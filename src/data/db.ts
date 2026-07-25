@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef, MedecinDef } from "./types";
+import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef, MedecinDef, Marqueur } from "./types";
 
 export interface Parametre {
   cle: string;
@@ -14,6 +14,7 @@ export class SoleilDatabase extends Dexie {
   symptomes!: Table<SymptomeDef, string>;
   autresSuivis!: Table<SuiviDef, string>;
   medecins!: Table<MedecinDef, string>;
+  marqueurs!: Table<Marqueur, string>;
 
   constructor() {
     super("soleil-db");
@@ -40,6 +41,11 @@ export class SoleilDatabase extends Dexie {
     // éditable ci-dessus.
     this.version(4).stores({
       medecins: "id, createdAt",
+    });
+    // Repères datés (ex. début d'un traitement) affichés sur le graphique
+    // d'évolution — en app et dans le rapport PDF.
+    this.version(5).stores({
+      marqueurs: "id, date",
     });
   }
 }

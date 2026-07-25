@@ -1,5 +1,5 @@
 import { db } from "../db";
-import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef, MedecinDef } from "../types";
+import type { Entree, Medicament, RessourceNote, SymptomeDef, SuiviDef, MedecinDef, Marqueur } from "../types";
 import { TYPES_UNIQUES } from "./entreesRepository";
 
 // v1 : entrees/medicaments/ressourcesNotes uniquement. v2 : ajoute les
@@ -7,8 +7,9 @@ import { TYPES_UNIQUES } from "./entreesRepository";
 // / GererSuivisPage) — sans elles, restaurer une sauvegarde sur un autre
 // appareil perdait silencieusement les symptômes/activités ajoutés,
 // renommés ou retirés par la personne qui utilise l'app. v3 : ajoute le
-// carnet d'adresses des médecins (voir RessourcesPage).
-const VERSION_SAUVEGARDE = 3;
+// carnet d'adresses des médecins (voir RessourcesPage). v4 : ajoute les
+// marqueurs (ex. début de traitement) affichés sur le graphique d'évolution.
+const VERSION_SAUVEGARDE = 4;
 
 export interface Sauvegarde {
   app: "soleil";
@@ -22,16 +23,19 @@ export interface Sauvegarde {
   autresSuivis?: SuiviDef[];
   /** Absent dans les sauvegardes v1/v2 — les médecins déjà enregistrés sur l'appareil restent alors en place. */
   medecins?: MedecinDef[];
+  /** Absent dans les sauvegardes v1/v2/v3 — les marqueurs déjà enregistrés sur l'appareil restent alors en place. */
+  marqueurs?: Marqueur[];
 }
 
 export async function exporterDonnees(): Promise<Sauvegarde> {
-  const [entrees, medicaments, ressourcesNotes, symptomes, autresSuivis, medecins] = await Promise.all([
+  const [entrees, medicaments, ressourcesNotes, symptomes, autresSuivis, medecins, marqueurs] = await Promise.all([
     db.entrees.toArray(),
     db.medicaments.toArray(),
     db.ressourcesNotes.toArray(),
     db.symptomes.toArray(),
     db.autresSuivis.toArray(),
     db.medecins.toArray(),
+    db.marqueurs.toArray(),
   ]);
   return {
     app: "soleil",
@@ -43,6 +47,7 @@ export async function exporterDonnees(): Promise<Sauvegarde> {
     symptomes,
     autresSuivis,
     medecins,
+    marqueurs,
   };
 }
 
@@ -71,7 +76,8 @@ export function estSauvegardeValide(data: unknown): data is Sauvegarde {
     Array.isArray(d.ressourcesNotes) &&
     (d.symptomes === undefined || Array.isArray(d.symptomes)) &&
     (d.autresSuivis === undefined || Array.isArray(d.autresSuivis)) &&
-    (d.medecins === undefined || Array.isArray(d.medecins))
+    (d.medecins === undefined || Array.isArray(d.medecins)) &&
+    (d.marqueurs === undefined || Array.isArray(d.marqueurs))
   );
 }
 
@@ -109,7 +115,7 @@ function dedupliquerEntrees(entrees: Entree[]): Entree[] {
 export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
   await db.transaction(
     "rw",
-    [db.entrees, db.medicaments, db.ressourcesNotes, db.symptomes, db.autresSuivis, db.medecins],
+    [db.entrees, db.medicaments, db.ressourcesNotes, db.symptomes, db.autresSuivis, db.medecins, db.marqueurs],
     async () => {
       await Promise.all([
         db.entrees.clear(),
@@ -118,6 +124,7 @@ export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
         ...(sauvegarde.symptomes ? [db.symptomes.clear()] : []),
         ...(sauvegarde.autresSuivis ? [db.autresSuivis.clear()] : []),
         ...(sauvegarde.medecins ? [db.medecins.clear()] : []),
+        ...(sauvegarde.marqueurs ? [db.marqueurs.clear()] : []),
       ]);
       await Promise.all([
         db.entrees.bulkAdd(dedupliquerEntrees(sauvegarde.entrees)),
@@ -126,6 +133,7 @@ export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
         ...(sauvegarde.symptomes ? [db.symptomes.bulkAdd(sauvegarde.symptomes)] : []),
         ...(sauvegarde.autresSuivis ? [db.autresSuivis.bulkAdd(sauvegarde.autresSuivis)] : []),
         ...(sauvegarde.medecins ? [db.medecins.bulkAdd(sauvegarde.medecins)] : []),
+        ...(sauvegarde.marqueurs ? [db.marqueurs.bulkAdd(sauvegarde.marqueurs)] : []),
       ]);
     },
   );
@@ -134,13 +142,14 @@ export async function importerDonnees(sauvegarde: Sauvegarde): Promise<void> {
 export async function supprimerToutesLesDonnees(): Promise<void> {
   await db.transaction(
     "rw",
-    [db.entrees, db.medicaments, db.ressourcesNotes, db.medecins],
+    [db.entrees, db.medicaments, db.ressourcesNotes, db.medecins, db.marqueurs],
     async () => {
       await Promise.all([
         db.entrees.clear(),
         db.medicaments.clear(),
         db.ressourcesNotes.clear(),
         db.medecins.clear(),
+        db.marqueurs.clear(),
       ]);
     },
   );

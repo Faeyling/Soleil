@@ -1,9 +1,11 @@
 import { jsPDF } from "jspdf";
-import type { Entree, Medicament } from "../data/types";
+import type { Entree, EntreeSymptome, Medicament, Marqueur } from "../data/types";
 import { labelSeverite, ordreSeverite, LABEL_SEVERITE, type Severite } from "./severite";
 import { libelleEntree } from "./libelleEntree";
 import { labelArticulation } from "../content/symptomes";
 import { formatDateLisible, formatDateTimeLisible, joursEntre } from "./date";
+import type { EvaluationBeighton } from "../data/repositories/beightonRepository";
+import { LABEL_TRANCHE_AGE_BEIGHTON, seuilPositifBeighton } from "../content/ressources";
 
 export interface OptionsExportPDF {
   inclureSymptomes: boolean;
@@ -14,8 +16,17 @@ export interface OptionsExportPDF {
   inclureGraphiques: boolean;
   /** Clés `"type:item"` des éléments à tracer sur le graphique (ex. "symptom:douleur"). */
   itemsGraphiques: string[];
+  /** Résumé chiffré en tête de rapport (crises, événements notables, prises...). */
+  inclureResume: boolean;
+  /** Dernier score de Beighton enregistré (Ressources), s'il existe. */
+  inclureBeighton: boolean;
   dateDebut: string;
   dateFin: string;
+  /** Affiché en en-tête du rapport pour l'identifier facilement (Profil). */
+  nomPatiente?: string;
+  evaluationBeighton?: EvaluationBeighton;
+  /** Repères datés (ex. début d'un traitement) affichés comme lignes verticales sur le graphique. */
+  marqueurs?: Marqueur[];
 }
 
 const COULEUR_TITRE: [number, number, number] = [169, 86, 58];
@@ -42,6 +53,7 @@ function dessinerGraphique(
   yDepart: number,
   dateDebut: string,
   dateFin: string,
+  marqueurs: Marqueur[],
 ): number {
   const items = itemsGraphiques
     .map((cle) => {
@@ -95,6 +107,21 @@ function dessinerGraphique(
     xGraphe + (jours.length === 1 ? 0 : (index / (jours.length - 1)) * largeurGraphe);
   const yPourNiveau = (niveau: number) => yBas - ((niveau - 1) / 3) * hauteurGraphe;
 
+  // Pas d'étiquette texte sur la ligne elle-même : un marqueur proche d'un
+  // bord du graphique verrait son texte tronqué. Le nom et la date de
+  // chaque marqueur sont listés sous le graphique à la place (voir plus bas).
+  const marqueursAffiches = marqueurs.filter((m) => jours.includes(m.date));
+  if (marqueursAffiches.length > 0) {
+    doc.setDrawColor(140, 110, 90);
+    doc.setLineWidth(0.8);
+    doc.setLineDashPattern([2, 2], 0);
+    for (const marqueur of marqueursAffiches) {
+      const x = xPourJour(jours.indexOf(marqueur.date));
+      doc.line(x, y, x, yBas);
+    }
+    doc.setLineDashPattern([], 0);
+  }
+
   items.forEach((item, indexItem) => {
     const couleur = PALETTE_GRAPHIQUE[indexItem % PALETTE_GRAPHIQUE.length];
     doc.setDrawColor(...couleur);
@@ -143,7 +170,21 @@ function dessinerGraphique(
     xLegende += largeurColonne;
   });
 
-  return yLegende + 24;
+  y = yLegende + 20;
+
+  if (marqueursAffiches.length > 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...COULEUR_DOUX);
+    const texteMarqueurs =
+      "Marqueurs (lignes verticales) : " +
+      marqueursAffiches.map((m) => `${m.label} (${formatDateLisible(m.date)})`).join(" · ");
+    const lignes = doc.splitTextToSize(texteMarqueurs, largeurUtile);
+    doc.text(lignes, margeGauche, y);
+    y += lignes.length * 11 + 6;
+  }
+
+  return y + 4;
 }
 
 export function genererRapportPDF(
@@ -209,6 +250,10 @@ export function genererRapportPDF(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
   doc.setTextColor(...COULEUR_DOUX);
+  if (options.nomPatiente?.trim()) {
+    doc.text(options.nomPatiente.trim(), margeGauche, y);
+    y += 14;
+  }
   doc.text(
     `Période couverte : du ${formatDateLisible(options.dateDebut)} au ${formatDateLisible(options.dateFin)}`,
     margeGauche,
@@ -217,6 +262,39 @@ export function genererRapportPDF(
   y += 14;
   doc.text(`Rapport généré le ${formatDateLisible(new Date().toISOString().slice(0, 10))}`, margeGauche, y);
   y += 26;
+
+  if (options.inclureResume) {
+    titre("Résumé de la période");
+    const symptomesPeriode = entreesPeriode.filter((e): e is EntreeSymptome => e.type === "symptom");
+    const crises = symptomesPeriode.filter((e) => e.severity === "crise").length;
+    const luxations = symptomesPeriode.filter((e) => e.item === "luxation-articulaire").length;
+    const subluxations = symptomesPeriode.filter((e) => e.item === "subluxation-articulaire").length;
+    const bleus = symptomesPeriode.filter((e) => e.item === "bleus").length;
+    const prisesMedicaments = entreesPeriode.filter((e) => e.type === "medication_intake").length;
+    paragraphe(
+      `• ${symptomesPeriode.length} entrée${symptomesPeriode.length > 1 ? "s" : ""} de symptômes, dont ${crises} en niveau « Crise »\n` +
+        `• ${luxations} luxation${luxations > 1 ? "s" : ""} et ${subluxations} subluxation${subluxations > 1 ? "s" : ""} articulaire${luxations + subluxations > 1 ? "s" : ""} signalée${luxations + subluxations > 1 ? "s" : ""}\n` +
+        `• ${bleus} ecchymose${bleus > 1 ? "s" : ""} signalée${bleus > 1 ? "s" : ""}\n` +
+        `• ${prisesMedicaments} prise${prisesMedicaments > 1 ? "s" : ""} de médicament${prisesMedicaments > 1 ? "s" : ""} enregistrée${prisesMedicaments > 1 ? "s" : ""}`,
+    );
+  }
+
+  if (options.inclureBeighton) {
+    titre("Score de Beighton");
+    if (!options.evaluationBeighton) {
+      paragraphe(
+        "Aucune évaluation enregistrée. Calcule ton score de Beighton depuis Ressources pour qu'il apparaisse ici.",
+      );
+    } else {
+      const { composantesCochees, tranche, evalueLe } = options.evaluationBeighton;
+      const score = composantesCochees.length;
+      const seuil = seuilPositifBeighton(tranche);
+      const positif = score >= seuil;
+      paragraphe(
+        `Score : ${score} / 9 — ${positif ? "seuil atteint" : "seuil non atteint"} (>= ${seuil}/9 pour « ${LABEL_TRANCHE_AGE_BEIGHTON[tranche].toLowerCase()} »). Évalué le ${formatDateLisible(evalueLe.slice(0, 10))}. Critère 1 sur 3 de la classification diagnostique du SEDh — voir Ressources.`,
+      );
+    }
+  }
 
   if (options.inclureGraphiques && options.itemsGraphiques.length > 0) {
     y = dessinerGraphique(
@@ -228,6 +306,7 @@ export function genererRapportPDF(
       y,
       options.dateDebut,
       options.dateFin,
+      (options.marqueurs ?? []).filter((m) => m.date >= options.dateDebut && m.date <= options.dateFin),
     );
   }
 

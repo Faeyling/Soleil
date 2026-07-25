@@ -1,14 +1,19 @@
 import { useMemo, useRef, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { useToutesLesEntrees } from "../../hooks/useEntrees";
 import { CHARGEMENT } from "../../hooks/chargement";
 import { useMedicaments } from "../../hooks/useMedicaments";
+import { useMarqueurs } from "../../hooks/useMarqueurs";
 import { Bouton } from "../../components/ui/Bouton";
+import { Champ, classesInput } from "../../components/ui/Champ";
 import { Confirmation } from "../../components/ui/Confirmation";
 import { PERIODES, dateDebutPeriode, type Periode } from "../../lib/periode";
 import { dateDuJour } from "../../lib/date";
 import { genererRapportPDF } from "../../lib/exportPdf";
 import { telechargerCSV } from "../../lib/exportCsv";
 import { libelle } from "../../lib/libelleItem";
+import { getNomPatiente, setNomPatiente } from "../../lib/profilPatiente";
+import { obtenirDerniereEvaluationBeighton } from "../../data/repositories/beightonRepository";
 import { useSymptomes } from "../../content/symptomes";
 import { useSuivis } from "../../content/autresSuivis";
 import {
@@ -41,15 +46,25 @@ export function ProfilPage() {
   const medicaments = useMedicaments();
   const symptomes = useSymptomes();
   const autresSuivis = useSuivis();
+  const marqueurs = useMarqueurs();
+  const evaluationBeighton = useLiveQuery(() => obtenirDerniereEvaluationBeighton(), []);
   const fichierRef = useRef<HTMLInputElement>(null);
 
+  const [nomPatiente, setNomPatienteEtat] = useState<string>(getNomPatiente);
   const [periode, setPeriode] = useState<Periode>("30");
   const [inclureSymptomes, setInclureSymptomes] = useState(true);
   const [inclureMedicaments, setInclureMedicaments] = useState(true);
   const [inclureEvenements, setInclureEvenements] = useState(true);
   const [inclureNotesImportantes, setInclureNotesImportantes] = useState(true);
   const [inclureGraphiques, setInclureGraphiques] = useState(false);
+  const [inclureResume, setInclureResume] = useState(true);
+  const [inclureBeighton, setInclureBeighton] = useState(true);
   const [itemsGraphiques, setItemsGraphiques] = useState<string[]>([]);
+
+  const changerNomPatiente = (valeur: string) => {
+    setNomPatienteEtat(valeur);
+    setNomPatiente(valeur);
+  };
 
   const dateDebutRapport = dateDebutPeriode(periode);
   // Éléments avec au moins une entrée de sévérité sur la période choisie —
@@ -91,19 +106,48 @@ export function ProfilPage() {
     setSuivisQuotidiens(suivant);
   };
 
+  const optionsRapport = () => ({
+    inclureSymptomes,
+    inclureMedicaments,
+    inclureEvenements,
+    inclureNotesImportantes,
+    inclureGraphiques,
+    itemsGraphiques,
+    inclureResume,
+    inclureBeighton,
+    dateDebut: dateDebutRapport,
+    dateFin: dateDuJour(),
+    nomPatiente,
+    evaluationBeighton,
+    marqueurs,
+  });
+
   const genererPdf = () => {
-    const doc = genererRapportPDF(entrees, medicaments, {
-      inclureSymptomes,
-      inclureMedicaments,
-      inclureEvenements,
-      inclureNotesImportantes,
-      inclureGraphiques,
-      itemsGraphiques,
-      dateDebut: dateDebutRapport,
-      dateFin: dateDuJour(),
-    });
+    const doc = genererRapportPDF(entrees, medicaments, optionsRapport());
     doc.save(`soleil-rapport-${dateDuJour()}.pdf`);
   };
+
+  const partagerPdf = async () => {
+    const doc = genererRapportPDF(entrees, medicaments, optionsRapport());
+    const nomFichier = `soleil-rapport-${dateDuJour()}.pdf`;
+    const nav = navigator as Navigator & {
+      canShare?: (data: { files: File[] }) => boolean;
+      share?: (data: { files: File[]; title?: string }) => Promise<void>;
+    };
+    const fichier = new File([doc.output("blob")], nomFichier, { type: "application/pdf" });
+    if (nav.share && nav.canShare?.({ files: [fichier] })) {
+      try {
+        await nav.share({ files: [fichier], title: "Rapport de suivi SEDh" });
+        return;
+      } catch (erreur) {
+        if ((erreur as Error).name === "AbortError") return;
+        // Autre échec (ex. pas d'appli compatible) : on retombe sur le téléchargement.
+      }
+    }
+    doc.save(nomFichier);
+  };
+
+  const partageDisponible = typeof navigator.share === "function";
 
   const exporterJSON = async () => {
     const sauvegarde = await exporterDonnees();
@@ -163,6 +207,15 @@ export function ProfilPage() {
       <section className="mb-8">
         <h2 className="font-bold text-lg mb-3">Rapport pour ton médecin</h2>
         <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4">
+          <Champ label="Mon nom" optionnel>
+            <input
+              className={classesInput}
+              value={nomPatiente}
+              onChange={(e) => changerNomPatiente(e.target.value)}
+              placeholder="Pour identifier facilement le rapport"
+            />
+          </Champ>
+
           <p className="text-sm font-semibold mb-2">Période à couvrir</p>
           <div className="flex gap-1 rounded-full bg-fond-douce p-1 mb-4 w-fit">
             {PERIODES.map((p) => (
@@ -180,10 +233,12 @@ export function ProfilPage() {
 
           <p className="text-sm font-semibold mb-2">Sections à inclure</p>
           <div className="flex flex-col gap-2 mb-4">
+            <CaseSection label="Résumé de la période" valeur={inclureResume} onChange={setInclureResume} />
             <CaseSection label="Symptômes (fréquence et sévérité)" valeur={inclureSymptomes} onChange={setInclureSymptomes} />
             <CaseSection label="Médicaments et doses" valeur={inclureMedicaments} onChange={setInclureMedicaments} />
             <CaseSection label="Événements notables (subluxations, hématomes...)" valeur={inclureEvenements} onChange={setInclureEvenements} />
             <CaseSection label="Notes marquées importantes" valeur={inclureNotesImportantes} onChange={setInclureNotesImportantes} />
+            <CaseSection label="Score de Beighton (Ressources)" valeur={inclureBeighton} onChange={setInclureBeighton} />
             <CaseSection label="Graphique d'évolution" valeur={inclureGraphiques} onChange={setInclureGraphiques} />
           </div>
 
@@ -220,9 +275,16 @@ export function ProfilPage() {
             </div>
           )}
 
-          <Bouton className="w-full" onClick={genererPdf}>
-            <span aria-hidden="true">📄</span> Générer le rapport PDF
-          </Bouton>
+          <div className="flex gap-3">
+            <Bouton className="flex-1" onClick={genererPdf}>
+              <span aria-hidden="true">📄</span> Générer le rapport PDF
+            </Bouton>
+            {partageDisponible && (
+              <Bouton variante="contour" onClick={() => void partagerPdf()}>
+                <span aria-hidden="true">📤</span> Partager
+              </Bouton>
+            )}
+          </div>
         </div>
       </section>
 

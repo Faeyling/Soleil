@@ -3,12 +3,13 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import type { Entree } from "../../data/types";
+import type { Entree, Marqueur } from "../../data/types";
 import { joursEntre, ajouterJours, dateDuJour, formatDateLisible } from "../../lib/date";
 import { ordreSeverite, LABEL_SEVERITE, labelSeverite, type Severite } from "../../lib/severite";
 import { libelleEntree, iconeEntree } from "../../lib/libelleEntree";
@@ -28,9 +29,10 @@ const PALETTE = [
 interface GraphiqueEvolutionProps {
   entrees: Entree[];
   periode: Periode;
+  marqueurs?: Marqueur[];
 }
 
-export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps) {
+export function GraphiqueEvolution({ entrees, periode, marqueurs = [] }: GraphiqueEvolutionProps) {
   const [masques, setMasques] = useState<Set<string>>(new Set());
   // Nombre de périodes complètes en arrière par rapport à aujourd'hui (0 =
   // la plus récente). Non applicable à "Tout", qui n'a pas de longueur fixe.
@@ -213,6 +215,14 @@ export function GraphiqueEvolution({ entrees, periode }: GraphiqueEvolutionProps
               />
             ),
           )}
+          {/* Pas d'étiquette texte sur la ligne : trop souvent tronquée près des
+              bords du graphique. Le nom et la date du marqueur sont déjà lisibles
+              dans la légende juste au-dessus. */}
+          {marqueurs
+            .filter((m) => m.date >= dateDebutSelection && m.date <= dateFinSelection && jours.includes(m.date))
+            .map((m) => (
+              <ReferenceLine key={m.id} x={m.date} stroke="var(--color-texte-doux)" strokeDasharray="3 3" />
+            ))}
         </LineChart>
       </ResponsiveContainer>
         </>

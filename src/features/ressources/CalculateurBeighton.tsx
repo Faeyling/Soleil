@@ -1,24 +1,57 @@
 import { useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import {
   COMPOSANTES_BEIGHTON,
   LABEL_TRANCHE_AGE_BEIGHTON,
   seuilPositifBeighton,
   type TrancheAgeBeighton,
 } from "../../content/ressources";
+import {
+  obtenirDerniereEvaluationBeighton,
+  enregistrerEvaluationBeighton,
+} from "../../data/repositories/beightonRepository";
+import { formatDateLisible, toDateStr } from "../../lib/date";
 
 const TRANCHES: TrancheAgeBeighton[] = ["avant-puberte", "puberte-50-ans", "plus-de-50-ans"];
 
 export function CalculateurBeighton() {
   const [coches, setCoches] = useState<Set<string>>(new Set());
   const [tranche, setTranche] = useState<TrancheAgeBeighton>("puberte-50-ans");
+  const [derniereEvaluationLe, setDerniereEvaluationLe] = useState<string | undefined>();
+
+  // Recharge l'évaluation déjà enregistrée une seule fois, dès qu'elle est
+  // disponible — ajustement pendant le rendu plutôt qu'un effet, pour éviter
+  // un rendu supplémentaire (même pattern que la personnalisation du
+  // parcours quotidien).
+  const derniereEvaluation = useLiveQuery(() => obtenirDerniereEvaluationBeighton(), []);
+  const [chargee, setChargee] = useState(false);
+  if (derniereEvaluation !== undefined && !chargee) {
+    setChargee(true);
+    setCoches(new Set(derniereEvaluation.composantesCochees));
+    setTranche(derniereEvaluation.tranche);
+    setDerniereEvaluationLe(derniereEvaluation.evalueLe);
+  }
+
+  const enregistrer = (prochainesCoches: Set<string>, prochaineTranche: TrancheAgeBeighton) => {
+    void enregistrerEvaluationBeighton({
+      composantesCochees: [...prochainesCoches],
+      tranche: prochaineTranche,
+    }).then(() => setDerniereEvaluationLe(new Date().toISOString()));
+  };
 
   const basculer = (id: string) => {
     setCoches((prev) => {
       const suivant = new Set(prev);
       if (suivant.has(id)) suivant.delete(id);
       else suivant.add(id);
+      enregistrer(suivant, tranche);
       return suivant;
     });
+  };
+
+  const changerTranche = (t: TrancheAgeBeighton) => {
+    setTranche(t);
+    enregistrer(coches, t);
   };
 
   const score = coches.size;
@@ -53,7 +86,7 @@ export function CalculateurBeighton() {
         <p className="text-sm font-semibold mb-1">Ta tranche d'âge</p>
         <select
           value={tranche}
-          onChange={(e) => setTranche(e.target.value as TrancheAgeBeighton)}
+          onChange={(e) => changerTranche(e.target.value as TrancheAgeBeighton)}
           className="w-full rounded-xl border border-bordure bg-surface px-3 py-2 text-sm cursor-pointer"
         >
           {TRANCHES.map((t) => (
@@ -82,6 +115,13 @@ export function CalculateurBeighton() {
           sur 3 de la classification — voir ci-dessous.
         </p>
       </div>
+
+      {derniereEvaluationLe && (
+        <p className="text-xs text-texte-doux mt-2">
+          Enregistré le {formatDateLisible(toDateStr(new Date(derniereEvaluationLe)))} — inclus dans le rapport
+          PDF pour ton médecin (Profil).
+        </p>
+      )}
     </div>
   );
 }

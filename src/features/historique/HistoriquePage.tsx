@@ -1,20 +1,22 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToutesLesEntrees } from "../../hooks/useEntrees";
+import { useMarqueurs } from "../../hooks/useMarqueurs";
 import { CHARGEMENT } from "../../hooks/chargement";
 import type { Entree } from "../../data/types";
 import { CalendrierMensuel } from "../../components/ui/CalendrierMensuel";
 import { LigneEntree } from "../../components/ui/LigneEntree";
 import { Bouton } from "../../components/ui/Bouton";
-import { classesInput } from "../../components/ui/Champ";
+import { Champ, classesInput } from "../../components/ui/Champ";
 import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { TableauSemaine } from "./TableauSemaine";
 import { GraphiqueEvolution } from "./GraphiqueEvolution";
 import { FrequenceArticulations } from "./FrequenceArticulations";
 import { Correlations } from "./Correlations";
 import { PERIODES, dateDebutPeriode, type Periode } from "../../lib/periode";
-import { formatDateLisible } from "../../lib/date";
+import { formatDateLisible, dateDuJour } from "../../lib/date";
 import { libelleEntree, sousTitreEntree } from "../../lib/libelleEntree";
+import { ajouterMarqueur, supprimerMarqueur } from "../../data/repositories/marqueursRepository";
 
 // Référence stable (ne change pas d'identité entre les rendus), pour ne pas
 // invalider le useMemo ci-dessous à chaque rendu pendant le chargement.
@@ -23,9 +25,21 @@ const AUCUNE_ENTREE: Entree[] = [];
 export function HistoriquePage() {
   const navigate = useNavigate();
   const entreesBrutes = useToutesLesEntrees();
+  const marqueurs = useMarqueurs();
   const [periode, setPeriode] = useState<Periode>("30");
   const [jourSelectionne, setJourSelectionne] = useState<string | undefined>();
   const [recherche, setRecherche] = useState("");
+  const [afficherFormulaireMarqueur, setAfficherFormulaireMarqueur] = useState(false);
+  const [labelMarqueur, setLabelMarqueur] = useState("");
+  const [dateMarqueur, setDateMarqueur] = useState(dateDuJour());
+
+  const ajouterUnMarqueur = async () => {
+    if (!labelMarqueur.trim()) return;
+    await ajouterMarqueur({ label: labelMarqueur.trim(), date: dateMarqueur });
+    setLabelMarqueur("");
+    setDateMarqueur(dateDuJour());
+    setAfficherFormulaireMarqueur(false);
+  };
 
   // `entrees` retombe sur [] pendant le chargement uniquement pour que les
   // hooks ci-dessous restent appelés à chaque rendu (règle des hooks) ; le
@@ -138,7 +152,68 @@ export function HistoriquePage() {
                 ))}
               </div>
             </div>
-            <GraphiqueEvolution entrees={entrees} periode={periode} />
+
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-texte-doux">
+                  Marqueurs (ex. début d'un traitement)
+                </p>
+                <Bouton
+                  variante="discret"
+                  className="!py-1 !px-3 text-xs"
+                  onClick={() => setAfficherFormulaireMarqueur((v) => !v)}
+                >
+                  {afficherFormulaireMarqueur ? "Annuler" : "+ Marqueur"}
+                </Bouton>
+              </div>
+
+              {afficherFormulaireMarqueur && (
+                <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-3 mb-3">
+                  <Champ label="Nom">
+                    <input
+                      className={classesInput}
+                      value={labelMarqueur}
+                      onChange={(e) => setLabelMarqueur(e.target.value)}
+                      placeholder="Ex. Début Ibuprofène 400mg"
+                    />
+                  </Champ>
+                  <Champ label="Date">
+                    <input
+                      type="date"
+                      className={classesInput}
+                      value={dateMarqueur}
+                      max={dateDuJour()}
+                      onChange={(e) => setDateMarqueur(e.target.value)}
+                    />
+                  </Champ>
+                  <Bouton className="w-full" onClick={() => void ajouterUnMarqueur()} disabled={!labelMarqueur.trim()}>
+                    Ajouter
+                  </Bouton>
+                </div>
+              )}
+
+              {marqueurs.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {marqueurs.map((m) => (
+                    <span
+                      key={m.id}
+                      className="flex items-center gap-1.5 rounded-full border border-bordure bg-fond-douce px-3 py-1 text-xs"
+                    >
+                      {m.label} · {formatDateLisible(m.date)}
+                      <button
+                        onClick={() => void supprimerMarqueur(m.id)}
+                        aria-label={`Supprimer le marqueur ${m.label}`}
+                        className="text-texte-doux hover:text-severite-haut cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <GraphiqueEvolution entrees={entrees} periode={periode} marqueurs={marqueurs} />
           </section>
 
           <section className="mt-8">

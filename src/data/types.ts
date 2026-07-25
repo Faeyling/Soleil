@@ -73,6 +73,15 @@ export interface MedecinDef {
   createdAt: string;
 }
 
+/** Repère daté (ex. début d'un traitement) affiché comme ligne verticale sur le graphique d'évolution, en app et dans le rapport PDF. */
+export interface Marqueur {
+  id: string;
+  label: string;
+  date: string; // YYYY-MM-DD
+  note?: string;
+  createdAt: string;
+}
+
 export interface RessourceNote {
   id: string;
   titre: string;

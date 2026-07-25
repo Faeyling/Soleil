@@ -10,6 +10,7 @@ beforeEach(async () => {
   await db.symptomes.clear();
   await db.autresSuivis.clear();
   await db.medecins.clear();
+  await db.marqueurs.clear();
 });
 
 function entreeSymptome(overrides: Partial<EntreeSymptome>): EntreeSymptome {
@@ -221,6 +222,41 @@ describe("importerDonnees", () => {
     const medecins = await db.medecins.toArray();
     expect(medecins).toHaveLength(1);
     expect(medecins[0].id).toBe("deja-la");
+  });
+
+  it("restaure les marqueurs d'une sauvegarde v4", async () => {
+    const sauvegarde: Sauvegarde = {
+      app: "soleil",
+      version: 4,
+      exporteLe: "2026-07-20T00:00:00.000Z",
+      entrees: [],
+      medicaments: [],
+      ressourcesNotes: [],
+      marqueurs: [{ id: "m1", label: "Début kiné hebdo", date: "2026-07-01", createdAt: "2026-07-20T00:00:00.000Z" }],
+    };
+
+    await importerDonnees(sauvegarde);
+
+    expect(await db.marqueurs.toArray()).toEqual(sauvegarde.marqueurs);
+  });
+
+  it("laisse les marqueurs déjà enregistrés inchangés pour une sauvegarde sans le champ marqueurs", async () => {
+    await db.marqueurs.add({ id: "deja-la", label: "Déjà là", date: "2026-07-01", createdAt: "2026-07-20T00:00:00.000Z" });
+
+    const sauvegarde: Sauvegarde = {
+      app: "soleil",
+      version: 3,
+      exporteLe: "2026-07-20T00:00:00.000Z",
+      entrees: [],
+      medicaments: [],
+      ressourcesNotes: [],
+    };
+
+    await importerDonnees(sauvegarde);
+
+    const marqueurs = await db.marqueurs.toArray();
+    expect(marqueurs).toHaveLength(1);
+    expect(marqueurs[0].id).toBe("deja-la");
   });
 
   it("laisse le contenu personnalisé actuel inchangé pour une sauvegarde v1 (sans symptomes/autresSuivis)", async () => {
