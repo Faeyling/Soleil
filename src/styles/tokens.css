@@ -169,6 +169,12 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 
+/* "Grand texte" (Profil > Apparence) — agrandit tout, texte et interface,
+   en changeant la taille de référence dont dérivent les unités "rem". */
+html[data-taille-texte="grande"] {
+  font-size: 118%;
+}
+
 html,
 body {
   background: var(--color-fond);

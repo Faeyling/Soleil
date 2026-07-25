@@ -6,6 +6,7 @@ import type { Entree } from "../../data/types";
 import { CalendrierMensuel } from "../../components/ui/CalendrierMensuel";
 import { LigneEntree } from "../../components/ui/LigneEntree";
 import { Bouton } from "../../components/ui/Bouton";
+import { classesInput } from "../../components/ui/Champ";
 import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { TableauSemaine } from "./TableauSemaine";
 import { GraphiqueEvolution } from "./GraphiqueEvolution";
@@ -13,6 +14,7 @@ import { FrequenceArticulations } from "./FrequenceArticulations";
 import { Correlations } from "./Correlations";
 import { PERIODES, dateDebutPeriode, type Periode } from "../../lib/periode";
 import { formatDateLisible } from "../../lib/date";
+import { libelleEntree, sousTitreEntree } from "../../lib/libelleEntree";
 
 // Référence stable (ne change pas d'identité entre les rendus), pour ne pas
 // invalider le useMemo ci-dessous à chaque rendu pendant le chargement.
@@ -23,6 +25,7 @@ export function HistoriquePage() {
   const entreesBrutes = useToutesLesEntrees();
   const [periode, setPeriode] = useState<Periode>("30");
   const [jourSelectionne, setJourSelectionne] = useState<string | undefined>();
+  const [recherche, setRecherche] = useState("");
 
   // `entrees` retombe sur [] pendant le chargement uniquement pour que les
   // hooks ci-dessous restent appelés à chaque rendu (règle des hooks) ; le
@@ -42,6 +45,17 @@ export function HistoriquePage() {
   const dateDebut = dateDebutPeriode(periode);
   const entreesJourSelectionne = jourSelectionne ? entreesParJour.get(jourSelectionne) ?? [] : [];
 
+  const rechercheNormalisee = recherche.trim().toLowerCase();
+  const resultatsRecherche = useMemo(() => {
+    if (!rechercheNormalisee) return [];
+    return entrees
+      .filter((e) => {
+        const champs = [libelleEntree(e), e.note, sousTitreEntree(e)];
+        return champs.some((champ) => champ?.toLowerCase().includes(rechercheNormalisee));
+      })
+      .sort((a, b) => b.datetime.localeCompare(a.datetime));
+  }, [entrees, rechercheNormalisee]);
+
   if (entreesBrutes === CHARGEMENT) {
     return <ChargementEcran />;
   }
@@ -53,66 +67,96 @@ export function HistoriquePage() {
         <Bouton onClick={() => navigate("/profil?export=1")}>Exporter en PDF</Bouton>
       </div>
 
-      <CalendrierMensuel
-        entreesParJour={entreesParJour}
-        jourSelectionne={jourSelectionne}
-        onSelectJour={(d) => setJourSelectionne(d === jourSelectionne ? undefined : d)}
-      />
+      <div className="relative mb-6">
+        <input
+          type="search"
+          className={classesInput}
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+          placeholder="Rechercher dans les notes, symptômes, médicaments..."
+          aria-label="Rechercher dans l'historique"
+        />
+      </div>
 
-      {jourSelectionne && (
-        <div className="mt-4">
-          <h2 className="font-bold mb-1">{formatDateLisible(jourSelectionne)}</h2>
-          {entreesJourSelectionne.length === 0 ? (
-            <p className="text-sm text-texte-doux">Aucune entrée ce jour-là.</p>
+      {rechercheNormalisee ? (
+        <section>
+          <h2 className="font-bold mb-1">
+            {resultatsRecherche.length} résultat{resultatsRecherche.length > 1 ? "s" : ""} pour « {recherche.trim()} »
+          </h2>
+          {resultatsRecherche.length === 0 ? (
+            <p className="text-sm text-texte-doux">Aucune entrée ne correspond à cette recherche.</p>
           ) : (
             <div className="divide-y divide-bordure">
-              {entreesJourSelectionne.map((e) => (
+              {resultatsRecherche.map((e) => (
                 <LigneEntree key={e.id} entree={e} />
               ))}
             </div>
           )}
-        </div>
+        </section>
+      ) : (
+        <>
+          <CalendrierMensuel
+            entreesParJour={entreesParJour}
+            jourSelectionne={jourSelectionne}
+            onSelectJour={(d) => setJourSelectionne(d === jourSelectionne ? undefined : d)}
+          />
+
+          {jourSelectionne && (
+            <div className="mt-4">
+              <h2 className="font-bold mb-1">{formatDateLisible(jourSelectionne)}</h2>
+              {entreesJourSelectionne.length === 0 ? (
+                <p className="text-sm text-texte-doux">Aucune entrée ce jour-là.</p>
+              ) : (
+                <div className="divide-y divide-bordure">
+                  {entreesJourSelectionne.map((e) => (
+                    <LigneEntree key={e.id} entree={e} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <section className="mt-8">
+            <h2 className="font-bold text-lg mb-3">Semaine en un coup d'œil</h2>
+            <TableauSemaine entrees={entrees} />
+          </section>
+
+          <section className="mt-8">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <h2 className="font-bold text-lg">Évolution dans le temps</h2>
+              <div className="flex gap-1 rounded-full bg-fond-douce p-1">
+                {PERIODES.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setPeriode(p.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                      periode === p.id ? "bg-ardoise text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <GraphiqueEvolution entrees={entrees} periode={periode} />
+          </section>
+
+          <section className="mt-8">
+            <h2 className="font-bold text-lg mb-3">Articulations les plus touchées</h2>
+            <p className="text-xs text-texte-doux mb-3">
+              Douleurs, luxations et subluxations localisées, sur la période «{" "}
+              {PERIODES.find((p) => p.id === periode)?.label} ». Filtre disponible pour voir l'effet d'une
+              activité le jour même ou le lendemain.
+            </p>
+            <FrequenceArticulations entrees={entrees} dateDebut={dateDebut} />
+          </section>
+
+          <section className="mt-8">
+            <h2 className="font-bold text-lg mb-3">Corrélations</h2>
+            <Correlations entrees={entrees} periode={periode} />
+          </section>
+        </>
       )}
-
-      <section className="mt-8">
-        <h2 className="font-bold text-lg mb-3">Semaine en un coup d'œil</h2>
-        <TableauSemaine entrees={entrees} />
-      </section>
-
-      <section className="mt-8">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="font-bold text-lg">Évolution dans le temps</h2>
-          <div className="flex gap-1 rounded-full bg-fond-douce p-1">
-            {PERIODES.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setPeriode(p.id)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                  periode === p.id ? "bg-ardoise text-[var(--color-texte-sur-accent)]" : "text-texte-doux"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <GraphiqueEvolution entrees={entrees} periode={periode} />
-      </section>
-
-      <section className="mt-8">
-        <h2 className="font-bold text-lg mb-3">Articulations les plus touchées</h2>
-        <p className="text-xs text-texte-doux mb-3">
-          Douleurs, luxations et subluxations localisées, sur la période «{" "}
-          {PERIODES.find((p) => p.id === periode)?.label} ». Filtre disponible pour voir l'effet d'une
-          activité le jour même ou le lendemain.
-        </p>
-        <FrequenceArticulations entrees={entrees} dateDebut={dateDebut} />
-      </section>
-
-      <section className="mt-8">
-        <h2 className="font-bold text-lg mb-3">Corrélations</h2>
-        <Correlations entrees={entrees} periode={periode} />
-      </section>
     </div>
   );
 }
