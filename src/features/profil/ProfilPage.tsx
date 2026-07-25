@@ -12,7 +12,7 @@ import { dateDuJour } from "../../lib/date";
 import { genererRapportPDF } from "../../lib/exportPdf";
 import { telechargerCSV } from "../../lib/exportCsv";
 import { libelle } from "../../lib/libelleItem";
-import { getNomPatiente, setNomPatiente } from "../../lib/profilPatiente";
+import { getNomPatiente, setNomPatiente, getDateNaissance, setDateNaissance, calculerAge } from "../../lib/profilPatiente";
 import { obtenirDerniereEvaluationBeighton } from "../../data/repositories/beightonRepository";
 import { useSymptomes } from "../../content/symptomes";
 import { useSuivis } from "../../content/autresSuivis";
@@ -51,6 +51,7 @@ export function ProfilPage() {
   const fichierRef = useRef<HTMLInputElement>(null);
 
   const [nomPatiente, setNomPatienteEtat] = useState<string>(getNomPatiente);
+  const [dateNaissance, setDateNaissanceEtat] = useState<string>(getDateNaissance);
   const [periode, setPeriode] = useState<Periode>("30");
   const [inclureSymptomes, setInclureSymptomes] = useState(true);
   const [inclureMedicaments, setInclureMedicaments] = useState(true);
@@ -64,6 +65,11 @@ export function ProfilPage() {
   const changerNomPatiente = (valeur: string) => {
     setNomPatienteEtat(valeur);
     setNomPatiente(valeur);
+  };
+
+  const changerDateNaissance = (valeur: string) => {
+    setDateNaissanceEtat(valeur);
+    setDateNaissance(valeur);
   };
 
   const dateDebutRapport = dateDebutPeriode(periode);
@@ -118,6 +124,7 @@ export function ProfilPage() {
     dateDebut: dateDebutRapport,
     dateFin: dateDuJour(),
     nomPatiente,
+    dateNaissance,
     evaluationBeighton,
     marqueurs,
   });
@@ -214,6 +221,19 @@ export function ProfilPage() {
               onChange={(e) => changerNomPatiente(e.target.value)}
               placeholder="Pour identifier facilement le rapport"
             />
+          </Champ>
+
+          <Champ label="Ma date de naissance" optionnel>
+            <input
+              type="date"
+              className={classesInput}
+              value={dateNaissance}
+              max={dateDuJour()}
+              onChange={(e) => changerDateNaissance(e.target.value)}
+            />
+            {dateNaissance && (
+              <p className="text-xs text-texte-doux mt-1">{calculerAge(dateNaissance)} ans</p>
+            )}
           </Champ>
 
           <p className="text-sm font-semibold mb-2">Période à couvrir</p>

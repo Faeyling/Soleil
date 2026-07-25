@@ -7,6 +7,7 @@ import { formatDateLisible, formatDateTimeLisible, joursEntre } from "./date";
 import type { EvaluationBeighton } from "../data/repositories/beightonRepository";
 import { LABEL_TRANCHE_AGE_BEIGHTON, seuilPositifBeighton } from "../content/ressources";
 import { medicamentsStockBas } from "./stock";
+import { calculerAge } from "./profilPatiente";
 
 export interface OptionsExportPDF {
   inclureSymptomes: boolean;
@@ -25,6 +26,8 @@ export interface OptionsExportPDF {
   dateFin: string;
   /** Affiché en en-tête du rapport pour l'identifier facilement (Profil). */
   nomPatiente?: string;
+  /** Date de naissance (YYYY-MM-DD) — affichée en en-tête avec l'âge calculé, si renseignée (Profil). */
+  dateNaissance?: string;
   evaluationBeighton?: EvaluationBeighton;
   /** Repères datés (ex. début d'un traitement) affichés comme lignes verticales sur le graphique. */
   marqueurs?: Marqueur[];
@@ -253,6 +256,11 @@ export function genererRapportPDF(
   doc.setTextColor(...COULEUR_DOUX);
   if (options.nomPatiente?.trim()) {
     doc.text(options.nomPatiente.trim(), margeGauche, y);
+    y += 14;
+  }
+  if (options.dateNaissance?.trim()) {
+    const age = calculerAge(options.dateNaissance.trim());
+    doc.text(`Né(e) le ${formatDateLisible(options.dateNaissance.trim())} (${age} ans)`, margeGauche, y);
     y += 14;
   }
   doc.text(
