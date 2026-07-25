@@ -76,6 +76,11 @@ export async function definirDoseHabituelle(id: string, doseHabituelle: string):
   await db.medicaments.update(id, { doseHabituelle: doseHabituelle.trim() || undefined });
 }
 
+/** Heure de rappel (HH:MM) — laisse vide pour désactiver le rappel de ce médicament. */
+export async function definirHeureRappel(id: string, heureRappel: string): Promise<void> {
+  await db.medicaments.update(id, { heureRappel: heureRappel.trim() || undefined });
+}
+
 export async function definirStock(
   id: string,
   stock: number | undefined,

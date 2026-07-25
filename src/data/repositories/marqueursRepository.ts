@@ -13,6 +13,13 @@ export async function ajouterMarqueur(donnees: Omit<Marqueur, "id" | "createdAt"
   return marqueur;
 }
 
+export async function modifierMarqueur(
+  id: string,
+  changements: Partial<Omit<Marqueur, "id" | "createdAt">>,
+): Promise<void> {
+  await db.marqueurs.update(id, changements);
+}
+
 export async function supprimerMarqueur(id: string): Promise<void> {
   await db.marqueurs.delete(id);
 }

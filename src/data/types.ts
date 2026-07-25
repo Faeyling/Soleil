@@ -54,6 +54,8 @@ export interface Medicament {
   doseHabituelle?: string;
   /** Position d'affichage dans "Mes médicaments" — absent pour les médicaments créés avant l'ajout du tri manuel (tri alphabétique de repli, voir medicamentsRepository). */
   ordre?: number;
+  /** Heure (HH:MM) à partir de laquelle un rappel s'affiche sur l'accueil si aucune prise n'est encore enregistrée ce jour-là. */
+  heureRappel?: string;
   /** Nombre de prises restantes, si l'utilisateur suit son stock pour ce médicament. */
   stock?: number;
   /** Seuil en dessous duquel une alerte de stock bas est affichée. */

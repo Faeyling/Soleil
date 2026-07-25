@@ -22,6 +22,8 @@ import {
   masquerRappelSauvegardePendantQuelquesJours,
   doitAlerterStockBas,
   masquerAlerteStockPendantQuelquesJours,
+  medicamentsARappeler,
+  masquerRappelMedicamentAujourdhui,
 } from "../../lib/rappels";
 
 // Référence stable (ne change pas d'identité entre les rendus), pour ne pas
@@ -41,6 +43,7 @@ export function AccueilPage() {
   const [rappelParcoursMasque, setRappelParcoursMasque] = useState(false);
   const [rappelSauvegardeMasque, setRappelSauvegardeMasque] = useState(false);
   const [alerteStockMasquee, setAlerteStockMasquee] = useState(false);
+  const [rappelMedicamentsMasque, setRappelMedicamentsMasque] = useState(false);
 
   // Tente une écriture silencieuse vers le fichier de sauvegarde automatique
   // (si configuré et déjà autorisé) plutôt que d'attendre que l'utilisateur
@@ -79,6 +82,11 @@ export function AccueilPage() {
   const medicamentsStockBasListe = medicamentsStockBas(tousLesMedicaments);
   const afficherAlerteStock =
     !alerteStockMasquee && doitAlerterStockBas(medicamentsStockBasListe.length);
+  const idsMedicamentsDejaPrisAujourdhui = new Set(
+    entreesAujourdhui.filter((e) => e.type === "medication_intake").map((e) => e.medicationId),
+  );
+  const medicamentsARappelerListe = medicamentsARappeler(tousLesMedicaments, idsMedicamentsDejaPrisAujourdhui);
+  const afficherRappelMedicaments = !rappelMedicamentsMasque && medicamentsARappelerListe.length > 0;
 
   if (entreesBrutes === CHARGEMENT) {
     return <ChargementEcran />;
@@ -176,6 +184,21 @@ export function AccueilPage() {
           onIgnorer={() => {
             masquerAlerteStockPendantQuelquesJours();
             setAlerteStockMasquee(true);
+          }}
+          couleur={SECTIONS.medicaments.couleurFonce}
+          couleurClaire={SECTIONS.medicaments.couleurClaire}
+        />
+      )}
+
+      {afficherRappelMedicaments && (
+        <BanniereRappel
+          icone="⏰"
+          texte={`C'est l'heure de prendre : ${medicamentsARappelerListe.map((m) => m.nom).join(", ")}.`}
+          labelAction="Voir mes médicaments"
+          onAction={() => navigate("/medicaments")}
+          onIgnorer={() => {
+            for (const m of medicamentsARappelerListe) masquerRappelMedicamentAujourdhui(m.id);
+            setRappelMedicamentsMasque(true);
           }}
           couleur={SECTIONS.medicaments.couleurFonce}
           couleurClaire={SECTIONS.medicaments.couleurClaire}

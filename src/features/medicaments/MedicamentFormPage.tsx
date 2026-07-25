@@ -15,6 +15,7 @@ import {
   reactiverMedicament,
   definirStock,
   definirDoseHabituelle,
+  definirHeureRappel,
   decrementerStock,
 } from "../../data/repositories/medicamentsRepository";
 import { creerEntree, modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
@@ -62,6 +63,7 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
   const navigate = useNavigate();
   const [nom, setNom] = useState(medicament?.nom ?? "");
   const [doseHabituelle, setDoseHabituelle] = useState("");
+  const [heureRappel, setHeureRappel] = useState("");
   const [stock, setStock] = useState("");
   const [seuilAlerte, setSeuilAlerte] = useState("");
   const [chargePour, setChargePour] = useState<string | undefined>();
@@ -76,6 +78,7 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
     setChargePour(medicamentId);
     setNom(medicament.nom);
     setDoseHabituelle(medicament.doseHabituelle ?? "");
+    setHeureRappel(medicament.heureRappel ?? "");
     setStock(medicament.stock != null ? String(medicament.stock) : "");
     setSeuilAlerte(medicament.seuilAlerte != null ? String(medicament.seuilAlerte) : "");
     setDosePrise(medicament.doseHabituelle ?? "");
@@ -92,6 +95,10 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
 
   const enregistrerDoseHabituelle = async () => {
     await definirDoseHabituelle(medicamentId, doseHabituelle);
+  };
+
+  const enregistrerHeureRappel = async () => {
+    await definirHeureRappel(medicamentId, heureRappel);
   };
 
   const enregistrerStock = async () => {
@@ -170,6 +177,24 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
         </div>
         <p className="text-xs text-texte-doux mt-1">
           Préremplit (sans l'imposer) le champ dose à chaque nouvelle prise.
+        </p>
+      </Champ>
+
+      <Champ label="Heure de rappel" optionnel>
+        <div className="flex gap-2">
+          <input
+            type="time"
+            className={classesInput}
+            value={heureRappel}
+            onChange={(e) => setHeureRappel(e.target.value)}
+          />
+          <Bouton couleur={SECTIONS.medicaments.couleur} onClick={enregistrerHeureRappel}>
+            Enregistrer
+          </Bouton>
+        </div>
+        <p className="text-xs text-texte-doux mt-1">
+          Affiche un rappel sur l'accueil à partir de cette heure, tant qu'aucune prise n'est
+          enregistrée ce jour-là. Laisse vide pour ne pas être rappelé·e.
         </p>
       </Champ>
 

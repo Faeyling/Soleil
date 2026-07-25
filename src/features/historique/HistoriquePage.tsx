@@ -13,10 +13,12 @@ import { TableauSemaine } from "./TableauSemaine";
 import { GraphiqueEvolution } from "./GraphiqueEvolution";
 import { FrequenceArticulations } from "./FrequenceArticulations";
 import { Correlations } from "./Correlations";
+import { ComparaisonMarqueur } from "./ComparaisonMarqueur";
 import { PERIODES, dateDebutPeriode, type Periode } from "../../lib/periode";
 import { formatDateLisible, dateDuJour } from "../../lib/date";
 import { libelleEntree, sousTitreEntree } from "../../lib/libelleEntree";
-import { ajouterMarqueur, supprimerMarqueur } from "../../data/repositories/marqueursRepository";
+import { ajouterMarqueur, modifierMarqueur, supprimerMarqueur } from "../../data/repositories/marqueursRepository";
+import type { Marqueur } from "../../data/types";
 
 // Référence stable (ne change pas d'identité entre les rendus), pour ne pas
 // invalider le useMemo ci-dessous à chaque rendu pendant le chargement.
@@ -30,15 +32,32 @@ export function HistoriquePage() {
   const [jourSelectionne, setJourSelectionne] = useState<string | undefined>();
   const [recherche, setRecherche] = useState("");
   const [afficherFormulaireMarqueur, setAfficherFormulaireMarqueur] = useState(false);
+  const [marqueurEnEdition, setMarqueurEnEdition] = useState<string | undefined>();
   const [labelMarqueur, setLabelMarqueur] = useState("");
   const [dateMarqueur, setDateMarqueur] = useState(dateDuJour());
 
-  const ajouterUnMarqueur = async () => {
-    if (!labelMarqueur.trim()) return;
-    await ajouterMarqueur({ label: labelMarqueur.trim(), date: dateMarqueur });
+  const fermerFormulaireMarqueur = () => {
+    setAfficherFormulaireMarqueur(false);
+    setMarqueurEnEdition(undefined);
     setLabelMarqueur("");
     setDateMarqueur(dateDuJour());
-    setAfficherFormulaireMarqueur(false);
+  };
+
+  const ouvrirEditionMarqueur = (m: Marqueur) => {
+    setMarqueurEnEdition(m.id);
+    setLabelMarqueur(m.label);
+    setDateMarqueur(m.date);
+    setAfficherFormulaireMarqueur(true);
+  };
+
+  const enregistrerMarqueur = async () => {
+    if (!labelMarqueur.trim()) return;
+    if (marqueurEnEdition) {
+      await modifierMarqueur(marqueurEnEdition, { label: labelMarqueur.trim(), date: dateMarqueur });
+    } else {
+      await ajouterMarqueur({ label: labelMarqueur.trim(), date: dateMarqueur });
+    }
+    fermerFormulaireMarqueur();
   };
 
   // `entrees` retombe sur [] pendant le chargement uniquement pour que les
@@ -161,7 +180,9 @@ export function HistoriquePage() {
                 <Bouton
                   variante="discret"
                   className="!py-1 !px-3 text-xs"
-                  onClick={() => setAfficherFormulaireMarqueur((v) => !v)}
+                  onClick={() =>
+                    afficherFormulaireMarqueur ? fermerFormulaireMarqueur() : setAfficherFormulaireMarqueur(true)
+                  }
                 >
                   {afficherFormulaireMarqueur ? "Annuler" : "+ Marqueur"}
                 </Bouton>
@@ -186,8 +207,8 @@ export function HistoriquePage() {
                       onChange={(e) => setDateMarqueur(e.target.value)}
                     />
                   </Champ>
-                  <Bouton className="w-full" onClick={() => void ajouterUnMarqueur()} disabled={!labelMarqueur.trim()}>
-                    Ajouter
+                  <Bouton className="w-full" onClick={() => void enregistrerMarqueur()} disabled={!labelMarqueur.trim()}>
+                    {marqueurEnEdition ? "Enregistrer" : "Ajouter"}
                   </Bouton>
                 </div>
               )}
@@ -199,7 +220,13 @@ export function HistoriquePage() {
                       key={m.id}
                       className="flex items-center gap-1.5 rounded-full border border-bordure bg-fond-douce px-3 py-1 text-xs"
                     >
-                      {m.label} · {formatDateLisible(m.date)}
+                      <button
+                        onClick={() => ouvrirEditionMarqueur(m)}
+                        className="cursor-pointer hover:underline"
+                        aria-label={`Modifier le marqueur ${m.label}`}
+                      >
+                        {m.label} · {formatDateLisible(m.date)}
+                      </button>
                       <button
                         onClick={() => void supprimerMarqueur(m.id)}
                         aria-label={`Supprimer le marqueur ${m.label}`}
@@ -230,6 +257,13 @@ export function HistoriquePage() {
             <h2 className="font-bold text-lg mb-3">Corrélations</h2>
             <Correlations entrees={entrees} periode={periode} />
           </section>
+
+          {marqueurs.length > 0 && (
+            <section className="mt-8">
+              <h2 className="font-bold text-lg mb-3">Avant / après un marqueur</h2>
+              <ComparaisonMarqueur entrees={entrees} marqueurs={marqueurs} />
+            </section>
+          )}
         </>
       )}
     </div>

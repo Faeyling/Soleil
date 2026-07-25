@@ -76,3 +76,45 @@ export function calculerCorrelation(
     moyenneLendemainSans: moyenne(lendemainSans),
   };
 }
+
+export const FENETRE_JOURS_COMPARAISON_MARQUEUR = 14;
+
+export interface ResultatComparaisonMarqueur {
+  moyenneAvant: number | null;
+  moyenneApres: number | null;
+  nombreEntreesAvant: number;
+  nombreEntreesApres: number;
+}
+
+/**
+ * Compare la sévérité moyenne d'un élément suivi (`itemCible`) sur les 14
+ * jours avant et après un marqueur daté (ex. "Début Ibuprofène 400mg") — utile
+ * pour objectiver l'effet d'un traitement dans le rapport pour le médecin.
+ * Le jour du marqueur lui-même compte comme le premier jour "après".
+ */
+export function calculerComparaisonMarqueur(
+  entrees: Entree[],
+  itemCible: string,
+  dateMarqueur: string,
+  fenetreJours = FENETRE_JOURS_COMPARAISON_MARQUEUR,
+): ResultatComparaisonMarqueur {
+  const debutAvant = ajouterJours(dateMarqueur, -fenetreJours);
+  const finApres = ajouterJours(dateMarqueur, fenetreJours - 1);
+
+  const avant: number[] = [];
+  const apres: number[] = [];
+
+  for (const e of entrees) {
+    if (e.item !== itemCible || !("severity" in e) || !e.severity) continue;
+    const niveau = ordreSeverite(e.severity);
+    if (e.date >= debutAvant && e.date < dateMarqueur) avant.push(niveau);
+    else if (e.date >= dateMarqueur && e.date <= finApres) apres.push(niveau);
+  }
+
+  return {
+    moyenneAvant: moyenne(avant),
+    moyenneApres: moyenne(apres),
+    nombreEntreesAvant: avant.length,
+    nombreEntreesApres: apres.length,
+  };
+}

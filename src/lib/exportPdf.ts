@@ -6,6 +6,7 @@ import { labelArticulation } from "../content/symptomes";
 import { formatDateLisible, formatDateTimeLisible, joursEntre } from "./date";
 import type { EvaluationBeighton } from "../data/repositories/beightonRepository";
 import { LABEL_TRANCHE_AGE_BEIGHTON, seuilPositifBeighton } from "../content/ressources";
+import { medicamentsStockBas } from "./stock";
 
 export interface OptionsExportPDF {
   inclureSymptomes: boolean;
@@ -345,6 +346,7 @@ export function genererRapportPDF(
     if (medicaments.length === 0) {
       paragraphe("Aucun médicament enregistré.");
     } else {
+      const idsStockBas = new Set(medicamentsStockBas(medicaments).map((m) => m.id));
       for (const m of medicaments) {
         const prises = entreesPeriode.filter(
           (e) => e.type === "medication_intake" && e.medicationId === m.id,
@@ -358,6 +360,9 @@ export function genererRapportPDF(
           9.5,
           COULEUR_DOUX,
         );
+        if (idsStockBas.has(m.id)) {
+          paragraphe(`Stock bas : ${m.stock} restant(s) — ordonnance à renouveler.`, 9.5, COULEUR_TITRE);
+        }
       }
     }
   }

@@ -8,7 +8,15 @@ import {
   masquerRappelParcoursAujourdhui,
   doitAlerterStockBas,
   masquerAlerteStockPendantQuelquesJours,
+  doitRappelerMedicament,
+  medicamentsARappeler,
+  masquerRappelMedicamentAujourdhui,
 } from "./rappels";
+import type { Medicament } from "../data/types";
+
+function medicament(overrides: Partial<Medicament> = {}): Medicament {
+  return { id: "m1", nom: "Ibuprofène", createdAt: "2026-07-20T00:00:00.000Z", ...overrides };
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -82,5 +90,50 @@ describe("alerte de stock bas", () => {
     expect(doitAlerterStockBas(1)).toBe(true);
     masquerAlerteStockPendantQuelquesJours();
     expect(doitAlerterStockBas(1)).toBe(false);
+  });
+});
+
+describe("rappel de prise de médicament", () => {
+  const midi = new Date("2026-07-20T12:00:00");
+
+  it("ne rappelle rien sans heure de rappel configurée", () => {
+    expect(doitRappelerMedicament(medicament(), false, midi)).toBe(false);
+  });
+
+  it("ne rappelle rien avant l'heure configurée", () => {
+    const m = medicament({ heureRappel: "14:00" });
+    expect(doitRappelerMedicament(m, false, midi)).toBe(false);
+  });
+
+  it("rappelle une fois l'heure configurée passée, si aucune prise aujourd'hui", () => {
+    const m = medicament({ heureRappel: "08:00" });
+    expect(doitRappelerMedicament(m, false, midi)).toBe(true);
+  });
+
+  it("ne rappelle rien si une prise est déjà enregistrée aujourd'hui", () => {
+    const m = medicament({ heureRappel: "08:00" });
+    expect(doitRappelerMedicament(m, true, midi)).toBe(false);
+  });
+
+  it("ne rappelle rien pour un médicament désactivé", () => {
+    const m = medicament({ heureRappel: "08:00", desactive: true });
+    expect(doitRappelerMedicament(m, false, midi)).toBe(false);
+  });
+
+  it("ne rappelle plus une fois masqué pour aujourd'hui", () => {
+    const m = medicament({ heureRappel: "08:00" });
+    expect(doitRappelerMedicament(m, false, midi)).toBe(true);
+    masquerRappelMedicamentAujourdhui(m.id);
+    expect(doitRappelerMedicament(m, false, midi)).toBe(false);
+  });
+
+  it("medicamentsARappeler ne garde que les médicaments dus", () => {
+    const du = medicament({ id: "du", heureRappel: "08:00" });
+    const pasEncore = medicament({ id: "pas-encore", heureRappel: "18:00" });
+    const dejaPris = medicament({ id: "deja-pris", heureRappel: "08:00" });
+
+    const resultat = medicamentsARappeler([du, pasEncore, dejaPris], new Set(["deja-pris"]), midi);
+
+    expect(resultat.map((m) => m.id)).toEqual(["du"]);
   });
 });

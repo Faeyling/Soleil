@@ -21,25 +21,38 @@ const ZONES_FACE: Point[] = [
   { id: "cotes-droite", x: 75, y: 140 },
   { id: "cotes-gauche", x: 125, y: 140 },
   { id: "ventre", x: 100, y: 175 },
+  { id: "bras-droit", x: 55, y: 100 },
+  { id: "bras-gauche", x: 145, y: 100 },
   { id: "coude-droit", x: 46, y: 130 },
   { id: "coude-gauche", x: 154, y: 130 },
+  { id: "avant-bras-droit", x: 40, y: 158 },
+  { id: "avant-bras-gauche", x: 160, y: 158 },
   { id: "poignet-droit", x: 34, y: 185 },
   { id: "poignet-gauche", x: 166, y: 185 },
   { id: "doigts-droit", x: 27, y: 208 },
   { id: "doigts-gauche", x: 173, y: 208 },
   { id: "hanche-droite", x: 78, y: 195 },
   { id: "hanche-gauche", x: 122, y: 195 },
+  { id: "cuisse-droite", x: 79, y: 233 },
+  { id: "cuisse-gauche", x: 121, y: 233 },
   { id: "genou-droit", x: 80, y: 270 },
   { id: "genou-gauche", x: 120, y: 270 },
+  { id: "jambe-droite", x: 81, y: 305 },
+  { id: "jambe-gauche", x: 119, y: 305 },
   { id: "cheville-droite", x: 82, y: 340 },
   { id: "cheville-gauche", x: 118, y: 340 },
   { id: "pied-orteils-droit", x: 78, y: 367 },
   { id: "pied-orteils-gauche", x: 122, y: 367 },
 ];
 
+// Vue "de dos" : ici, le patient te tourne le dos plutôt que de te faire
+// face — gauche/droite correspond donc directement à l'image, sans
+// inversion (contrairement à la vue de face ci-dessus).
 const ZONES_DOS: Point[] = [
   { id: "nuque-cervicales", x: 100, y: 56 },
   { id: "dos", x: 100, y: 150 },
+  { id: "sacro-iliaque-gauche", x: 90, y: 185 },
+  { id: "sacro-iliaque-droite", x: 110, y: 185 },
 ];
 
 const IDS_HORS_SCHEMA = ["autre-zone"];
