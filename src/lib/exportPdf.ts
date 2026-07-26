@@ -18,8 +18,6 @@ export interface OptionsExportPDF {
   inclureGraphiques: boolean;
   /** Clés `"type:item"` des éléments à tracer sur le graphique (ex. "symptom:douleur"). */
   itemsGraphiques: string[];
-  /** Résumé chiffré en tête de rapport (crises, événements notables, prises...). */
-  inclureResume: boolean;
   /** Dernier score de Beighton enregistré (Ressources), s'il existe. */
   inclureBeighton: boolean;
   dateDebut: string;
@@ -317,22 +315,6 @@ export function genererRapportPDF(
   doc.text(`Rapport généré le ${formatDateLisible(new Date().toISOString().slice(0, 10))}`, margeGauche, y);
   y += 26;
 
-  if (options.inclureResume) {
-    titre("Résumé de la période");
-    const symptomesPeriode = entreesPeriode.filter((e): e is EntreeSymptome => e.type === "symptom");
-    const crises = symptomesPeriode.filter((e) => e.severity === "crise").length;
-    const luxations = symptomesPeriode.filter((e) => e.item === "luxation-articulaire").length;
-    const subluxations = symptomesPeriode.filter((e) => e.item === "subluxation-articulaire").length;
-    const bleus = symptomesPeriode.filter((e) => e.item === "bleus").length;
-    const prisesMedicaments = entreesPeriode.filter((e) => e.type === "medication_intake").length;
-    paragraphe(
-      `• ${symptomesPeriode.length} entrée${symptomesPeriode.length > 1 ? "s" : ""} de symptômes, dont ${crises} en niveau « Crise »\n` +
-        `• ${luxations} luxation${luxations > 1 ? "s" : ""} et ${subluxations} subluxation${subluxations > 1 ? "s" : ""} articulaire${luxations + subluxations > 1 ? "s" : ""} signalée${luxations + subluxations > 1 ? "s" : ""}\n` +
-        `• ${bleus} ecchymose${bleus > 1 ? "s" : ""} signalée${bleus > 1 ? "s" : ""}\n` +
-        `• ${prisesMedicaments} prise${prisesMedicaments > 1 ? "s" : ""} de médicament${prisesMedicaments > 1 ? "s" : ""} enregistrée${prisesMedicaments > 1 ? "s" : ""}`,
-    );
-  }
-
   if (options.inclureBeighton) {
     titre("Score de Beighton");
     if (!options.evaluationBeighton) {
@@ -377,15 +359,21 @@ export function genererRapportPDF(
         parItem.set(e.item, liste);
       }
       const joursPeriode = joursEntre(options.dateDebut, options.dateFin);
-      for (const [item, liste] of parItem) {
+      const symptomesAvecStats = [...parItem.entries()]
+        .map(([item, liste]) => {
+          const dates = new Set(liste.map((e) => e.date));
+          const { pourcentageGlobal, parMois } = repartitionParMois(
+            dates,
+            joursPeriode,
+            options.dateDebut,
+            options.dateFin,
+          );
+          return { item, liste, pourcentageGlobal, parMois };
+        })
+        .sort((a, b) => b.pourcentageGlobal - a.pourcentageGlobal);
+
+      for (const { item, liste, pourcentageGlobal, parMois } of symptomesAvecStats) {
         const label = libelleEntree(liste[0]);
-        const dates = new Set(liste.map((e) => e.date));
-        const { pourcentageGlobal, parMois } = repartitionParMois(
-          dates,
-          joursPeriode,
-          options.dateDebut,
-          options.dateFin,
-        );
         sousTitre(`${label} — signalé ${pourcentageGlobal}% des jours de la période`);
 
         if (trouverSymptome(item)?.typeFormulaire === "eva") {

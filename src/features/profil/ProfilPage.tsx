@@ -58,7 +58,6 @@ export function ProfilPage() {
   const [inclureEvenements, setInclureEvenements] = useState(true);
   const [inclureNotesImportantes, setInclureNotesImportantes] = useState(true);
   const [inclureGraphiques, setInclureGraphiques] = useState(false);
-  const [inclureResume, setInclureResume] = useState(true);
   const [inclureBeighton, setInclureBeighton] = useState(true);
   const [itemsGraphiques, setItemsGraphiques] = useState<string[]>([]);
 
@@ -119,7 +118,6 @@ export function ProfilPage() {
     inclureNotesImportantes,
     inclureGraphiques,
     itemsGraphiques,
-    inclureResume,
     inclureBeighton,
     dateDebut: dateDebutRapport,
     dateFin: dateDuJour(),
@@ -253,7 +251,6 @@ export function ProfilPage() {
 
           <p className="text-sm font-semibold mb-2">Sections à inclure</p>
           <div className="flex flex-col gap-2 mb-4">
-            <CaseSection label="Résumé de la période" valeur={inclureResume} onChange={setInclureResume} />
             <CaseSection label="Symptômes (fréquence et sévérité)" valeur={inclureSymptomes} onChange={setInclureSymptomes} />
             <CaseSection label="Médicaments et doses" valeur={inclureMedicaments} onChange={setInclureMedicaments} />
             <CaseSection label="Événements notables (subluxations, hématomes...)" valeur={inclureEvenements} onChange={setInclureEvenements} />
