@@ -7,7 +7,7 @@ import { useSymptomes } from "../../content/symptomes";
 import { ajouterSymptome, modifierSymptome, deplacerSymptome } from "../../data/repositories/contenuRepository";
 import type { SymptomeDef } from "../../data/types";
 
-type TypeFormulaireSymptome = "severite" | "ouinon" | "texte";
+type TypeFormulaireSymptome = "severite" | "ouinon" | "eva" | "texte";
 
 interface FormulaireSymptome {
   icone: string;
@@ -21,6 +21,7 @@ const FORMULAIRE_VIDE: FormulaireSymptome = { icone: "🩹", label: "", localisa
 const LABEL_TYPE: Record<TypeFormulaireSymptome, string> = {
   severite: "Niveau (Bas / Moyen / Haut)",
   ouinon: "Oui / Non",
+  eva: "Échelle Visuelle Analogique (EVA, 0-10)",
   texte: "Texte libre",
 };
 

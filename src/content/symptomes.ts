@@ -35,7 +35,7 @@ export const SYMPTOMES_PAR_DEFAUT: SymptomeDef[] = [
     ordre: 12,
   },
   { id: "nausees", label: "Nausées", icone: "🤮", ordre: 13 },
-  { id: "douleur", label: "Douleur", icone: "⚡", localisable: true, ordre: 14 },
+  { id: "douleur", label: "Douleur", icone: "⚡", localisable: true, typeFormulaire: "eva", ordre: 14 },
   { id: "sommeil", label: "Sommeil", icone: "🌙", ordre: 15 },
   { id: "vomissements", label: "Vomissements", icone: "🤢", ordre: 16 },
   { id: "autre-symptome", label: "Autre", icone: "➕", typeFormulaire: "texte", ordre: 17 },

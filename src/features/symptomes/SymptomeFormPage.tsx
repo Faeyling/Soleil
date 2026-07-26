@@ -5,8 +5,10 @@ import { EnTete } from "../../components/ui/EnTete";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
 import { SelecteurOuiNon } from "../../components/ui/SelecteurOuiNon";
+import { SelecteurEva } from "../../components/ui/SelecteurEva";
 import { SchemaCorporel } from "../../components/ui/SchemaCorporel";
 import { versSeverite, depuisSeverite } from "../../lib/ouinon";
+import { severiteDepuisEva } from "../../lib/eva";
 import { Bouton } from "../../components/ui/Bouton";
 import { Confirmation } from "../../components/ui/Confirmation";
 import { CaseImportante } from "../../components/ui/CaseImportante";
@@ -32,6 +34,7 @@ export function SymptomeFormPage() {
   const entreeBrute = useEntree(entreeId);
 
   const [severite, setSeverite] = useState<Severite | undefined>();
+  const [evaluationEva, setEvaluationEva] = useState<number | undefined>();
   const [datetime, setDatetime] = useState(datetimeLocalValue(maintenantISO()));
   const [localisation, setLocalisation] = useState<string[]>([]);
   const [note, setNote] = useState("");
@@ -51,6 +54,7 @@ export function SymptomeFormPage() {
   if (entreeExistante && entreeExistante.id !== entreeChargeeId) {
     setEntreeChargeeId(entreeExistante.id);
     setSeverite(entreeExistante.severity);
+    setEvaluationEva(entreeExistante.evaluationEva);
     setDatetime(datetimeLocalValue(entreeExistante.datetime));
     setLocalisation(entreeExistante.location ?? []);
     setNote(entreeExistante.note ?? "");
@@ -74,6 +78,11 @@ export function SymptomeFormPage() {
         setErreur("Ajoute une petite description avant d'enregistrer.");
         return;
       }
+    } else if (symptome.typeFormulaire === "eva") {
+      if (evaluationEva === undefined) {
+        setErreur("Positionne le curseur sur l'échelle EVA pour continuer.");
+        return;
+      }
     } else if (!severite) {
       setErreur(
         symptome.typeFormulaire === "ouinon" ? "Choisis Oui ou Non pour continuer." : "Choisis une sévérité pour continuer.",
@@ -84,11 +93,18 @@ export function SymptomeFormPage() {
     try {
       const iso = isoDepuisDatetimeLocal(datetime);
       const date = dateDepuisDatetimeLocal(datetime);
-      const severityFinale = symptome.typeFormulaire === "texte" ? undefined : severite;
+      const severityFinale =
+        symptome.typeFormulaire === "texte"
+          ? undefined
+          : symptome.typeFormulaire === "eva" && evaluationEva !== undefined
+            ? severiteDepuisEva(evaluationEva)
+            : severite;
+      const evaluationEvaFinale = symptome.typeFormulaire === "eva" ? evaluationEva : undefined;
 
       if (entreeExistante) {
         const resultat = await modifierEntreeAvecUnicite(entreeExistante, {
           severity: severityFinale,
+          evaluationEva: evaluationEvaFinale,
           datetime: iso,
           date,
           location: symptome.localisable ? localisation : undefined,
@@ -112,6 +128,7 @@ export function SymptomeFormPage() {
         date,
         datetime: iso,
         severity: severityFinale,
+        evaluationEva: evaluationEvaFinale,
         location: symptome.localisable ? localisation : undefined,
         note: note.trim() || undefined,
         important,
@@ -123,6 +140,7 @@ export function SymptomeFormPage() {
         );
         if (resultat.entree.type === "symptom") {
           setSeverite(resultat.entree.severity);
+          setEvaluationEva(resultat.entree.evaluationEva);
           setDatetime(datetimeLocalValue(resultat.entree.datetime));
           setLocalisation(resultat.entree.location ?? []);
           setNote(resultat.entree.note ?? "");
@@ -158,6 +176,10 @@ export function SymptomeFormPage() {
       {symptome.typeFormulaire === "ouinon" ? (
         <Champ label="Réponse">
           <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(r ? versSeverite(r) : undefined)} />
+        </Champ>
+      ) : symptome.typeFormulaire === "eva" ? (
+        <Champ label="Douleur">
+          <SelecteurEva valeur={evaluationEva} onChange={setEvaluationEva} />
         </Champ>
       ) : symptome.typeFormulaire === "texte" ? (
         <Champ label="Description">

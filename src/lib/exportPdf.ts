@@ -2,8 +2,8 @@ import { jsPDF } from "jspdf";
 import type { Entree, EntreeSymptome, Medicament, Marqueur } from "../data/types";
 import { labelSeverite, ordreSeverite, LABEL_SEVERITE, type Severite } from "./severite";
 import { libelleEntree } from "./libelleEntree";
-import { labelArticulation } from "../content/symptomes";
-import { formatDateLisible, formatDateTimeLisible, joursEntre } from "./date";
+import { labelArticulation, trouverSymptome } from "../content/symptomes";
+import { formatDateLisible, formatDateTimeLisible, joursEntre, nomMois } from "./date";
 import type { EvaluationBeighton } from "../data/repositories/beightonRepository";
 import { LABEL_TRANCHE_AGE_BEIGHTON, seuilPositifBeighton } from "../content/ressources";
 import { medicamentsStockBas } from "./stock";
@@ -191,6 +191,51 @@ function dessinerGraphique(
   return y + 4;
 }
 
+/** Regroupe les jours d'une période par mois calendaire (clé "YYYY-MM", dans l'ordre chronologique). */
+function moisDeLaPeriode(dateDebut: string, dateFin: string): string[] {
+  const vus = new Set<string>();
+  const mois: string[] = [];
+  for (const jour of joursEntre(dateDebut, dateFin)) {
+    const cle = jour.slice(0, 7);
+    if (!vus.has(cle)) {
+      vus.add(cle);
+      mois.push(cle);
+    }
+  }
+  return mois;
+}
+
+function libelleMois(cle: string): string {
+  const [annee, mois] = cle.split("-").map(Number);
+  return `${nomMois(mois - 1)} ${annee}`;
+}
+
+/**
+ * Pourcentage de jours de la période (et, pour chaque mois couvert, pourcentage
+ * de jours de ce mois) où au moins une entrée existe pour cet élément — plus
+ * parlant qu'un simple comptage brut d'occurrences pour comparer des périodes
+ * de longueurs différentes.
+ */
+function repartitionParMois(
+  dates: Set<string>,
+  joursPeriode: string[],
+  dateDebut: string,
+  dateFin: string,
+): { pourcentageGlobal: number; parMois: string[] } {
+  const pourcentageGlobal =
+    joursPeriode.length > 0 ? Math.round((dates.size / joursPeriode.length) * 100) : 0;
+  const parMois = moisDeLaPeriode(dateDebut, dateFin).map((cle) => {
+    const joursDuMoisDansPeriode = joursPeriode.filter((j) => j.startsWith(cle));
+    const joursAvecEntree = joursDuMoisDansPeriode.filter((j) => dates.has(j)).length;
+    const pct =
+      joursDuMoisDansPeriode.length > 0
+        ? Math.round((joursAvecEntree / joursDuMoisDansPeriode.length) * 100)
+        : 0;
+    return `${libelleMois(cle)} : ${pct}%`;
+  });
+  return { pourcentageGlobal, parMois };
+}
+
 export function genererRapportPDF(
   entrees: Entree[],
   medicaments: Medicament[],
@@ -331,20 +376,42 @@ export function genererRapportPDF(
         liste.push(e);
         parItem.set(e.item, liste);
       }
+      const joursPeriode = joursEntre(options.dateDebut, options.dateFin);
       for (const [item, liste] of parItem) {
         const label = libelleEntree(liste[0]);
-        const compte: Record<Severite, number> = { bas: 0, moyen: 0, haut: 0, crise: 0 };
-        for (const e of liste) {
-          if ("severity" in e && e.severity) compte[e.severity]++;
-        }
-        sousTitre(`${label} — ${liste.length} occurrence${liste.length > 1 ? "s" : ""}`);
-        paragraphe(
-          `Répartition : ${labelSeverite("bas", item)} ${compte.bas} · ${labelSeverite("moyen", item)} ${compte.moyen} · ${labelSeverite("haut", item)} ${compte.haut}${
-            compte.crise > 0 ? ` · ${labelSeverite("crise", item)} ${compte.crise}` : ""
-          }`,
-          9.5,
-          COULEUR_DOUX,
+        const dates = new Set(liste.map((e) => e.date));
+        const { pourcentageGlobal, parMois } = repartitionParMois(
+          dates,
+          joursPeriode,
+          options.dateDebut,
+          options.dateFin,
         );
+        sousTitre(`${label} — signalé ${pourcentageGlobal}% des jours de la période`);
+
+        if (trouverSymptome(item)?.typeFormulaire === "eva") {
+          const evas = liste
+            .filter((e): e is EntreeSymptome => e.type === "symptom")
+            .map((e) => e.evaluationEva)
+            .filter((v): v is number => v != null);
+          const moyenneEva = evas.length > 0 ? (evas.reduce((a, b) => a + b, 0) / evas.length).toFixed(1) : undefined;
+          paragraphe(
+            `${moyenneEva !== undefined ? `EVA moyen : ${moyenneEva}/10 — ` : ""}Par mois : ${parMois.join(" · ")}`,
+            9.5,
+            COULEUR_DOUX,
+          );
+        } else {
+          const compte: Record<Severite, number> = { bas: 0, moyen: 0, haut: 0, crise: 0 };
+          for (const e of liste) {
+            if ("severity" in e && e.severity) compte[e.severity]++;
+          }
+          paragraphe(
+            `Répartition : ${labelSeverite("bas", item)} ${compte.bas} · ${labelSeverite("moyen", item)} ${compte.moyen} · ${labelSeverite("haut", item)} ${compte.haut}${
+              compte.crise > 0 ? ` · ${labelSeverite("crise", item)} ${compte.crise}` : ""
+            }\nPar mois : ${parMois.join(" · ")}`,
+            9.5,
+            COULEUR_DOUX,
+          );
+        }
       }
     }
   }

@@ -4,8 +4,10 @@ import { EnTete } from "../../components/ui/EnTete";
 import { BarreProgression } from "../../components/ui/BarreProgression";
 import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
 import { SelecteurOuiNon } from "../../components/ui/SelecteurOuiNon";
+import { SelecteurEva } from "../../components/ui/SelecteurEva";
 import { SchemaCorporel } from "../../components/ui/SchemaCorporel";
 import { versSeverite, depuisSeverite } from "../../lib/ouinon";
+import { severiteDepuisEva } from "../../lib/eva";
 import { Bouton } from "../../components/ui/Bouton";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Mascotte } from "../../components/mascotte/Mascotte";
@@ -51,7 +53,12 @@ export function ParcoursQuotidienPage() {
       if (e.type === "symptom" && idsSymptomesQuotidiens.includes(e.item)) {
         const symptomeEntree = e as EntreeSymptome;
         const def = trouverSymptome(e.item);
-        symptomes[e.item] = def?.typeFormulaire === "texte" ? (symptomeEntree.note ?? "") : (symptomeEntree.severity ?? "");
+        symptomes[e.item] =
+          def?.typeFormulaire === "texte"
+            ? (symptomeEntree.note ?? "")
+            : def?.typeFormulaire === "eva"
+              ? (symptomeEntree.evaluationEva !== undefined ? String(symptomeEntree.evaluationEva) : "")
+              : (symptomeEntree.severity ?? "");
         const zones = symptomeEntree.location;
         if (zones) localisations[e.item] = zones;
       }
@@ -103,10 +110,13 @@ export function ParcoursQuotidienPage() {
       if (!valeurBrute) continue;
       const def = trouverSymptome(item);
       const estTexte = def?.typeFormulaire === "texte";
+      const estEva = def?.typeFormulaire === "eva";
+      const evaluationEva = estEva ? Number(valeurBrute) : undefined;
       await enregistrerOuMettreAJour({
         type: "symptom",
         item,
-        severity: estTexte ? undefined : (valeurBrute as Severite),
+        severity: estTexte ? undefined : estEva ? severiteDepuisEva(evaluationEva as number) : (valeurBrute as Severite),
+        evaluationEva,
         note: estTexte ? valeurBrute : undefined,
         location: def?.localisable ? localisationValeurs[item] : undefined,
         date: dateJour,
@@ -293,6 +303,11 @@ function EtapeSymptomes({
                   valeur={depuisSeverite(valeurs[id] as Severite | undefined)}
                   onChange={(r) => onChange(id, r ? versSeverite(r) : "")}
                   permettreDeselection
+                />
+              ) : def.typeFormulaire === "eva" ? (
+                <SelecteurEva
+                  valeur={valeurs[id] ? Number(valeurs[id]) : undefined}
+                  onChange={(v) => onChange(id, String(v))}
                 />
               ) : def.typeFormulaire === "texte" ? (
                 <textarea

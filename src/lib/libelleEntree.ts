@@ -29,6 +29,9 @@ export function sousTitreEntree(entree: Entree): string | undefined {
   if (entree.type === "medication_intake") {
     return entree.dose ? `Dose : ${entree.dose}` : undefined;
   }
+  if (entree.type === "symptom" && entree.evaluationEva != null) {
+    return `EVA ${entree.evaluationEva}/10`;
+  }
   if (entree.type === "track_something" && entree.value != null) {
     return `${entree.value}${entree.unit ? ` ${entree.unit}` : ""}`;
   }

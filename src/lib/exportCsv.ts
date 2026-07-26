@@ -49,7 +49,11 @@ export function genererCSV(entrees: Entree[]): string {
       date,
       (heure ?? "").slice(0, 5),
       "severity" in e && e.severity ? labelSeverite(e.severity, e.item) : "",
-      "value" in e && e.value != null ? String(e.value) : "",
+      "value" in e && e.value != null
+        ? String(e.value)
+        : e.type === "symptom" && e.evaluationEva != null
+          ? String(e.evaluationEva)
+          : "",
       "unit" in e && e.unit ? e.unit : "",
       "location" in e && e.location ? e.location.map(labelArticulation).join(" / ") : "",
       "dose" in e && e.dose ? e.dose : "",
