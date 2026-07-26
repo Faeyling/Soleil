@@ -10,7 +10,7 @@ import { Bouton } from "../../components/ui/Bouton";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Mascotte } from "../../components/mascotte/Mascotte";
 import { SECTIONS } from "../../lib/sections";
-import type { Severite } from "../../lib/severite";
+import { severitesDisponibles, couleurSeverite, labelSeverite, type Severite } from "../../lib/severite";
 import { getSymptomesQuotidiens, getSuivisQuotidiens } from "../../lib/preferences";
 import { trouverSymptome } from "../../content/symptomes";
 import { trouverSuivi } from "../../content/autresSuivis";
@@ -383,6 +383,32 @@ function EtapeMedicaments({
   );
 }
 
+function CaseSeverite({
+  actif,
+  couleur,
+  label,
+  onToggle,
+}: {
+  actif: boolean;
+  couleur: string;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <label className="flex flex-col items-center gap-0.5 cursor-pointer select-none" title={label}>
+      <input
+        type="checkbox"
+        checked={actif}
+        onChange={onToggle}
+        aria-label={label}
+        className="w-5 h-5 rounded"
+        style={{ accentColor: couleur }}
+      />
+      <span className="text-[9px] leading-none text-texte-doux">{label.slice(0, 1)}</span>
+    </label>
+  );
+}
+
 function EtapeAutresSuivis({
   ids,
   valeurs,
@@ -402,27 +428,42 @@ function EtapeAutresSuivis({
           Aucun suivi sélectionné pour ce parcours — personnalise-le depuis Profil.
         </p>
       )}
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-2">
         {ids.map((id) => {
           const def = trouverSuivi(id);
           if (!def || def.desactive) return null;
           return (
-            <div key={id}>
-              <p className="font-semibold text-sm mb-2">
-                <span aria-hidden="true">{def.icone}</span> {def.label}
-              </p>
+            <div
+              key={id}
+              className={
+                def.typeFormulaire === "numerique" || def.typeFormulaire === "texte"
+                  ? "rounded-xl border border-bordure bg-surface px-3 py-2.5"
+                  : "flex items-center justify-between gap-3 rounded-xl border border-bordure bg-surface px-3 py-2.5"
+              }
+            >
+              <span className={`flex items-center gap-2 min-w-0 ${def.typeFormulaire === "numerique" || def.typeFormulaire === "texte" ? "mb-2" : "flex-1"}`}>
+                <span aria-hidden="true">{def.icone}</span>
+                <span className="text-sm font-medium truncate">{def.label}</span>
+              </span>
               {def.typeFormulaire === "severite" ? (
-                <SelecteurSeverite
-                  valeur={valeurs[id] as Severite | undefined}
-                  onChange={(s) => onChange(id, s ?? "")}
-                  itemId={id}
-                  permettreDeselection
-                />
+                <div className="flex items-center gap-2 shrink-0">
+                  {severitesDisponibles(id).map((s) => (
+                    <CaseSeverite
+                      key={s}
+                      actif={valeurs[id] === s}
+                      couleur={couleurSeverite(s)}
+                      label={labelSeverite(s, id)}
+                      onToggle={() => onChange(id, valeurs[id] === s ? "" : s)}
+                    />
+                  ))}
+                </div>
               ) : def.typeFormulaire === "ouinon" ? (
-                <SelecteurOuiNon
-                  valeur={depuisSeverite(valeurs[id] as Severite | undefined)}
-                  onChange={(r) => onChange(id, r ? versSeverite(r) : "")}
-                  permettreDeselection
+                <input
+                  type="checkbox"
+                  checked={depuisSeverite(valeurs[id] as Severite | undefined) === "oui"}
+                  onChange={(e) => onChange(id, versSeverite(e.target.checked ? "oui" : "non"))}
+                  aria-label={`${def.label} aujourd'hui`}
+                  className="w-6 h-6 shrink-0 accent-[var(--color-ardoise)]"
                 />
               ) : def.typeFormulaire === "numerique" ? (
                 <input
