@@ -12,6 +12,21 @@ export async function initialiserContenuSiVide(): Promise<void> {
   if (nbSuivis === 0) await db.autresSuivis.bulkAdd(AUTRES_SUIVIS_PAR_DEFAUT);
 }
 
+/**
+ * Migration ponctuelle : la Douleur est passée à l'échelle EVA après le
+ * premier semis de contenu pour les installations déjà existantes — sans
+ * ceci, leur symptôme "douleur" déjà en base garde indéfiniment son ancien
+ * type de saisie (Bas/Moyen/Haut), puisque le semis initial ne s'exécute
+ * qu'une fois, sur une table vide. Sans risque d'écraser un choix
+ * délibéré : l'échelle EVA n'existait pas comme option avant cette migration.
+ */
+export async function migrerDouleurVersEva(): Promise<void> {
+  const douleur = await db.symptomes.get("douleur");
+  if (douleur && douleur.typeFormulaire !== "eva") {
+    await db.symptomes.update("douleur", { typeFormulaire: "eva" });
+  }
+}
+
 async function prochainOrdre(table: typeof db.symptomes | typeof db.autresSuivis): Promise<number> {
   const tous = await table.toArray();
   return tous.reduce((max, item) => Math.max(max, item.ordre), -1) + 1;

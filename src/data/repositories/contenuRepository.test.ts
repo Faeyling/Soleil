@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../db";
 import {
   initialiserContenuSiVide,
+  migrerDouleurVersEva,
   ajouterSymptome,
   modifierSymptome,
   supprimerSymptome,
@@ -33,6 +34,32 @@ describe("initialiserContenuSiVide", () => {
     await initialiserContenuSiVide();
 
     expect(await db.symptomes.count()).toBe(SYMPTOMES_PAR_DEFAUT.length + 1);
+  });
+});
+
+describe("migrerDouleurVersEva", () => {
+  it("passe la douleur déjà en base à l'échelle EVA", async () => {
+    await db.symptomes.add({ id: "douleur", label: "Douleur", icone: "⚡", ordre: 0 });
+
+    await migrerDouleurVersEva();
+
+    expect((await db.symptomes.get("douleur"))?.typeFormulaire).toBe("eva");
+  });
+
+  it("ne fait rien si la douleur n'existe pas encore en base", async () => {
+    await migrerDouleurVersEva();
+
+    expect(await db.symptomes.get("douleur")).toBeUndefined();
+  });
+
+  it("ne touche pas aux autres champs de la douleur", async () => {
+    await db.symptomes.add({ id: "douleur", label: "Douleur", icone: "⚡", localisable: true, ordre: 3 });
+
+    await migrerDouleurVersEva();
+
+    const relu = await db.symptomes.get("douleur");
+    expect(relu?.localisable).toBe(true);
+    expect(relu?.ordre).toBe(3);
   });
 });
 
