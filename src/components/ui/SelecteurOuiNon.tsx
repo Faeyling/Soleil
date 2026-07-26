@@ -1,57 +1,21 @@
-import type { KeyboardEvent } from "react";
-import { couleurSeverite } from "../../lib/severite";
-import { versSeverite } from "../../lib/ouinon";
-
 interface SelecteurOuiNonProps {
   valeur?: "oui" | "non";
-  onChange: (reponse: "oui" | "non" | undefined) => void;
-  /** Si vrai, cliquer sur la réponse déjà sélectionnée la désélectionne (parcours quotidien). */
-  permettreDeselection?: boolean;
+  onChange: (reponse: "oui" | "non") => void;
+  /** Texte affiché à côté de la case (ex. "Oui, aujourd'hui"). */
+  label?: string;
 }
 
-const OPTIONS: ("oui" | "non")[] = ["oui", "non"];
-
-export function SelecteurOuiNon({ valeur, onChange, permettreDeselection = false }: SelecteurOuiNonProps) {
-  const indexActif = valeur ? OPTIONS.indexOf(valeur) : 0;
-
-  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    if (e.key !== "ArrowRight" && e.key !== "ArrowDown" && e.key !== "ArrowLeft" && e.key !== "ArrowUp") {
-      return;
-    }
-    e.preventDefault();
-    const direction = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
-    const indexSuivant = (index + direction + OPTIONS.length) % OPTIONS.length;
-    const suivant = OPTIONS[indexSuivant];
-    onChange(suivant);
-    (e.currentTarget.parentElement?.children[indexSuivant] as HTMLElement | undefined)?.focus();
-  };
-
+/** Événement Oui/Non (ex. luxation, subluxation) : une case à cocher pour signaler sa présence — non cochée = non. */
+export function SelecteurOuiNon({ valeur, onChange, label = "Oui" }: SelecteurOuiNonProps) {
   return (
-    <div className="flex gap-2 flex-wrap" role="radiogroup" aria-label="Oui ou non">
-      {OPTIONS.map((reponse, index) => {
-        const actif = valeur === reponse;
-        const couleur = couleurSeverite(versSeverite(reponse));
-        const fond = `color-mix(in srgb, ${couleur} 15%, var(--color-surface))`;
-        return (
-          <button
-            key={reponse}
-            type="button"
-            role="radio"
-            aria-checked={actif}
-            tabIndex={index === indexActif ? 0 : -1}
-            onClick={() => onChange(permettreDeselection && actif ? undefined : reponse)}
-            onKeyDown={(e) => onKeyDown(e, index)}
-            className="flex-1 min-w-[70px] flex flex-col items-center gap-2 rounded-[var(--rayon)] border-2 py-3 transition-transform active:scale-95 cursor-pointer"
-            style={{
-              borderColor: actif ? couleur : "var(--color-bordure)",
-              background: actif ? fond : "var(--color-surface)",
-            }}
-          >
-            <span className="w-6 h-6 rounded-full" style={{ background: couleur }} />
-            <span className="text-sm font-semibold">{reponse === "oui" ? "Oui" : "Non"}</span>
-          </button>
-        );
-      })}
-    </div>
+    <label className="flex items-center gap-3 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        checked={valeur === "oui"}
+        onChange={(e) => onChange(e.target.checked ? "oui" : "non")}
+        className="w-6 h-6 accent-[var(--color-ardoise)]"
+      />
+      <span className="text-sm font-medium">{label}</span>
+    </label>
   );
 }

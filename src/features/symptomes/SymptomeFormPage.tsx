@@ -83,10 +83,8 @@ export function SymptomeFormPage() {
         setErreur("Positionne le curseur sur l'échelle EVA pour continuer.");
         return;
       }
-    } else if (!severite) {
-      setErreur(
-        symptome.typeFormulaire === "ouinon" ? "Choisis Oui ou Non pour continuer." : "Choisis une sévérité pour continuer.",
-      );
+    } else if (symptome.typeFormulaire === "severite" && !severite) {
+      setErreur("Choisis une sévérité pour continuer.");
       return;
     }
     setEnregistrementEnCours(true);
@@ -98,7 +96,9 @@ export function SymptomeFormPage() {
           ? undefined
           : symptome.typeFormulaire === "eva" && evaluationEva !== undefined
             ? severiteDepuisEva(evaluationEva)
-            : severite;
+            : symptome.typeFormulaire === "ouinon"
+              ? (severite ?? versSeverite("non"))
+              : severite;
       const evaluationEvaFinale = symptome.typeFormulaire === "eva" ? evaluationEva : undefined;
 
       if (entreeExistante) {
@@ -175,7 +175,7 @@ export function SymptomeFormPage() {
 
       {symptome.typeFormulaire === "ouinon" ? (
         <Champ label="Réponse">
-          <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(r ? versSeverite(r) : undefined)} />
+          <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(versSeverite(r))} />
         </Champ>
       ) : symptome.typeFormulaire === "eva" ? (
         <Champ label="Douleur">

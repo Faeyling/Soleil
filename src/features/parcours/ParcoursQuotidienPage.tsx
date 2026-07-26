@@ -301,8 +301,7 @@ function EtapeSymptomes({
               {def.typeFormulaire === "ouinon" ? (
                 <SelecteurOuiNon
                   valeur={depuisSeverite(valeurs[id] as Severite | undefined)}
-                  onChange={(r) => onChange(id, r ? versSeverite(r) : "")}
-                  permettreDeselection
+                  onChange={(r) => onChange(id, versSeverite(r))}
                 />
               ) : def.typeFormulaire === "eva" ? (
                 <SelecteurEva

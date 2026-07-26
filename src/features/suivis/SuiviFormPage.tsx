@@ -67,10 +67,6 @@ export function SuiviFormPage() {
       setErreur("Choisis un niveau pour continuer.");
       return;
     }
-    if (suivi.typeFormulaire === "ouinon" && !severite) {
-      setErreur("Choisis Oui ou Non pour continuer.");
-      return;
-    }
     if (suivi.typeFormulaire === "texte" && !note.trim()) {
       setErreur("Ajoute une petite description avant d'enregistrer.");
       return;
@@ -81,7 +77,12 @@ export function SuiviFormPage() {
       const date = dateDepuisDatetimeLocal(datetime);
 
       const champs = {
-        severity: suivi.typeFormulaire === "severite" || suivi.typeFormulaire === "ouinon" ? severite : undefined,
+        severity:
+          suivi.typeFormulaire === "severite"
+            ? severite
+            : suivi.typeFormulaire === "ouinon"
+              ? (severite ?? versSeverite("non"))
+              : undefined,
         value: suivi.typeFormulaire === "numerique" && valeur !== "" ? Number(valeur) : undefined,
         unit: suivi.typeFormulaire === "numerique" ? suivi.unite : undefined,
         note: note.trim() || undefined,
@@ -149,7 +150,7 @@ export function SuiviFormPage() {
 
       {suivi.typeFormulaire === "ouinon" && (
         <Champ label="Réponse">
-          <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(r ? versSeverite(r) : undefined)} />
+          <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(versSeverite(r))} />
         </Champ>
       )}
 
