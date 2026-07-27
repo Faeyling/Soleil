@@ -8,42 +8,45 @@ interface NiveauDouleur {
 }
 
 /**
- * Ancrages fonctionnels plutôt qu'un chiffre nu à choisir dans l'abstrait —
- * inspirés de la Functional Pain Scale (Gloth et al., 2001), conçue
- * justement parce qu'une douleur chronique déjà présente en permanence rend
- * une note 0-10 abstraite difficile à situer. Chaque niveau décrit un impact
- * concret sur la journée plutôt qu'une intensité ressentie dans le vide.
+ * Ancrages fonctionnels plutôt qu'un chiffre nu à choisir dans l'abstrait,
+ * bâtis autour de la douleur de fond plutôt que d'un "0" rarement atteint en
+ * douleur chronique : le niveau 2 sert de référence ("mon niveau habituel"),
+ * les suivants décrivent un écart croissant par rapport à cette base plutôt
+ * qu'une intensité absolue. Impact mesuré sur la mobilité et le besoin de
+ * repos/pause — plus parlant pour le SEDh que la lecture/les écrans (repris
+ * d'une première version inspirée de la Functional Pain Scale de Gloth et
+ * al., pensée pour un contexte plus proche de la douleur aiguë).
  */
 const NIVEAUX_DOULEUR: NiveauDouleur[] = [
   {
     eva: 0,
     titre: "Aucune douleur",
-    description: "Pas de douleur aujourd'hui, journée normale.",
+    description: "Vraiment aucune douleur aujourd'hui — rare, mais ça arrive.",
   },
   {
     eva: 2,
-    titre: "Légère — n'empêche rien",
-    description: "Je la sens si j'y pense, mais ça ne change rien à ce que je fais.",
+    titre: "Mon niveau habituel",
+    description: "C'est ma douleur de tous les jours, je vis normalement avec.",
   },
   {
     eva: 4,
-    titre: "Modérée — je dois composer avec",
-    description: "Je fais l'essentiel, mais j'évite ou je reporte certains gestes, certaines activités.",
+    titre: "Plus que d'habitude",
+    description: "Je ralentis, j'évite certains mouvements ou certaines postures.",
   },
   {
     eva: 6,
-    titre: "Forte — mais je peux encore me distraire",
-    description: "Je peux encore téléphoner, lire ou suivre un écran malgré la douleur.",
+    titre: "Bien plus que d'habitude",
+    description: "Je dois m'arrêter, me poser, revoir mes plans de la journée.",
   },
   {
     eva: 8,
-    titre: "Sévère — je ne peux plus me distraire",
-    description: "Impossible de téléphoner, lire ou suivre un écran : la douleur prend toute la place.",
+    titre: "Débordée par la douleur",
+    description: "Bouger, rester debout ou utiliser mes mains devient très difficile.",
   },
   {
     eva: 10,
     titre: "Extrême — crise",
-    description: "La douleur empêche même de parler ou de répondre. Besoin d'aide immédiate.",
+    description: "Douleur insupportable, je ne peux presque plus bouger ni communiquer. Besoin d'aide immédiate.",
   },
 ];
 
