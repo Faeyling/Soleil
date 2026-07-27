@@ -9,13 +9,14 @@ import { SelecteurEva } from "../../components/ui/SelecteurEva";
 import { SchemaCorporel } from "../../components/ui/SchemaCorporel";
 import { versSeverite, depuisSeverite } from "../../lib/ouinon";
 import { severiteDepuisEva } from "../../lib/eva";
+import { cyclerZoneDouleur } from "../../lib/zonesDouleur";
 import { Bouton } from "../../components/ui/Bouton";
 import { Confirmation } from "../../components/ui/Confirmation";
 import { CaseImportante } from "../../components/ui/CaseImportante";
 import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { SECTIONS } from "../../lib/sections";
 import type { Severite } from "../../lib/severite";
-import { dateDepuisDatetimeLocal, datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
+import { dateDuJour, isoDepuisDate } from "../../lib/date";
 import {
   creerEntree,
   modifierEntreeAvecUnicite,
@@ -35,8 +36,9 @@ export function SymptomeFormPage() {
 
   const [severite, setSeverite] = useState<Severite | undefined>();
   const [evaluationEva, setEvaluationEva] = useState<number | undefined>();
-  const [datetime, setDatetime] = useState(datetimeLocalValue(maintenantISO()));
+  const [date, setDate] = useState(dateDuJour());
   const [localisation, setLocalisation] = useState<string[]>([]);
+  const [zonesPlusDouloureuses, setZonesPlusDouloureuses] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [important, setImportant] = useState(false);
   const [erreur, setErreur] = useState<string | undefined>();
@@ -55,8 +57,9 @@ export function SymptomeFormPage() {
     setEntreeChargeeId(entreeExistante.id);
     setSeverite(entreeExistante.severity);
     setEvaluationEva(entreeExistante.evaluationEva);
-    setDatetime(datetimeLocalValue(entreeExistante.datetime));
+    setDate(entreeExistante.date);
     setLocalisation(entreeExistante.location ?? []);
+    setZonesPlusDouloureuses(entreeExistante.zonesPlusDouloureuses ?? []);
     setNote(entreeExistante.note ?? "");
     setImportant(entreeExistante.important ?? false);
   }
@@ -69,6 +72,15 @@ export function SymptomeFormPage() {
     setLocalisation((prev) =>
       prev.includes(zoneId) ? prev.filter((z) => z !== zoneId) : [...prev, zoneId],
     );
+  };
+
+  const cyclerZone = (zoneId: string) => {
+    const suivant = cyclerZoneDouleur(zoneId, {
+      zonesSelectionnees: localisation,
+      zonesPlusDouloureuses,
+    });
+    setLocalisation(suivant.zonesSelectionnees);
+    setZonesPlusDouloureuses(suivant.zonesPlusDouloureuses);
   };
 
   const enregistrer = async () => {
@@ -89,8 +101,7 @@ export function SymptomeFormPage() {
     }
     setEnregistrementEnCours(true);
     try {
-      const iso = isoDepuisDatetimeLocal(datetime);
-      const date = dateDepuisDatetimeLocal(datetime);
+      const iso = isoDepuisDate(date);
       const severityFinale =
         symptome.typeFormulaire === "texte"
           ? undefined
@@ -100,6 +111,8 @@ export function SymptomeFormPage() {
               ? (severite ?? versSeverite("non"))
               : severite;
       const evaluationEvaFinale = symptome.typeFormulaire === "eva" ? evaluationEva : undefined;
+      const zonesPlusDouloureusesFinale =
+        symptome.localisable && symptome.typeFormulaire === "eva" ? zonesPlusDouloureuses : undefined;
 
       if (entreeExistante) {
         const resultat = await modifierEntreeAvecUnicite(entreeExistante, {
@@ -108,6 +121,7 @@ export function SymptomeFormPage() {
           datetime: iso,
           date,
           location: symptome.localisable ? localisation : undefined,
+          zonesPlusDouloureuses: zonesPlusDouloureusesFinale,
           note: note.trim() || undefined,
           important,
         });
@@ -130,6 +144,7 @@ export function SymptomeFormPage() {
         severity: severityFinale,
         evaluationEva: evaluationEvaFinale,
         location: symptome.localisable ? localisation : undefined,
+        zonesPlusDouloureuses: zonesPlusDouloureusesFinale,
         note: note.trim() || undefined,
         important,
       });
@@ -141,8 +156,9 @@ export function SymptomeFormPage() {
         if (resultat.entree.type === "symptom") {
           setSeverite(resultat.entree.severity);
           setEvaluationEva(resultat.entree.evaluationEva);
-          setDatetime(datetimeLocalValue(resultat.entree.datetime));
+          setDate(resultat.entree.date);
           setLocalisation(resultat.entree.location ?? []);
+          setZonesPlusDouloureuses(resultat.entree.zonesPlusDouloureuses ?? []);
           setNote(resultat.entree.note ?? "");
           setImportant(resultat.entree.important ?? false);
         }
@@ -197,13 +213,13 @@ export function SymptomeFormPage() {
         </Champ>
       )}
 
-      <Champ label="Date et heure">
+      <Champ label="Date">
         <input
-          type="datetime-local"
+          type="date"
           className={classesInput}
-          value={datetime}
-          max={datetimeLocalValue(maintenantISO())}
-          onChange={(e) => setDatetime(e.target.value)}
+          value={date}
+          max={dateDuJour()}
+          onChange={(e) => setDate(e.target.value)}
         />
       </Champ>
 
@@ -212,7 +228,12 @@ export function SymptomeFormPage() {
           <span className="block text-sm font-semibold mb-1.5 text-texte">
             Zone(s) concernée(s) <span className="text-texte-doux font-normal">(optionnel)</span>
           </span>
-          <SchemaCorporel zonesSelectionnees={localisation} onToggleZone={basculerZone} />
+          <SchemaCorporel
+            zonesSelectionnees={localisation}
+            onToggleZone={basculerZone}
+            zonesPlusDouloureuses={symptome.typeFormulaire === "eva" ? zonesPlusDouloureuses : undefined}
+            onToggleZonePlusDouloureuse={symptome.typeFormulaire === "eva" ? cyclerZone : undefined}
+          />
         </div>
       )}
 

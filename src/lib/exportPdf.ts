@@ -3,7 +3,7 @@ import type { Entree, EntreeSymptome, Medicament, Marqueur } from "../data/types
 import { labelSeverite, ordreSeverite, LABEL_SEVERITE, type Severite } from "./severite";
 import { libelleEntree } from "./libelleEntree";
 import { labelArticulation, trouverSymptome } from "../content/symptomes";
-import { formatDateLisible, formatDateTimeLisible, joursEntre, nomMois } from "./date";
+import { formatDateLisible, joursEntre, nomMois } from "./date";
 import type { EvaluationBeighton } from "../data/repositories/beightonRepository";
 import { LABEL_TRANCHE_AGE_BEIGHTON, seuilPositifBeighton } from "../content/ressources";
 import { medicamentsStockBas } from "./stock";
@@ -445,7 +445,7 @@ export function genererRapportPDF(
         const zones = e.location?.map(labelArticulation).join(", ");
         const niveau = e.severity ? ` (${labelSeverite(e.severity, e.item)})` : "";
         paragraphe(
-          `${formatDateTimeLisible(e.datetime)} — ${libelleEntree(e)}${niveau}${
+          `${formatDateLisible(e.date)} — ${libelleEntree(e)}${niveau}${
             zones ? ` — Zone(s) : ${zones}` : ""
           }${e.note ? ` — ${e.note}` : ""}`,
           9.5,
@@ -461,7 +461,7 @@ export function genererRapportPDF(
       paragraphe("Aucune note marquée comme importante sur cette période.");
     } else {
       for (const e of notes) {
-        paragraphe(`${formatDateTimeLisible(e.datetime)} — ${libelleEntree(e)} : ${e.note}`, 9.5);
+        paragraphe(`${formatDateLisible(e.date)} — ${libelleEntree(e)} : ${e.note}`, 9.5);
       }
     }
   }

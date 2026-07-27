@@ -20,6 +20,8 @@ export interface EntreeSymptome extends EntreeBase {
   location?: string[];
   /** Note brute de 0 à 10 pour un symptôme en saisie "eva" (ex. Douleur) — `severity` reste dérivé automatiquement de cette valeur pour rester compatible avec les couleurs, graphiques et corrélations existants. */
   evaluationEva?: number;
+  /** Sous-ensemble de `location` (2 maximum) marqué comme la/les zone(s) la/les plus douloureuse(s) de la journée — pertinent uniquement pour la Douleur (échelle "eva"). */
+  zonesPlusDouloureuses?: string[];
 }
 
 export interface EntreeSuivi extends EntreeBase {

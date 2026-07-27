@@ -8,6 +8,7 @@ import { SelecteurEva } from "../../components/ui/SelecteurEva";
 import { SchemaCorporel } from "../../components/ui/SchemaCorporel";
 import { versSeverite, depuisSeverite } from "../../lib/ouinon";
 import { severiteDepuisEva } from "../../lib/eva";
+import { cyclerZoneDouleur } from "../../lib/zonesDouleur";
 import { Bouton } from "../../components/ui/Bouton";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Mascotte } from "../../components/mascotte/Mascotte";
@@ -35,6 +36,7 @@ export function ParcoursQuotidienPage() {
   const [termine, setTermine] = useState(false);
   const [symptomeValeurs, setSymptomeValeurs] = useState<Record<string, string>>({});
   const [localisationValeurs, setLocalisationValeurs] = useState<Record<string, string[]>>({});
+  const [zonesPlusDouloureusesValeurs, setZonesPlusDouloureusesValeurs] = useState<Record<string, string[]>>({});
   const [humeur, setHumeur] = useState<Severite | undefined>();
   const [medicamentsCoches, setMedicamentsCoches] = useState<Set<string>>(new Set());
   const [medicamentsDejaCoches, setMedicamentsDejaCoches] = useState<Set<string>>(new Set());
@@ -49,6 +51,7 @@ export function ParcoursQuotidienPage() {
     setPreremplissageFait(true);
     const symptomes: Record<string, string> = {};
     const localisations: Record<string, string[]> = {};
+    const zonesPlusDouloureuses: Record<string, string[]> = {};
     for (const e of entreesJour) {
       if (e.type === "symptom" && idsSymptomesQuotidiens.includes(e.item)) {
         const symptomeEntree = e as EntreeSymptome;
@@ -61,10 +64,12 @@ export function ParcoursQuotidienPage() {
               : (symptomeEntree.severity ?? "");
         const zones = symptomeEntree.location;
         if (zones) localisations[e.item] = zones;
+        if (symptomeEntree.zonesPlusDouloureuses) zonesPlusDouloureuses[e.item] = symptomeEntree.zonesPlusDouloureuses;
       }
     }
     setSymptomeValeurs((prev) => ({ ...prev, ...symptomes }));
     setLocalisationValeurs((prev) => ({ ...prev, ...localisations }));
+    setZonesPlusDouloureusesValeurs((prev) => ({ ...prev, ...zonesPlusDouloureuses }));
 
     const humeurEntree = entreesJour.find((e) => e.type === "track_something" && e.item === "humeur") as
       | EntreeSuivi
@@ -119,6 +124,7 @@ export function ParcoursQuotidienPage() {
         evaluationEva,
         note: estTexte ? valeurBrute : undefined,
         location: def?.localisable ? localisationValeurs[item] : undefined,
+        zonesPlusDouloureuses: def?.localisable && estEva ? zonesPlusDouloureusesValeurs[item] : undefined,
         date: dateJour,
         datetime: maintenantISO(),
       });
@@ -212,6 +218,10 @@ export function ParcoursQuotidienPage() {
               onChange={(id, s) => setSymptomeValeurs((prev) => ({ ...prev, [id]: s }))}
               localisations={localisationValeurs}
               onChangeLocalisation={(id, zones) => setLocalisationValeurs((prev) => ({ ...prev, [id]: zones }))}
+              zonesPlusDouloureuses={zonesPlusDouloureusesValeurs}
+              onChangeZonesPlusDouloureuses={(id, zones) =>
+                setZonesPlusDouloureusesValeurs((prev) => ({ ...prev, [id]: zones }))
+              }
             />
           )}
           {etape === 2 && <EtapeHumeur valeur={humeur} onChange={setHumeur} />}
@@ -269,12 +279,16 @@ function EtapeSymptomes({
   onChange,
   localisations,
   onChangeLocalisation,
+  zonesPlusDouloureuses,
+  onChangeZonesPlusDouloureuses,
 }: {
   ids: string[];
   valeurs: Record<string, string>;
   onChange: (id: string, v: string) => void;
   localisations: Record<string, string[]>;
   onChangeLocalisation: (id: string, zones: string[]) => void;
+  zonesPlusDouloureuses: Record<string, string[]>;
+  onChangeZonesPlusDouloureuses: (id: string, zones: string[]) => void;
 }) {
   return (
     <div>
@@ -291,8 +305,17 @@ function EtapeSymptomes({
           const def = trouverSymptome(id);
           if (!def || def.desactive) return null;
           const zones = localisations[id] ?? [];
+          const zonesPlusDouloureusesItem = zonesPlusDouloureuses[id] ?? [];
           const basculerZone = (zoneId: string) =>
             onChangeLocalisation(id, zones.includes(zoneId) ? zones.filter((z) => z !== zoneId) : [...zones, zoneId]);
+          const cyclerZone = (zoneId: string) => {
+            const suivant = cyclerZoneDouleur(zoneId, {
+              zonesSelectionnees: zones,
+              zonesPlusDouloureuses: zonesPlusDouloureusesItem,
+            });
+            onChangeLocalisation(id, suivant.zonesSelectionnees);
+            onChangeZonesPlusDouloureuses(id, suivant.zonesPlusDouloureuses);
+          };
           return (
             <div key={id}>
               <p className="font-semibold text-sm mb-2">
@@ -329,7 +352,12 @@ function EtapeSymptomes({
                   <span className="block text-xs font-semibold mb-1.5 text-texte-doux">
                     Zone(s) concernée(s) (optionnel)
                   </span>
-                  <SchemaCorporel zonesSelectionnees={zones} onToggleZone={basculerZone} />
+                  <SchemaCorporel
+                    zonesSelectionnees={zones}
+                    onToggleZone={basculerZone}
+                    zonesPlusDouloureuses={def.typeFormulaire === "eva" ? zonesPlusDouloureusesItem : undefined}
+                    onToggleZonePlusDouloureuse={def.typeFormulaire === "eva" ? cyclerZone : undefined}
+                  />
                 </div>
               )}
             </div>

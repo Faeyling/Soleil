@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { labelArticulation } from "../../content/symptomes";
 import { SECTIONS } from "../../lib/sections";
+import { couleurSeverite } from "../../lib/severite";
+import { MAX_ZONES_PLUS_DOULOUREUSES } from "../../lib/zonesDouleur";
 
 type Vue = "face" | "dos";
 
@@ -60,34 +62,52 @@ const IDS_HORS_SCHEMA = ["autre-zone"];
 interface SchemaCorporelProps {
   zonesSelectionnees: string[];
   onToggleZone: (id: string) => void;
+  /**
+   * Active un 2e niveau "zone la plus douloureuse de la journée" (2 maximum)
+   * sur un cycle à 3 états par appui : sélectionnée → la plus douloureuse →
+   * désélectionnée. Laisser absent désactive ce niveau (ex. luxation,
+   * subluxation — un événement n'a pas d'intensité à situer).
+   */
+  zonesPlusDouloureuses?: string[];
+  onToggleZonePlusDouloureuse?: (id: string) => void;
 }
 
 function Hotspot({
   point,
   actif,
+  plusDouloureuse,
   onToggle,
 }: {
   point: Point;
   actif: boolean;
+  plusDouloureuse: boolean;
   onToggle: (id: string) => void;
 }) {
-  const couleur = SECTIONS.symptomes.couleur;
+  const couleur = plusDouloureuse ? couleurSeverite("haut") : SECTIONS.symptomes.couleur;
+  const label = labelArticulation(point.id);
+  const libelleEtat = plusDouloureuse ? `${label} — zone la plus douloureuse de la journée` : label;
   return (
     <button
       type="button"
       onClick={() => onToggle(point.id)}
       aria-pressed={actif}
-      aria-label={labelArticulation(point.id)}
-      title={labelArticulation(point.id)}
-      className="absolute w-7 h-7 rounded-full border-2 -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-transform active:scale-90 flex items-center justify-center"
+      aria-label={libelleEtat}
+      title={libelleEtat}
+      className="absolute w-7 h-7 rounded-full -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-transform active:scale-90 flex items-center justify-center"
       style={{
         left: `${(point.x / 200) * 100}%`,
         top: `${(point.y / 400) * 100}%`,
-        borderColor: couleur,
+        border: `${plusDouloureuse ? 3 : 2}px solid ${couleur}`,
         background: actif ? couleur : "var(--color-surface)",
         boxShadow: "0 1px 4px rgba(58,46,38,0.2)",
       }}
-    />
+    >
+      {plusDouloureuse && (
+        <span aria-hidden="true" className="text-[10px] leading-none text-[var(--color-texte-sur-accent)]">
+          ★
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -120,10 +140,16 @@ function Silhouette({ vue }: { vue: Vue }) {
 }
 
 /** Sélecteur de zones corporelles par schéma cliquable (face/dos), façon logiciel de kiné. */
-export function SchemaCorporel({ zonesSelectionnees, onToggleZone }: SchemaCorporelProps) {
+export function SchemaCorporel({
+  zonesSelectionnees,
+  onToggleZone,
+  zonesPlusDouloureuses,
+  onToggleZonePlusDouloureuse,
+}: SchemaCorporelProps) {
   const [vue, setVue] = useState<Vue>("face");
   const points = vue === "face" ? ZONES_FACE : ZONES_DOS;
   const autresZonesSelectionnees = zonesSelectionnees.filter((id) => IDS_HORS_SCHEMA.includes(id));
+  const avecIntensite = zonesPlusDouloureuses !== undefined && onToggleZonePlusDouloureuse !== undefined;
 
   return (
     <div>
@@ -157,7 +183,8 @@ export function SchemaCorporel({ zonesSelectionnees, onToggleZone }: SchemaCorpo
             key={point.id}
             point={point}
             actif={zonesSelectionnees.includes(point.id)}
-            onToggle={onToggleZone}
+            plusDouloureuse={avecIntensite && zonesPlusDouloureuses.includes(point.id)}
+            onToggle={avecIntensite ? onToggleZonePlusDouloureuse : onToggleZone}
           />
         ))}
       </div>
@@ -181,10 +208,23 @@ export function SchemaCorporel({ zonesSelectionnees, onToggleZone }: SchemaCorpo
         </button>
       </div>
 
+      {avecIntensite && (
+        <p className="text-xs text-texte-doux mt-3 text-center">
+          Appui 1 : sélectionne · Appui 2 : ★ zone la plus douloureuse ({zonesPlusDouloureuses.length}/
+          {MAX_ZONES_PLUS_DOULOUREUSES} max) · Appui 3 : désélectionne
+        </p>
+      )}
+
       {zonesSelectionnees.length > 0 && (
-        <p className="text-sm text-texte-doux mt-3 text-center">
+        <p className="text-sm text-texte-doux mt-2 text-center">
           Zone{zonesSelectionnees.length > 1 ? "s" : ""} sélectionnée{zonesSelectionnees.length > 1 ? "s" : ""} :{" "}
           {zonesSelectionnees.map((id) => labelArticulation(id)).join(", ")}
+        </p>
+      )}
+
+      {avecIntensite && zonesPlusDouloureuses.length > 0 && (
+        <p className="text-sm text-texte-doux mt-1 text-center">
+          ★ La plus douloureuse : {zonesPlusDouloureuses.map((id) => labelArticulation(id)).join(", ")}
         </p>
       )}
     </div>

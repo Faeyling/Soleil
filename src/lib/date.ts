@@ -13,6 +13,24 @@ export function maintenantISO(): string {
   return new Date().toISOString();
 }
 
+/**
+ * ISO combinant une date (YYYY-MM-DD) avec l'heure actuelle — la saisie ne
+ * demande plus l'heure, mais un horodatage complet reste nécessaire en
+ * interne (tri, graphes).
+ */
+export function isoDepuisDate(date: string): string {
+  const maintenant = new Date();
+  const [annee, mois, jour] = date.split("-").map(Number);
+  return new Date(
+    annee,
+    mois - 1,
+    jour,
+    maintenant.getHours(),
+    maintenant.getMinutes(),
+    maintenant.getSeconds(),
+  ).toISOString();
+}
+
 const MOIS_FR = [
   "janvier",
   "février",
@@ -56,38 +74,6 @@ export function formatDateLisible(dateStr: string): string {
   const [a, m, j] = dateStr.split("-").map(Number);
   const d = new Date(a, m - 1, j);
   return `${d.getDate()} ${nomMois(d.getMonth())} ${d.getFullYear()}`;
-}
-
-export function formatHeure(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-}
-
-export function formatDateTimeLisible(iso: string): string {
-  const d = new Date(iso);
-  return `${formatDateLisible(toDateStr(d))} à ${formatHeure(iso)}`;
-}
-
-export function datetimeLocalValue(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours(),
-  )}:${pad(d.getMinutes())}`;
-}
-
-export function isoDepuisDatetimeLocal(value: string): string {
-  return new Date(value).toISOString();
-}
-
-/**
- * Extrait la date (YYYY-MM-DD) directement depuis la valeur d'un input
- * `datetime-local`, qui est déjà exprimée en heure locale — contrairement à
- * `isoDepuisDatetimeLocal(value).slice(0, 10)`, qui donnerait la date UTC et
- * peut se tromper de jour en soirée/nuit pour un fuseau horaire ≠ UTC.
- */
-export function dateDepuisDatetimeLocal(value: string): string {
-  return value.slice(0, 10);
 }
 
 export function premierJourMois(annee: number, mois: number): Date {

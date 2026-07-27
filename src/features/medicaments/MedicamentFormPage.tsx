@@ -20,13 +20,7 @@ import {
 } from "../../data/repositories/medicamentsRepository";
 import { creerEntree, modifierEntree, supprimerEntree } from "../../data/repositories/entreesRepository";
 import { proposerAnnulation } from "../../lib/toastAnnulerStore";
-import {
-  dateDepuisDatetimeLocal,
-  datetimeLocalValue,
-  formatDateLisible,
-  isoDepuisDatetimeLocal,
-  maintenantISO,
-} from "../../lib/date";
+import { dateDuJour, formatDateLisible, isoDepuisDate } from "../../lib/date";
 import type { EntreePriseMedicament, Medicament } from "../../data/types";
 
 export function MedicamentFormPage() {
@@ -70,7 +64,7 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
 
   const [dosePrise, setDosePrise] = useState("");
   const [notePrise, setNotePrise] = useState("");
-  const [datetimePrise, setDatetimePrise] = useState(datetimeLocalValue(maintenantISO()));
+  const [datePrise, setDatePrise] = useState(dateDuJour());
   const [confirmationPrise, setConfirmationPrise] = useState(false);
   const [enregistrementPriseEnCours, setEnregistrementPriseEnCours] = useState(false);
 
@@ -125,7 +119,7 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
       // implicitement — sinon la prise fraîchement enregistrée référencerait
       // un médicament resté invisible dans "Mes médicaments".
       if (medicament.desactive) await reactiverMedicament(medicamentId);
-      const iso = isoDepuisDatetimeLocal(datetimePrise);
+      const iso = isoDepuisDate(datePrise);
       await creerEntree({
         type: "medication_intake",
         item: medicamentId,
@@ -133,13 +127,13 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
         medicationName: medicament.nom,
         dose: dosePrise.trim() || undefined,
         note: notePrise.trim() || undefined,
-        date: dateDepuisDatetimeLocal(datetimePrise),
+        date: datePrise,
         datetime: iso,
       });
       await decrementerStock(medicamentId);
       setDosePrise(medicament.doseHabituelle ?? "");
       setNotePrise("");
-      setDatetimePrise(datetimeLocalValue(maintenantISO()));
+      setDatePrise(dateDuJour());
       setConfirmationPrise(true);
       setTimeout(() => setConfirmationPrise(false), 2500);
     } finally {
@@ -253,13 +247,13 @@ function GestionMedicament({ medicamentId, medicament, prises }: GestionMedicame
             placeholder="Ex. 400mg, 2 comprimés, 10 gouttes..."
           />
         </Champ>
-        <Champ label="Date et heure de la prise">
+        <Champ label="Date de la prise">
           <input
-            type="datetime-local"
+            type="date"
             className={classesInput}
-            value={datetimePrise}
-            max={datetimeLocalValue(maintenantISO())}
-            onChange={(e) => setDatetimePrise(e.target.value)}
+            value={datePrise}
+            max={dateDuJour()}
+            onChange={(e) => setDatePrise(e.target.value)}
           />
         </Champ>
         <Champ label="Note" optionnel>
@@ -332,7 +326,7 @@ function EditionPrise({ entree, medicamentNom }: EditionPriseProps) {
   const navigate = useNavigate();
   const [dose, setDose] = useState("");
   const [note, setNote] = useState("");
-  const [datetime, setDatetime] = useState("");
+  const [date, setDate] = useState("");
   const [suppressionDemandee, setSuppressionDemandee] = useState(false);
   const [entreeChargeeId, setEntreeChargeeId] = useState<string | undefined>();
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
@@ -341,7 +335,7 @@ function EditionPrise({ entree, medicamentNom }: EditionPriseProps) {
     setEntreeChargeeId(entree.id);
     setDose(entree.dose ?? "");
     setNote(entree.note ?? "");
-    setDatetime(datetimeLocalValue(entree.datetime));
+    setDate(entree.date);
   }
 
   if (!entree) {
@@ -352,12 +346,12 @@ function EditionPrise({ entree, medicamentNom }: EditionPriseProps) {
     if (enregistrementEnCours) return;
     setEnregistrementEnCours(true);
     try {
-      const iso = isoDepuisDatetimeLocal(datetime);
+      const iso = isoDepuisDate(date);
       await modifierEntree(entree.id, {
         dose: dose.trim() || undefined,
         note: note.trim() || undefined,
         datetime: iso,
-        date: dateDepuisDatetimeLocal(datetime),
+        date,
       });
       navigate(-1);
     } finally {
@@ -378,12 +372,13 @@ function EditionPrise({ entree, medicamentNom }: EditionPriseProps) {
       <Champ label="Dose">
         <input className={classesInput} value={dose} onChange={(e) => setDose(e.target.value)} />
       </Champ>
-      <Champ label="Date et heure">
+      <Champ label="Date">
         <input
-          type="datetime-local"
+          type="date"
           className={classesInput}
-          value={datetime}
-          onChange={(e) => setDatetime(e.target.value)}
+          value={date}
+          max={dateDuJour()}
+          onChange={(e) => setDate(e.target.value)}
         />
       </Champ>
       <Champ label="Note" optionnel>

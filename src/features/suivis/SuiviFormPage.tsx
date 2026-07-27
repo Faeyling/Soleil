@@ -12,7 +12,7 @@ import { CaseImportante } from "../../components/ui/CaseImportante";
 import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { SECTIONS } from "../../lib/sections";
 import type { Severite } from "../../lib/severite";
-import { dateDepuisDatetimeLocal, datetimeLocalValue, isoDepuisDatetimeLocal, maintenantISO } from "../../lib/date";
+import { dateDuJour, isoDepuisDate } from "../../lib/date";
 import {
   creerEntree,
   modifierEntreeAvecUnicite,
@@ -32,7 +32,7 @@ export function SuiviFormPage() {
 
   const [severite, setSeverite] = useState<Severite | undefined>();
   const [valeur, setValeur] = useState("");
-  const [datetime, setDatetime] = useState(datetimeLocalValue(maintenantISO()));
+  const [date, setDate] = useState(dateDuJour());
   const [note, setNote] = useState("");
   const [important, setImportant] = useState(false);
   const [erreur, setErreur] = useState<string | undefined>();
@@ -52,7 +52,7 @@ export function SuiviFormPage() {
     setEntreeChargeeId(entreeExistante.id);
     setSeverite(entreeExistante.severity);
     setValeur(entreeExistante.value != null ? String(entreeExistante.value) : "");
-    setDatetime(datetimeLocalValue(entreeExistante.datetime));
+    setDate(entreeExistante.date);
     setNote(entreeExistante.note ?? "");
     setImportant(entreeExistante.important ?? false);
   }
@@ -73,8 +73,7 @@ export function SuiviFormPage() {
     }
     setEnregistrementEnCours(true);
     try {
-      const iso = isoDepuisDatetimeLocal(datetime);
-      const date = dateDepuisDatetimeLocal(datetime);
+      const iso = isoDepuisDate(date);
 
       const champs = {
         severity:
@@ -113,7 +112,7 @@ export function SuiviFormPage() {
         if (resultat.entree.type === "track_something") {
           setSeverite(resultat.entree.severity);
           setValeur(resultat.entree.value != null ? String(resultat.entree.value) : "");
-          setDatetime(datetimeLocalValue(resultat.entree.datetime));
+          setDate(resultat.entree.date);
           setNote(resultat.entree.note ?? "");
           setImportant(resultat.entree.important ?? false);
         }
@@ -179,13 +178,13 @@ export function SuiviFormPage() {
         </Champ>
       )}
 
-      <Champ label="Date et heure">
+      <Champ label="Date">
         <input
-          type="datetime-local"
+          type="date"
           className={classesInput}
-          value={datetime}
-          max={datetimeLocalValue(maintenantISO())}
-          onChange={(e) => setDatetime(e.target.value)}
+          value={date}
+          max={dateDuJour()}
+          onChange={(e) => setDate(e.target.value)}
         />
       </Champ>
 
