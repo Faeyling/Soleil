@@ -3,6 +3,7 @@ import { db } from "../db";
 import {
   initialiserContenuSiVide,
   migrerDouleurVersEva,
+  migrerCategoriesSymptomes,
   ajouterSymptome,
   modifierSymptome,
   supprimerSymptome,
@@ -60,6 +61,32 @@ describe("migrerDouleurVersEva", () => {
     const relu = await db.symptomes.get("douleur");
     expect(relu?.localisable).toBe(true);
     expect(relu?.ordre).toBe(3);
+  });
+});
+
+describe("migrerCategoriesSymptomes", () => {
+  it("catégorise un symptôme par défaut déjà en base sans catégorie", async () => {
+    await db.symptomes.add({ id: "fatigue", label: "Fatigue", icone: "🪫", ordre: 0 });
+
+    await migrerCategoriesSymptomes();
+
+    expect((await db.symptomes.get("fatigue"))?.categorie).toBe("dysautonomie");
+  });
+
+  it("ne touche pas à un symptôme par défaut déjà catégorisé", async () => {
+    await db.symptomes.add({ id: "fatigue", label: "Fatigue", icone: "🪫", categorie: "autre", ordre: 0 });
+
+    await migrerCategoriesSymptomes();
+
+    expect((await db.symptomes.get("fatigue"))?.categorie).toBe("autre");
+  });
+
+  it("ne catégorise pas un symptôme personnalisé (inconnu du contenu par défaut)", async () => {
+    const perso = await ajouterSymptome({ icone: "🩹", label: "Personnalisé" });
+
+    await migrerCategoriesSymptomes();
+
+    expect((await db.symptomes.get(perso.id))?.categorie).toBeUndefined();
   });
 });
 

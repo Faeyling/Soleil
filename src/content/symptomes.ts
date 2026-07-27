@@ -1,29 +1,36 @@
 import { useSyncExternalStore } from "react";
-import type { SymptomeDef } from "../data/types";
+import type { SymptomeDef, CategorieSymptome } from "../data/types";
 
-export type { SymptomeDef };
+export type { SymptomeDef, CategorieSymptome };
 
 // Contenu de départ, semé en base une seule fois au premier lancement (voir
 // data/repositories/contenuRepository.ts) — modifiable ensuite par la
 // personne qui utilise l'app, voir GererSymptomesPage.
 export const SYMPTOMES_PAR_DEFAUT: SymptomeDef[] = [
-  { id: "douleur-vesicale", label: "Douleur vésicale / difficulté à uriner", icone: "💧", ordre: 0 },
-  { id: "tension-arterielle", label: "Tension artérielle", icone: "🩺", ordre: 1 },
-  { id: "bleus", label: "Bleus / ecchymoses", icone: "🟣", ordre: 2 },
-  { id: "constipation", label: "Constipation", icone: "🌀", ordre: 3 },
-  { id: "diarrhee", label: "Diarrhée", icone: "🚽", ordre: 4 },
-  { id: "vertiges", label: "Vertiges", icone: "💫", ordre: 5 },
-  { id: "fatigue", label: "Fatigue", icone: "🪫", ordre: 6 },
-  { id: "troubles-digestifs", label: "Troubles digestifs / gastro-intestinaux", icone: "🤢", ordre: 7 },
-  { id: "frequence-cardiaque", label: "Fréquence cardiaque", icone: "❤️", ordre: 8 },
-  { id: "urticaire", label: "Urticaire", icone: "🔴", ordre: 9 },
-  { id: "demangeaisons", label: "Démangeaisons", icone: "✋", ordre: 10 },
+  { id: "douleur-vesicale", label: "Douleur vésicale / difficulté à uriner", icone: "💧", categorie: "urinaire", ordre: 0 },
+  { id: "tension-arterielle", label: "Tension artérielle", icone: "🩺", categorie: "dysautonomie", ordre: 1 },
+  { id: "bleus", label: "Bleus / ecchymoses", icone: "🟣", categorie: "cutane", ordre: 2 },
+  { id: "constipation", label: "Constipation", icone: "🌀", categorie: "digestif", ordre: 3 },
+  { id: "diarrhee", label: "Diarrhée", icone: "🚽", categorie: "digestif", ordre: 4 },
+  { id: "vertiges", label: "Vertiges", icone: "💫", categorie: "dysautonomie", ordre: 5 },
+  { id: "fatigue", label: "Fatigue", icone: "🪫", categorie: "dysautonomie", ordre: 6 },
+  {
+    id: "troubles-digestifs",
+    label: "Troubles digestifs / gastro-intestinaux",
+    icone: "🤢",
+    categorie: "digestif",
+    ordre: 7,
+  },
+  { id: "frequence-cardiaque", label: "Fréquence cardiaque", icone: "❤️", categorie: "dysautonomie", ordre: 8 },
+  { id: "urticaire", label: "Urticaire", icone: "🔴", categorie: "cutane", ordre: 9 },
+  { id: "demangeaisons", label: "Démangeaisons", icone: "✋", categorie: "cutane", ordre: 10 },
   {
     id: "luxation-articulaire",
     label: "Luxation articulaire",
     icone: "🦴",
     localisable: true,
     typeFormulaire: "ouinon",
+    categorie: "musculo-squelettique",
     ordre: 11,
   },
   {
@@ -32,14 +39,48 @@ export const SYMPTOMES_PAR_DEFAUT: SymptomeDef[] = [
     icone: "🦴",
     localisable: true,
     typeFormulaire: "ouinon",
+    categorie: "musculo-squelettique",
     ordre: 12,
   },
-  { id: "nausees", label: "Nausées", icone: "🤮", ordre: 13 },
-  { id: "douleur", label: "Douleur", icone: "⚡", localisable: true, typeFormulaire: "eva", ordre: 14 },
-  { id: "sommeil", label: "Sommeil", icone: "🌙", ordre: 15 },
-  { id: "vomissements", label: "Vomissements", icone: "🤢", ordre: 16 },
-  { id: "autre-symptome", label: "Autre", icone: "➕", typeFormulaire: "texte", ordre: 17 },
+  { id: "nausees", label: "Nausées", icone: "🤮", categorie: "digestif", ordre: 13 },
+  {
+    id: "douleur",
+    label: "Douleur",
+    icone: "⚡",
+    localisable: true,
+    typeFormulaire: "eva",
+    categorie: "musculo-squelettique",
+    ordre: 14,
+  },
+  { id: "sommeil", label: "Sommeil", icone: "🌙", categorie: "sommeil", ordre: 15 },
+  { id: "vomissements", label: "Vomissements", icone: "🤢", categorie: "digestif", ordre: 16 },
+  { id: "autre-symptome", label: "Autre", icone: "➕", typeFormulaire: "texte", categorie: "autre", ordre: 17 },
 ];
+
+export const ORDRE_CATEGORIES_SYMPTOME: CategorieSymptome[] = [
+  "musculo-squelettique",
+  "dysautonomie",
+  "digestif",
+  "cutane",
+  "urinaire",
+  "sommeil",
+  "autre",
+];
+
+export const LABEL_CATEGORIE_SYMPTOME: Record<CategorieSymptome, string> = {
+  "musculo-squelettique": "Musculo-squelettique",
+  dysautonomie: "Dysautonomie",
+  digestif: "Digestif",
+  cutane: "Peau & réactions",
+  urinaire: "Urinaire",
+  sommeil: "Sommeil",
+  autre: "Autre",
+};
+
+/** Catégorie effective d'un symptôme, "Autre" par défaut si non renseignée (ex. symptôme personnalisé non catégorisé). */
+export function categorieSymptome(s: SymptomeDef): CategorieSymptome {
+  return s.categorie ?? "autre";
+}
 
 // Store externe (façon useSyncExternalStore) tenu à jour par un liveQuery sur
 // la table `symptomes` — voir data/contenuInit.ts. Permet à `trouverSymptome`

@@ -27,6 +27,24 @@ export async function migrerDouleurVersEva(): Promise<void> {
   }
 }
 
+/**
+ * Migration ponctuelle : les symptômes par défaut sont désormais regroupés
+ * par grande catégorie clinique (ex. Dysautonomie) dans la grille — même
+ * raison que `migrerDouleurVersEva`, une installation existante garde sinon
+ * ses symptômes par défaut sans `categorie` indéfiniment. Ne touche que les
+ * symptômes par défaut déjà en base et pas encore catégorisés ; un symptôme
+ * personnalisé sans catégorie reste simplement classé "Autre" à l'affichage.
+ */
+export async function migrerCategoriesSymptomes(): Promise<void> {
+  for (const defaut of SYMPTOMES_PAR_DEFAUT) {
+    if (!defaut.categorie) continue;
+    const existant = await db.symptomes.get(defaut.id);
+    if (existant && !existant.categorie) {
+      await db.symptomes.update(defaut.id, { categorie: defaut.categorie });
+    }
+  }
+}
+
 async function prochainOrdre(table: typeof db.symptomes | typeof db.autresSuivis): Promise<number> {
   const tous = await table.toArray();
   return tous.reduce((max, item) => Math.max(max, item.ordre), -1) + 1;

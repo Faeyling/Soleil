@@ -94,6 +94,15 @@ export interface RessourceNote {
   createdAt: string;
 }
 
+export type CategorieSymptome =
+  | "musculo-squelettique"
+  | "dysautonomie"
+  | "digestif"
+  | "cutane"
+  | "urinaire"
+  | "sommeil"
+  | "autre";
+
 export interface SymptomeDef {
   id: string;
   label: string;
@@ -102,6 +111,8 @@ export interface SymptomeDef {
   localisable?: boolean;
   /** Échelle de saisie : "severite" (Bas/Moyen/Haut, par défaut), "ouinon" — ex. luxation/subluxation, un événement plutôt qu'une intensité —, "eva" — Échelle Visuelle Analogique de 0 à 10, réservée à la douleur — ou "texte" — description libre, ex. "Autre". */
   typeFormulaire?: "severite" | "ouinon" | "texte" | "eva";
+  /** Grande catégorie clinique regroupant ce symptôme dans la grille (ex. dysautonomie) — "autre" par défaut si absent. */
+  categorie?: CategorieSymptome;
   /** Si vrai, le symptôme est désactivé : il n'apparaît plus dans la grille "Signaler un symptôme" ni dans le parcours quotidien, mais reste éditable, réactivable, et ses entrées déjà enregistrées restent pleinement consultables. */
   desactive?: boolean;
   /** Position d'affichage dans la grille — les éléments par défaut gardent leur ordre d'origine, les ajouts arrivent en fin de liste. */

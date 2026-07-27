@@ -3,9 +3,9 @@ import { EnTete } from "../../components/ui/EnTete";
 import { Champ, classesInput } from "../../components/ui/Champ";
 import { Bouton } from "../../components/ui/Bouton";
 import { SECTIONS } from "../../lib/sections";
-import { useSymptomes } from "../../content/symptomes";
+import { useSymptomes, ORDRE_CATEGORIES_SYMPTOME, LABEL_CATEGORIE_SYMPTOME, categorieSymptome } from "../../content/symptomes";
 import { ajouterSymptome, modifierSymptome, deplacerSymptome } from "../../data/repositories/contenuRepository";
-import type { SymptomeDef } from "../../data/types";
+import type { SymptomeDef, CategorieSymptome } from "../../data/types";
 
 type TypeFormulaireSymptome = "severite" | "ouinon" | "eva" | "texte";
 
@@ -14,9 +14,16 @@ interface FormulaireSymptome {
   label: string;
   localisable: boolean;
   typeFormulaire: TypeFormulaireSymptome;
+  categorie: CategorieSymptome;
 }
 
-const FORMULAIRE_VIDE: FormulaireSymptome = { icone: "🩹", label: "", localisable: false, typeFormulaire: "severite" };
+const FORMULAIRE_VIDE: FormulaireSymptome = {
+  icone: "🩹",
+  label: "",
+  localisable: false,
+  typeFormulaire: "severite",
+  categorie: "autre",
+};
 
 const LABEL_TYPE: Record<TypeFormulaireSymptome, string> = {
   severite: "Niveau (Bas / Moyen / Haut)",
@@ -44,6 +51,7 @@ export function GererSymptomesPage() {
       label: s.label,
       localisable: s.localisable ?? false,
       typeFormulaire: s.typeFormulaire ?? "severite",
+      categorie: categorieSymptome(s),
     });
     setEdition(s.id);
   };
@@ -59,6 +67,7 @@ export function GererSymptomesPage() {
         label: formulaire.label.trim(),
         localisable: formulaire.localisable,
         typeFormulaire: formulaire.typeFormulaire,
+        categorie: formulaire.categorie,
       };
       if (edition === "nouveau") {
         await ajouterSymptome(donnees);
@@ -122,6 +131,19 @@ export function GererSymptomesPage() {
               {(Object.keys(LABEL_TYPE) as TypeFormulaireSymptome[]).map((t) => (
                 <option key={t} value={t}>
                   {LABEL_TYPE[t]}
+                </option>
+              ))}
+            </select>
+          </Champ>
+          <Champ label="Catégorie">
+            <select
+              className={classesInput}
+              value={formulaire.categorie}
+              onChange={(e) => setFormulaire((f) => ({ ...f, categorie: e.target.value as CategorieSymptome }))}
+            >
+              {ORDRE_CATEGORIES_SYMPTOME.map((c) => (
+                <option key={c} value={c}>
+                  {LABEL_CATEGORIE_SYMPTOME[c]}
                 </option>
               ))}
             </select>
