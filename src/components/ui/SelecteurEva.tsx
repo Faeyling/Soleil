@@ -8,45 +8,49 @@ interface NiveauDouleur {
 }
 
 /**
- * Ancrages fonctionnels plutôt qu'un chiffre nu à choisir dans l'abstrait,
- * bâtis autour de la douleur de fond plutôt que d'un "0" rarement atteint en
- * douleur chronique : le niveau 2 sert de référence ("mon niveau habituel"),
- * les suivants décrivent un écart croissant par rapport à cette base plutôt
- * qu'une intensité absolue. Impact mesuré sur la mobilité et le besoin de
- * repos/pause — plus parlant pour le SEDh que la lecture/les écrans (repris
- * d'une première version inspirée de la Functional Pain Scale de Gloth et
- * al., pensée pour un contexte plus proche de la douleur aiguë).
+ * Ancrages fonctionnels plutôt qu'un chiffre nu à choisir dans l'abstrait —
+ * mais chaque niveau garde un sens fixe et objectif, comme une échelle
+ * clinique standard (à la manière des échelles couleur utilisées en douleur
+ * chronique). Redéfinir un niveau selon "l'habitude" de la personne (ex.
+ * faire de 2 sa référence personnelle) rendrait le suivi inutilisable pour
+ * repérer une vraie aggravation dans le temps : le "2" dériverait avec le
+ * ressenti plutôt que de rester un repère stable sur le graphique et le
+ * rapport PDF. La réalité d'une douleur de fond qui n'atteint presque
+ * jamais 0 en douleur chronique est donc reconnue dans le texte (niveaux 0
+ * et 2), sans déplacer l'échelle elle-même. Impact mesuré sur la mobilité
+ * et le besoin de pause, plus parlant pour le SEDh que la lecture/les
+ * écrans d'une première version inspirée de la Functional Pain Scale.
  */
 const NIVEAUX_DOULEUR: NiveauDouleur[] = [
   {
     eva: 0,
     titre: "Aucune douleur",
-    description: "Vraiment aucune douleur aujourd'hui — rare, mais ça arrive.",
+    description: "Pas de douleur du tout. En douleur chronique, ce niveau peut être rare voire jamais atteint — et c'est normal.",
   },
   {
     eva: 2,
-    titre: "Mon niveau habituel",
-    description: "C'est ma douleur de tous les jours, je vis normalement avec.",
+    titre: "Légère, mais gérable",
+    description: "Je la remarque si j'y pense, elle n'empêche aucune activité. C'est peut-être ton état la plupart du temps, et c'est OK.",
   },
   {
     eva: 4,
-    titre: "Plus que d'habitude",
-    description: "Je ralentis, j'évite certains mouvements ou certaines postures.",
+    titre: "Modérée, je dois composer avec",
+    description: "Je ne peux plus l'ignorer complètement : je ralentis, j'évite certains mouvements ou certaines postures.",
   },
   {
     eva: 6,
-    titre: "Bien plus que d'habitude",
-    description: "Je dois m'arrêter, me poser, revoir mes plans de la journée.",
+    titre: "Forte, difficile à ignorer",
+    description: "Impossible à ignorer plus de quelques minutes : je dois m'arrêter, me poser, revoir mes plans.",
   },
   {
     eva: 8,
-    titre: "Débordée par la douleur",
-    description: "Bouger, rester debout ou utiliser mes mains devient très difficile.",
+    titre: "Sévère, très limitante",
+    description: "Bouger, rester debout ou utiliser mes mains devient très difficile. J'ai besoin d'aide ou de m'allonger.",
   },
   {
     eva: 10,
     titre: "Extrême — crise",
-    description: "Douleur insupportable, je ne peux presque plus bouger ni communiquer. Besoin d'aide immédiate.",
+    description: "Douleur insupportable, incapacitante. Besoin d'aide immédiate.",
   },
 ];
 
