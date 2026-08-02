@@ -3,7 +3,7 @@ import type { Entree, EntreeSymptome, Medicament, Marqueur } from "../data/types
 import { labelSeverite, ordreSeverite, LABEL_SEVERITE, type Severite } from "./severite";
 import { libelleEntree } from "./libelleEntree";
 import { labelArticulation, trouverSymptome } from "../content/symptomes";
-import { formatDateLisible, joursEntre, nomMois } from "./date";
+import { dateDuJour, formatDateLisible, joursEntre, nomMois } from "./date";
 import type { EvaluationBeighton } from "../data/repositories/beightonRepository";
 import { LABEL_TRANCHE_AGE_BEIGHTON, seuilPositifBeighton } from "../content/ressources";
 import { medicamentsStockBas } from "./stock";
@@ -359,6 +359,23 @@ export function genererRapportPDF(
         parItem.set(e.item, liste);
       }
       const joursPeriode = joursEntre(options.dateDebut, options.dateFin);
+
+      // "Depuis le début du suivi" : indépendant de la période choisie pour le
+      // rapport — s'appuie sur toutes les entrées jamais enregistrées, pas
+      // seulement `entreesPeriode`.
+      const dateDebutSuivi = entrees.reduce<string | undefined>(
+        (min, e) => (min === undefined || e.date < min ? e.date : min),
+        undefined,
+      );
+      const joursDepuisDebut = dateDebutSuivi ? joursEntre(dateDebutSuivi, dateDuJour()) : [];
+      const parItemToutesEntrees = new Map<string, Entree[]>();
+      for (const e of entrees) {
+        if (e.type !== "symptom") continue;
+        const liste = parItemToutesEntrees.get(e.item) ?? [];
+        liste.push(e);
+        parItemToutesEntrees.set(e.item, liste);
+      }
+
       const symptomesAvecStats = [...parItem.entries()]
         .map(([item, liste]) => {
           const dates = new Set(liste.map((e) => e.date));
@@ -368,13 +385,20 @@ export function genererRapportPDF(
             options.dateDebut,
             options.dateFin,
           );
-          return { item, liste, pourcentageGlobal, parMois };
+          const datesToutesEntrees = new Set((parItemToutesEntrees.get(item) ?? []).map((e) => e.date));
+          const pourcentageDepuisDebut =
+            joursDepuisDebut.length > 0
+              ? Math.round((datesToutesEntrees.size / joursDepuisDebut.length) * 100)
+              : 0;
+          return { item, liste, pourcentageGlobal, parMois, pourcentageDepuisDebut };
         })
         .sort((a, b) => b.pourcentageGlobal - a.pourcentageGlobal);
 
-      for (const { item, liste, pourcentageGlobal, parMois } of symptomesAvecStats) {
+      for (const { item, liste, pourcentageGlobal, parMois, pourcentageDepuisDebut } of symptomesAvecStats) {
         const label = libelleEntree(liste[0]);
-        sousTitre(`${label} — signalé ${pourcentageGlobal}% des jours de la période`);
+        sousTitre(
+          `${label} — signalé ${pourcentageGlobal}% des jours de la période (${pourcentageDepuisDebut}% depuis le début du suivi)`,
+        );
 
         if (trouverSymptome(item)?.typeFormulaire === "eva") {
           const evas = liste
