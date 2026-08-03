@@ -142,7 +142,7 @@ export function ProfilPage() {
     const fichier = new File([doc.output("blob")], nomFichier, { type: "application/pdf" });
     if (nav.share && nav.canShare?.({ files: [fichier] })) {
       try {
-        await nav.share({ files: [fichier], title: "Suivi SEDh" });
+        await nav.share({ files: [fichier], title: "Suivi" });
         return;
       } catch (erreur) {
         if ((erreur as Error).name === "AbortError") return;

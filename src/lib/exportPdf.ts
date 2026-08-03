@@ -134,7 +134,7 @@ interface Colonne {
   ajouter(hauteur: number, dessiner: Bloc["dessiner"]): void;
 }
 
-/** Construit une colonne : le contenu est mis en file d'attente (mesuré) plutôt que dessiné immédiatement, pour permettre de répartir gauche/droite sur les mêmes pages en un second passage. */
+/** Construit une colonne : le contenu est mis en file d'attente (mesuré) plutôt que dessiné immédiatement, pour calculer la pagination avant de savoir où chaque bloc tombera. */
 function creerColonne(doc: jsPDF, largeur: number): Colonne {
   const blocs: Bloc[] = [];
   const ajouter: Colonne["ajouter"] = (hauteur, dessiner) => {
@@ -563,7 +563,7 @@ export function genererRapportPDF(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(...COULEUR_TITRE);
-  doc.text("Soleil — Suivi SEDh", margeGauche, y);
+  doc.text("Soleil — Suivi", margeGauche, y);
   y += 22;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
@@ -586,23 +586,14 @@ export function genererRapportPDF(
   doc.text(`Rapport généré le ${formatDateLisible(new Date().toISOString().slice(0, 10))}`, margeGauche, y);
   y += 26;
 
-  // Deux colonnes : gauche = contenu visuel (score, zones, graphique), pour
-  // une lecture immédiate ; droite = détail texte (symptômes, médicaments,
-  // événements, notes), pour approfondir.
-  const espaceEntreColonnes = 20;
-  const largeurColonne = (largeurUtile - espaceEntreColonnes) / 2;
-  const xGauche = margeGauche;
-  const xDroite = margeGauche + largeurColonne + espaceEntreColonnes;
-
-  const gauche = creerColonne(doc, largeurColonne);
-  const droite = creerColonne(doc, largeurColonne);
-
-  // --- Colonne gauche : visuel ---
+  // Une seule colonne pleine largeur, dans l'ordre : visuel (score, zones,
+  // graphique) puis détail (symptômes, médicaments, événements, notes).
+  const colonne = creerColonne(doc, largeurUtile);
 
   if (options.inclureBeighton) {
-    gauche.titre("Score de Beighton");
+    colonne.titre("Score de Beighton");
     if (!options.evaluationBeighton) {
-      gauche.paragraphe(
+      colonne.paragraphe(
         "Aucune évaluation enregistrée. Calcule ton score de Beighton depuis Ressources pour qu'il apparaisse ici.",
       );
     } else {
@@ -611,7 +602,7 @@ export function genererRapportPDF(
       const seuil = seuilPositifBeighton(tranche);
       const positif = score >= seuil;
       const couleurBadge: [number, number, number] = positif ? [235, 152, 110] : [200, 216, 178];
-      const largeurTexteBadge = largeurColonne - 68 - 10;
+      const largeurTexteBadge = largeurUtile - 68 - 10;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
       const lignesBadge = doc.splitTextToSize(
@@ -619,7 +610,7 @@ export function genererRapportPDF(
         largeurTexteBadge,
       ) as string[];
       const hauteurBadge = Math.max(46, lignesBadge.length * 11 + 20);
-      gauche.ajouter(hauteurBadge + 10, (x, yy, largeur) => {
+      colonne.ajouter(hauteurBadge + 10, (x, yy, largeur) => {
         doc.setFillColor(...couleurBadge);
         doc.roundedRect(x, yy, largeur, hauteurBadge, 8, 8, "F");
         doc.setFont("helvetica", "bold");
@@ -637,11 +628,11 @@ export function genererRapportPDF(
   const joursPeriode = joursEntre(dateDebutEffective, options.dateFin);
   if (options.inclureSymptomes) {
     const topZones = zonesPlusDouloureusesFrequentes(entreesPeriode, joursPeriode);
-    gauche.titre("Zones les plus douloureuses");
+    colonne.titre("Zones les plus douloureuses");
     if (topZones.length === 0) {
-      gauche.paragraphe("Aucune zone marquée « la plus douloureuse » sur cette période.");
+      colonne.paragraphe("Aucune zone marquée « la plus douloureuse » sur cette période.");
     } else {
-      gauche.ajouter(HAUTEUR_SILHOUETTE + 8 + topZones.length * 19 + 4, (x, yy, largeur) => {
+      colonne.ajouter(HAUTEUR_SILHOUETTE + 8 + topZones.length * 19 + 4, (x, yy, largeur) => {
         const yApresSilhouette = dessinerSilhouetteMini(doc, x, yy, largeur, topZones);
         return dessinerBarresZones(doc, x, yApresSilhouette, largeur, topZones);
       });
@@ -660,20 +651,18 @@ export function genererRapportPDF(
     (m) => m.date >= dateDebutEffective && m.date <= options.dateFin,
   );
   if (options.inclureGraphiques && itemsGraphiqueResolus.length > 0 && joursPeriode.length >= 2) {
-    gauche.ajouter(
-      hauteurGraphique(itemsGraphiqueResolus.length, largeurColonne, marqueursPeriode.length),
+    colonne.ajouter(
+      hauteurGraphique(itemsGraphiqueResolus.length, largeurUtile, marqueursPeriode.length),
       (x, yy, largeur) =>
         dessinerGraphique(doc, entreesPeriode, itemsGraphiqueResolus, x, largeur, yy, joursPeriode, marqueursPeriode),
     );
   }
 
-  // --- Colonne droite : détail ---
-
   if (options.inclureSymptomes) {
-    droite.titre("Symptômes");
+    colonne.titre("Symptômes");
     const symptomesEntrees = entreesPeriode.filter((e) => e.type === "symptom");
     if (symptomesEntrees.length === 0) {
-      droite.paragraphe("Aucun symptôme enregistré sur cette période.");
+      colonne.paragraphe("Aucun symptôme enregistré sur cette période.");
     } else {
       const parItem = new Map<string, Entree[]>();
       for (const e of symptomesEntrees) {
@@ -702,7 +691,7 @@ export function genererRapportPDF(
 
       for (const { item, liste, pourcentageGlobal, pourcentageJoursForts: pctForts, tendance } of symptomesAvecStats) {
         const label = libelleEntree(liste[0]);
-        droite.sousTitre(label);
+        colonne.sousTitre(label);
 
         const infoTendance = TENDANCE_INFO[tendance];
         const swatches: Swatch[] = [
@@ -728,16 +717,16 @@ export function genererRapportPDF(
           }
         }
 
-        const hauteur = hauteurSwatches(doc, droite.largeur, swatches);
-        droite.ajouter(hauteur, (x, yy, largeur) => dessinerSwatches(doc, x, yy, largeur, swatches));
+        const hauteur = hauteurSwatches(doc, colonne.largeur, swatches);
+        colonne.ajouter(hauteur, (x, yy, largeur) => dessinerSwatches(doc, x, yy, largeur, swatches));
       }
     }
   }
 
   if (options.inclureMedicaments) {
-    droite.titre("Médicaments");
+    colonne.titre("Médicaments");
     if (medicaments.length === 0) {
-      droite.paragraphe("Aucun médicament enregistré.");
+      colonne.paragraphe("Aucun médicament enregistré.");
     } else {
       const idsStockBas = new Set(medicamentsStockBas(medicaments).map((m) => m.id));
       for (const m of medicaments) {
@@ -745,8 +734,8 @@ export function genererRapportPDF(
           (e) => e.type === "medication_intake" && e.medicationId === m.id,
         );
         const doses = [...new Set(prises.map((p) => (p as { dose?: string }).dose).filter(Boolean))];
-        droite.sousTitre(m.nom);
-        droite.paragraphe(
+        colonne.sousTitre(m.nom);
+        colonne.paragraphe(
           `${prises.length} prise${prises.length > 1 ? "s" : ""} sur la période${
             doses.length > 0 ? ` — dose(s) : ${doses.join(", ")}` : ""
           }`,
@@ -754,27 +743,27 @@ export function genererRapportPDF(
           COULEUR_DOUX,
         );
         if (idsStockBas.has(m.id)) {
-          droite.paragraphe(`Stock bas : ${m.stock} restant(s) — ordonnance à renouveler.`, 9.5, COULEUR_TITRE);
+          colonne.paragraphe(`Stock bas : ${m.stock} restant(s) — ordonnance à renouveler.`, 9.5, COULEUR_TITRE);
         }
       }
     }
   }
 
   if (options.inclureEvenements) {
-    droite.titre("Événements notables");
+    colonne.titre("Événements notables");
     const evenements = entreesPeriode.filter(
       (e) =>
         e.type === "symptom" &&
         ["luxation-articulaire", "subluxation-articulaire", "bleus"].includes(e.item),
     );
     if (evenements.length === 0) {
-      droite.paragraphe("Aucun événement notable (luxation, subluxation, ecchymose) sur cette période.");
+      colonne.paragraphe("Aucun événement notable (luxation, subluxation, ecchymose) sur cette période.");
     } else {
       for (const e of evenements) {
         if (e.type !== "symptom") continue;
         const zones = e.location?.map(labelArticulation).join(", ");
         const niveau = e.severity ? ` (${labelSeverite(e.severity, e.item)})` : "";
-        droite.paragraphe(
+        colonne.paragraphe(
           `${formatDateLisible(e.date)} — ${libelleEntree(e)}${niveau}${
             zones ? ` — Zone(s) : ${zones}` : ""
           }${e.note ? ` — ${e.note}` : ""}`,
@@ -785,38 +774,32 @@ export function genererRapportPDF(
   }
 
   if (options.inclureNotesImportantes) {
-    droite.titre("Notes importantes");
+    colonne.titre("Notes importantes");
     const notes = entreesPeriode.filter((e) => e.important && e.note);
     if (notes.length === 0) {
-      droite.paragraphe("Aucune note marquée comme importante sur cette période.");
+      colonne.paragraphe("Aucune note marquée comme importante sur cette période.");
     } else {
       for (const e of notes) {
-        droite.paragraphe(`${formatDateLisible(e.date)} — ${libelleEntree(e)} : ${e.note}`, 9.5);
+        colonne.paragraphe(`${formatDateLisible(e.date)} — ${libelleEntree(e)} : ${e.note}`, 9.5);
       }
     }
   }
 
-  // --- Pagination : les deux colonnes partagent les mêmes pages, chacune avec son propre fil. ---
+  // --- Pagination ---
 
   const hauteurPage1 = hauteurPage - margeBas - y;
   const hauteurAutresPages = hauteurPage - margeBas - 56;
-  const pagesGauche = assignerPages(gauche.blocs, hauteurPage1, hauteurAutresPages);
-  const pagesDroite = assignerPages(droite.blocs, hauteurPage1, hauteurAutresPages);
-  const totalPages = Math.max(1, ...pagesGauche, ...pagesDroite);
+  const pages = assignerPages(colonne.blocs, hauteurPage1, hauteurAutresPages);
+  const totalPages = Math.max(1, ...pages);
 
-  let yGauche = y;
-  let yDroite = y;
+  let yCourant = y;
   for (let page = 1; page <= totalPages; page++) {
     if (page > 1) {
       doc.addPage();
-      yGauche = 56;
-      yDroite = 56;
+      yCourant = 56;
     }
-    gauche.blocs.forEach((bloc, i) => {
-      if (pagesGauche[i] === page) yGauche = bloc.dessiner(xGauche, yGauche, largeurColonne);
-    });
-    droite.blocs.forEach((bloc, i) => {
-      if (pagesDroite[i] === page) yDroite = bloc.dessiner(xDroite, yDroite, largeurColonne);
+    colonne.blocs.forEach((bloc, i) => {
+      if (pages[i] === page) yCourant = bloc.dessiner(margeGauche, yCourant, largeurUtile);
     });
   }
 
@@ -824,7 +807,7 @@ export function genererRapportPDF(
   // (hauteurPage - 30) : on ne saute une page que si le contenu déjà tracé
   // le chevaucherait réellement, pas selon la marge générique du reste du
   // contenu (hauteurPage - margeBas), plus stricte et donc trop pénalisante ici.
-  const yFinContenu = Math.max(yGauche, yDroite);
+  const yFinContenu = yCourant;
   const yPositionFooter = hauteurPage - 30;
   if (yFinContenu + 16 > yPositionFooter) {
     doc.addPage();
