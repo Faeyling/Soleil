@@ -129,12 +129,12 @@ export function ProfilPage() {
 
   const genererPdf = () => {
     const doc = genererRapportPDF(entrees, medicaments, optionsRapport());
-    doc.save(`soleil-rapport-${dateDuJour()}.pdf`);
+    doc.save(`soleil-suivi-${dateDuJour()}.pdf`);
   };
 
   const partagerPdf = async () => {
     const doc = genererRapportPDF(entrees, medicaments, optionsRapport());
-    const nomFichier = `soleil-rapport-${dateDuJour()}.pdf`;
+    const nomFichier = `soleil-suivi-${dateDuJour()}.pdf`;
     const nav = navigator as Navigator & {
       canShare?: (data: { files: File[] }) => boolean;
       share?: (data: { files: File[]; title?: string }) => Promise<void>;
@@ -142,7 +142,7 @@ export function ProfilPage() {
     const fichier = new File([doc.output("blob")], nomFichier, { type: "application/pdf" });
     if (nav.share && nav.canShare?.({ files: [fichier] })) {
       try {
-        await nav.share({ files: [fichier], title: "Rapport de suivi SEDh" });
+        await nav.share({ files: [fichier], title: "Suivi SEDh" });
         return;
       } catch (erreur) {
         if ((erreur as Error).name === "AbortError") return;
@@ -210,14 +210,14 @@ export function ProfilPage() {
       <SectionSecurite />
 
       <section className="mb-8">
-        <h2 className="font-bold text-lg mb-3">Rapport pour ton médecin</h2>
+        <h2 className="font-bold text-lg mb-3">Suivi pour ton médecin</h2>
         <div className="rounded-[var(--rayon-grand)] bg-surface border border-bordure p-4">
           <Champ label="Mon nom" optionnel>
             <input
               className={classesInput}
               value={nomPatiente}
               onChange={(e) => changerNomPatiente(e.target.value)}
-              placeholder="Pour identifier facilement le rapport"
+              placeholder="Pour identifier facilement le suivi"
             />
           </Champ>
 
@@ -294,7 +294,7 @@ export function ProfilPage() {
 
           <div className="flex gap-3">
             <Bouton className="flex-1" onClick={genererPdf}>
-              <span aria-hidden="true">📄</span> Générer le rapport PDF
+              <span aria-hidden="true">📄</span> Générer le suivi PDF
             </Bouton>
             {partageDisponible && (
               <Bouton variante="contour" onClick={() => void partagerPdf()}>

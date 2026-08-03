@@ -547,7 +547,7 @@ export function genererRapportPDF(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(...COULEUR_TITRE);
-  doc.text("Soleil — Rapport de suivi SEDh", margeGauche, y);
+  doc.text("Soleil — Suivi SEDh", margeGauche, y);
   y += 22;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);

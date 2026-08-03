@@ -14,7 +14,7 @@ export function CaseImportante({ valeur, onChange }: CaseImportanteProps) {
       />
       <span className="text-sm font-medium">
         <span aria-hidden="true">⭐ </span>
-        Marquer comme importante (incluse en priorité dans le rapport pour le médecin)
+        Marquer comme importante (incluse en priorité dans le suivi pour le médecin)
       </span>
     </label>
   );
