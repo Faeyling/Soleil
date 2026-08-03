@@ -8,6 +8,7 @@ import type { EvaluationBeighton } from "../data/repositories/beightonRepository
 import { LABEL_TRANCHE_AGE_BEIGHTON, seuilPositifBeighton } from "../content/ressources";
 import { medicamentsStockBas } from "./stock";
 import { calculerAge } from "./profilPatiente";
+import { severiteDepuisEva } from "./eva";
 
 export interface OptionsExportPDF {
   inclureSymptomes: boolean;
@@ -56,6 +57,62 @@ const GRADIENT_ZONES: [number, number, number][] = [
   [240, 175, 140],
   [247, 205, 180],
 ];
+
+/** Mêmes teintes que l'appli (--color-severite-*, thème clair) — indépendantes du thème CSS, non disponible hors composant. */
+const COULEUR_SEVERITE_PDF: Record<Severite, [number, number, number]> = {
+  bas: [165, 195, 117],
+  moyen: [242, 166, 99],
+  haut: [182, 0, 0],
+  crise: [132, 184, 217],
+};
+
+interface Swatch {
+  label: string;
+  couleur: [number, number, number];
+}
+
+/** Calcule la position (relative) de chaque pastille colorée + étiquette, en repassant à la ligne quand la largeur disponible est dépassée — partagé entre la mesure (pagination) et le tracé pour rester cohérent. */
+function disposerSwatches(doc: jsPDF, largeur: number, items: Swatch[]): { item: Swatch; x: number; y: number }[] {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  const rayon = 3.5;
+  const hauteurLigne = 15;
+  let xx = 0;
+  let yy = 0;
+  const positions: { item: Swatch; x: number; y: number }[] = [];
+  for (const item of items) {
+    const largeurItem = rayon * 2 + 4 + doc.getTextWidth(item.label) + 14;
+    if (xx > 0 && xx + largeurItem > largeur) {
+      xx = 0;
+      yy += hauteurLigne;
+    }
+    positions.push({ item, x: xx, y: yy });
+    xx += largeurItem;
+  }
+  return positions;
+}
+
+function hauteurSwatches(doc: jsPDF, largeur: number, items: Swatch[]): number {
+  const positions = disposerSwatches(doc, largeur, items);
+  const maxY = positions.length > 0 ? Math.max(...positions.map((p) => p.y)) : 0;
+  return maxY + 15 + 4;
+}
+
+/** Pastille colorée (sévérité) + étiquette, en ligne(s) — plus parlant qu'un simple décompte texte pour repérer d'un coup d'œil les niveaux préoccupants. */
+function dessinerSwatches(doc: jsPDF, x: number, y: number, largeur: number, items: Swatch[]): number {
+  const positions = disposerSwatches(doc, largeur, items);
+  const rayon = 3.5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  for (const { item, x: dx, y: dy } of positions) {
+    doc.setFillColor(...item.couleur);
+    doc.circle(x + dx + rayon, y + dy - 3, rayon, "F");
+    doc.setTextColor(...COULEUR_TEXTE);
+    doc.text(item.label, x + dx + rayon * 2 + 4, y + dy);
+  }
+  const maxY = positions.length > 0 ? Math.max(...positions.map((p) => p.y)) : 0;
+  return y + maxY + 15;
+}
 
 /**
  * Bloc de contenu positionnable dans une colonne : `hauteur` sert à la
@@ -472,6 +529,20 @@ export function genererRapportPDF(
     (e) => e.date >= options.dateDebut && e.date <= options.dateFin,
   );
 
+  // La période "Tout" démarre à une date arbitraire lointaine (voir
+  // dateDebutPeriode) — sans ce recadrage, les statistiques en % et le
+  // détail par mois seraient dilués sur des milliers de jours sans aucune
+  // donnée (ex. avant même la création de l'app), rendant les pourcentages
+  // trompeurs et gonflant le rapport de dizaines de pages vides.
+  const premiereDateAvecDonnees = entreesPeriode.reduce<string | undefined>(
+    (min, e) => (min === undefined || e.date < min ? e.date : min),
+    undefined,
+  );
+  const dateDebutEffective =
+    premiereDateAvecDonnees && premiereDateAvecDonnees > options.dateDebut
+      ? premiereDateAvecDonnees
+      : options.dateDebut;
+
   // En-tête du document (pleine largeur, page 1 uniquement).
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
@@ -491,7 +562,7 @@ export function genererRapportPDF(
     y += 14;
   }
   doc.text(
-    `Période couverte : du ${formatDateLisible(options.dateDebut)} au ${formatDateLisible(options.dateFin)}`,
+    `Période couverte : du ${formatDateLisible(dateDebutEffective)} au ${formatDateLisible(options.dateFin)}`,
     margeGauche,
     y,
   );
@@ -547,7 +618,7 @@ export function genererRapportPDF(
     }
   }
 
-  const joursPeriode = joursEntre(options.dateDebut, options.dateFin);
+  const joursPeriode = joursEntre(dateDebutEffective, options.dateFin);
   if (options.inclureSymptomes) {
     const topZones = zonesPlusDouloureusesFrequentes(entreesPeriode, joursPeriode);
     gauche.titre("Zones les plus douloureuses");
@@ -570,7 +641,7 @@ export function genererRapportPDF(
     })
     .filter((x): x is { type: string; itemId: string; label: string } => x !== undefined);
   const marqueursPeriode = (options.marqueurs ?? []).filter(
-    (m) => m.date >= options.dateDebut && m.date <= options.dateFin,
+    (m) => m.date >= dateDebutEffective && m.date <= options.dateFin,
   );
   if (options.inclureGraphiques && itemsGraphiqueResolus.length > 0 && joursPeriode.length >= 2) {
     gauche.ajouter(
@@ -617,7 +688,7 @@ export function genererRapportPDF(
           const { pourcentageGlobal, parMois } = repartitionParMois(
             dates,
             joursPeriode,
-            options.dateDebut,
+            dateDebutEffective,
             options.dateFin,
           );
           const datesToutesEntrees = new Set((parItemToutesEntrees.get(item) ?? []).map((e) => e.date));
@@ -640,24 +711,27 @@ export function genererRapportPDF(
             .filter((e): e is EntreeSymptome => e.type === "symptom")
             .map((e) => e.evaluationEva)
             .filter((v): v is number => v != null);
-          const moyenneEva = evas.length > 0 ? (evas.reduce((a, b) => a + b, 0) / evas.length).toFixed(1) : undefined;
-          droite.paragraphe(
-            `${moyenneEva !== undefined ? `EVA moyen : ${moyenneEva}/10 — ` : ""}Par mois : ${parMois.join(" · ")}`,
-            9.5,
-            COULEUR_DOUX,
-          );
+          const moyenneEvaNum = evas.length > 0 ? evas.reduce((a, b) => a + b, 0) / evas.length : undefined;
+          if (moyenneEvaNum !== undefined) {
+            const swatch: Swatch = {
+              label: `EVA moyen : ${moyenneEvaNum.toFixed(1)}/10`,
+              couleur: COULEUR_SEVERITE_PDF[severiteDepuisEva(moyenneEvaNum)],
+            };
+            const hauteur = hauteurSwatches(doc, droite.largeur, [swatch]);
+            droite.ajouter(hauteur, (x, yy, largeur) => dessinerSwatches(doc, x, yy, largeur, [swatch]));
+          }
+          droite.paragraphe(`Par mois : ${parMois.join(" · ")}`, 9.5, COULEUR_DOUX);
         } else {
           const compte: Record<Severite, number> = { bas: 0, moyen: 0, haut: 0, crise: 0 };
           for (const e of liste) {
             if ("severity" in e && e.severity) compte[e.severity]++;
           }
-          droite.paragraphe(
-            `Répartition : ${labelSeverite("bas", item)} ${compte.bas} · ${labelSeverite("moyen", item)} ${compte.moyen} · ${labelSeverite("haut", item)} ${compte.haut}${
-              compte.crise > 0 ? ` · ${labelSeverite("crise", item)} ${compte.crise}` : ""
-            }\nPar mois : ${parMois.join(" · ")}`,
-            9.5,
-            COULEUR_DOUX,
-          );
+          const swatches: Swatch[] = (["bas", "moyen", "haut", "crise"] as Severite[])
+            .filter((s) => s !== "crise" || compte.crise > 0)
+            .map((s) => ({ label: `${labelSeverite(s, item)} ${compte[s]}`, couleur: COULEUR_SEVERITE_PDF[s] }));
+          const hauteur = hauteurSwatches(doc, droite.largeur, swatches);
+          droite.ajouter(hauteur, (x, yy, largeur) => dessinerSwatches(doc, x, yy, largeur, swatches));
+          droite.paragraphe(`Par mois : ${parMois.join(" · ")}`, 9.5, COULEUR_DOUX);
         }
       }
     }
