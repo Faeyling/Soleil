@@ -150,3 +150,57 @@ export async function enregistrerOuMettreAJour(donnees: NouvelleEntree): Promise
 export async function viderToutesLesEntrees(): Promise<void> {
   await db.entrees.clear();
 }
+
+/**
+ * Anciennes zones articulaires (coude, poignet, doigts, cuisse, genou,
+ * cheville, pied/orteils, sacro-iliaque gauche/droite, ventre, côtes...)
+ * fusionnées en grandes régions (bras, main, jambe, pied, sacro-iliaque,
+ * torse...) pour rendre le schéma corporel lisible même les jours à
+ * plusieurs zones douloureuses — voir SchemaCorporel.tsx.
+ */
+const FUSION_ZONES: Record<string, string> = {
+  machoire: "tete-machoire",
+  "nuque-cervicales": "nuque",
+  "coude-gauche": "bras-gauche",
+  "coude-droit": "bras-droit",
+  "avant-bras-gauche": "bras-gauche",
+  "avant-bras-droit": "bras-droit",
+  "poignet-gauche": "main-gauche",
+  "poignet-droit": "main-droite",
+  "doigts-gauche": "main-gauche",
+  "doigts-droit": "main-droite",
+  "cuisse-gauche": "jambe-gauche",
+  "cuisse-droite": "jambe-droite",
+  "genou-gauche": "jambe-gauche",
+  "genou-droit": "jambe-droite",
+  "cheville-gauche": "pied-gauche",
+  "cheville-droite": "pied-droit",
+  "pied-orteils-gauche": "pied-gauche",
+  "pied-orteils-droit": "pied-droit",
+  "sacro-iliaque-gauche": "sacro-iliaque",
+  "sacro-iliaque-droite": "sacro-iliaque",
+  ventre: "torse",
+  "cotes-gauche": "torse",
+  "cotes-droite": "torse",
+};
+
+function fusionnerZones(zones: string[] | undefined): string[] | undefined {
+  if (!zones) return zones;
+  const fusionnees = zones.map((z) => FUSION_ZONES[z] ?? z);
+  return [...new Set(fusionnees)];
+}
+
+/** Remappe `location`/`zonesPlusDouloureuses` des entrées déjà enregistrées vers les zones fusionnées ci-dessus — idempotent, à rejouer à chaque démarrage. */
+export async function migrerZonesDouleurFusionnees(): Promise<void> {
+  const entrees = await db.entrees.where("type").equals("symptom").toArray();
+  for (const entree of entrees) {
+    if (entree.type !== "symptom") continue;
+    const location = fusionnerZones(entree.location);
+    const zonesPlusDouloureuses = fusionnerZones(entree.zonesPlusDouloureuses);
+    const locationChangee = JSON.stringify(location) !== JSON.stringify(entree.location);
+    const zonesPlusChangees = JSON.stringify(zonesPlusDouloureuses) !== JSON.stringify(entree.zonesPlusDouloureuses);
+    if (locationChangee || zonesPlusChangees) {
+      await db.entrees.update(entree.id, { location, zonesPlusDouloureuses } as ChangementsEntree);
+    }
+  }
+}

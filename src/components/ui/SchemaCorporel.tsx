@@ -2,59 +2,58 @@ import { useState } from "react";
 import { labelArticulation } from "../../content/symptomes";
 import { SECTIONS } from "../../lib/sections";
 import { couleurSeverite } from "../../lib/severite";
-import { MAX_ZONES_PLUS_DOULOUREUSES } from "../../lib/zonesDouleur";
+import { MAX_ZONES_PLUS_DOULOUREUSES, MAX_ZONES_SELECTIONNEES } from "../../lib/zonesDouleur";
 
 type Vue = "face" | "dos";
 
-interface Point {
+interface ZonePoint {
+  type: "point";
   id: string;
   x: number;
   y: number;
+  /** Rayon plus grand pour les zones qui représentent une grande région (dos, tête) plutôt qu'une petite articulation. */
+  grande?: boolean;
 }
 
-// Repères en coordonnées du viewBox (0 0 200 400), alignés sur les points du
-// bonhomme dessiné plus bas — vue "de face" : la gauche/droite est celle du
-// patient qui te fait face (comme les schémas des logiciels de kiné), donc
-// inversée par rapport à l'image.
-const ZONES_FACE: Point[] = [
-  { id: "machoire", x: 100, y: 40 },
-  { id: "epaule-droite", x: 64, y: 70 },
-  { id: "epaule-gauche", x: 136, y: 70 },
-  { id: "cotes-droite", x: 75, y: 140 },
-  { id: "cotes-gauche", x: 125, y: 140 },
-  { id: "ventre", x: 100, y: 175 },
-  { id: "bras-droit", x: 55, y: 100 },
-  { id: "bras-gauche", x: 145, y: 100 },
-  { id: "coude-droit", x: 46, y: 130 },
-  { id: "coude-gauche", x: 154, y: 130 },
-  { id: "avant-bras-droit", x: 40, y: 158 },
-  { id: "avant-bras-gauche", x: 160, y: 158 },
-  { id: "poignet-droit", x: 34, y: 185 },
-  { id: "poignet-gauche", x: 166, y: 185 },
-  { id: "doigts-droit", x: 27, y: 208 },
-  { id: "doigts-gauche", x: 173, y: 208 },
-  { id: "hanche-droite", x: 78, y: 195 },
-  { id: "hanche-gauche", x: 122, y: 195 },
-  { id: "cuisse-droite", x: 79, y: 233 },
-  { id: "cuisse-gauche", x: 121, y: 233 },
-  { id: "genou-droit", x: 80, y: 270 },
-  { id: "genou-gauche", x: 120, y: 270 },
-  { id: "jambe-droite", x: 81, y: 305 },
-  { id: "jambe-gauche", x: 119, y: 305 },
-  { id: "cheville-droite", x: 82, y: 340 },
-  { id: "cheville-gauche", x: 118, y: 340 },
-  { id: "pied-orteils-droit", x: 78, y: 367 },
-  { id: "pied-orteils-gauche", x: 122, y: 367 },
+interface ZoneMembre {
+  type: "membre";
+  id: string;
+  /** Tracé du membre, du tronc vers l'extrémité — épouse le coude/genou pour rester lisible sur le bonhomme. */
+  trace: [number, number][];
+}
+
+type ZoneCorporelle = ZonePoint | ZoneMembre;
+
+// Repères en coordonnées du viewBox (0 0 200 400), alignés sur le bonhomme
+// dessiné plus bas — vue "de face" : la gauche/droite est celle du patient
+// qui te fait face (comme les schémas des logiciels de kiné), donc inversée
+// par rapport à l'image. Zones fusionnées par grande région (bras, jambe...)
+// plutôt qu'articulation par articulation, pour rester lisible même sur une
+// journée à plusieurs endroits douloureux (6 zones max, voir zonesDouleur.ts).
+const ZONES_FACE: ZoneCorporelle[] = [
+  { type: "point", id: "tete-machoire", x: 100, y: 32, grande: true },
+  { type: "point", id: "epaule-droite", x: 64, y: 70 },
+  { type: "point", id: "epaule-gauche", x: 136, y: 70 },
+  { type: "point", id: "torse", x: 100, y: 150, grande: true },
+  { type: "membre", id: "bras-droit", trace: [[64, 70], [46, 130], [34, 185]] },
+  { type: "membre", id: "bras-gauche", trace: [[136, 70], [154, 130], [166, 185]] },
+  { type: "point", id: "main-droite", x: 27, y: 208 },
+  { type: "point", id: "main-gauche", x: 173, y: 208 },
+  { type: "point", id: "hanche-droite", x: 78, y: 195 },
+  { type: "point", id: "hanche-gauche", x: 122, y: 195 },
+  { type: "membre", id: "jambe-droite", trace: [[78, 195], [80, 270], [82, 340]] },
+  { type: "membre", id: "jambe-gauche", trace: [[122, 195], [120, 270], [118, 340]] },
+  { type: "point", id: "pied-droit", x: 78, y: 367 },
+  { type: "point", id: "pied-gauche", x: 122, y: 367 },
 ];
 
 // Vue "de dos" : ici, le patient te tourne le dos plutôt que de te faire
 // face — gauche/droite correspond donc directement à l'image, sans
 // inversion (contrairement à la vue de face ci-dessus).
-const ZONES_DOS: Point[] = [
-  { id: "nuque-cervicales", x: 100, y: 56 },
-  { id: "dos", x: 100, y: 150 },
-  { id: "sacro-iliaque-gauche", x: 90, y: 185 },
-  { id: "sacro-iliaque-droite", x: 110, y: 185 },
+const ZONES_DOS: ZoneCorporelle[] = [
+  { type: "point", id: "nuque", x: 100, y: 56 },
+  { type: "point", id: "dos", x: 100, y: 150, grande: true },
+  { type: "point", id: "sacro-iliaque", x: 100, y: 185 },
 ];
 
 const IDS_HORS_SCHEMA = ["autre-zone"];
@@ -72,31 +71,40 @@ interface SchemaCorporelProps {
   onToggleZonePlusDouloureuse?: (id: string) => void;
 }
 
-function Hotspot({
-  point,
+function couleurZone(plusDouloureuse: boolean): string {
+  return plusDouloureuse ? couleurSeverite("haut") : SECTIONS.symptomes.couleur;
+}
+
+function libelleEtatZone(id: string, plusDouloureuse: boolean): string {
+  const label = labelArticulation(id);
+  return plusDouloureuse ? `${label} — zone la plus douloureuse de la journée` : label;
+}
+
+function PointHotspot({
+  zone,
   actif,
   plusDouloureuse,
   onToggle,
 }: {
-  point: Point;
+  zone: ZonePoint;
   actif: boolean;
   plusDouloureuse: boolean;
   onToggle: (id: string) => void;
 }) {
-  const couleur = plusDouloureuse ? couleurSeverite("haut") : SECTIONS.symptomes.couleur;
-  const label = labelArticulation(point.id);
-  const libelleEtat = plusDouloureuse ? `${label} — zone la plus douloureuse de la journée` : label;
+  const couleur = couleurZone(plusDouloureuse);
+  const libelleEtat = libelleEtatZone(zone.id, plusDouloureuse);
+  const taille = zone.grande ? "w-11 h-11" : "w-7 h-7";
   return (
     <button
       type="button"
-      onClick={() => onToggle(point.id)}
+      onClick={() => onToggle(zone.id)}
       aria-pressed={actif}
       aria-label={libelleEtat}
       title={libelleEtat}
-      className="absolute w-7 h-7 rounded-full -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-transform active:scale-90 flex items-center justify-center"
+      className={`absolute ${taille} rounded-full -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-transform active:scale-90 flex items-center justify-center`}
       style={{
-        left: `${(point.x / 200) * 100}%`,
-        top: `${(point.y / 400) * 100}%`,
+        left: `${(zone.x / 200) * 100}%`,
+        top: `${(zone.y / 400) * 100}%`,
         border: `${plusDouloureuse ? 3 : 2}px solid ${couleur}`,
         background: actif ? couleur : "var(--color-surface)",
         boxShadow: "0 1px 4px rgba(58,46,38,0.2)",
@@ -108,6 +116,103 @@ function Hotspot({
         </span>
       )}
     </button>
+  );
+}
+
+/** Style d'une barre reliant deux points du tracé, en pixels dérivés du viewBox (200x400) — la largeur/hauteur en % sont calculées sur la même échelle que le positionnement des points, donc la rotation reste cohérente quel que soit le ratio d'affichage réel. */
+function styleSegment(x1: number, y1: number, x2: number, y2: number, epaisseur: number) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const longueur = Math.hypot(dx, dy);
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  return {
+    left: `${((x1 + x2) / 2 / 200) * 100}%`,
+    top: `${((y1 + y2) / 2 / 400) * 100}%`,
+    width: `${(longueur / 200) * 100}%`,
+    height: `${(epaisseur / 400) * 100}%`,
+    transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+  };
+}
+
+/**
+ * Rapproche les deux extrémités d'un tracé vers son intérieur, pour que la
+ * cible tactile du membre ne recouvre pas les points (épaule, hanche...) qui
+ * se trouvent exactement à ces extrémités — sans ce retrait, le bouton
+ * invisible du membre passe au-dessus du hotspot du point voisin et bloque
+ * son clic.
+ */
+function retirerExtremites(trace: [number, number][], retrait: number): [number, number][] {
+  if (trace.length < 2) return trace;
+  const resultat = trace.map((p) => [...p] as [number, number]);
+  const rapprocher = (depuis: [number, number], vers: [number, number]) => {
+    const dx = vers[0] - depuis[0];
+    const dy = vers[1] - depuis[1];
+    const longueur = Math.hypot(dx, dy);
+    const t = Math.min(retrait, longueur / 2) / longueur;
+    return [depuis[0] + dx * t, depuis[1] + dy * t] as [number, number];
+  };
+  resultat[0] = rapprocher(resultat[0], resultat[1]);
+  const derniere = resultat.length - 1;
+  resultat[derniere] = rapprocher(resultat[derniere], resultat[derniere - 1]);
+  return resultat;
+}
+
+/** Zone "membre" (bras, jambe) : colorie le tracé entier plutôt qu'un simple point sur une articulation. Chaque segment porte sa propre cible tactile (au lieu d'un rectangle englobant, qui recouvrirait les points voisins comme l'épaule ou la hanche). */
+function MembreZone({
+  zone,
+  actif,
+  plusDouloureuse,
+  onToggle,
+}: {
+  zone: ZoneMembre;
+  actif: boolean;
+  plusDouloureuse: boolean;
+  onToggle: (id: string) => void;
+}) {
+  const couleur = couleurZone(plusDouloureuse);
+  const libelleEtat = libelleEtatZone(zone.id, plusDouloureuse);
+  const [xMilieu, yMilieu] = zone.trace[Math.floor(zone.trace.length / 2)];
+  const traceCible = retirerExtremites(zone.trace, 18);
+
+  return (
+    <>
+      {actif &&
+        zone.trace.slice(0, -1).map(([x1, y1], i) => {
+          const [x2, y2] = zone.trace[i + 1];
+          return (
+            <div
+              key={i}
+              aria-hidden="true"
+              className="absolute rounded-full pointer-events-none"
+              style={{ ...styleSegment(x1, y1, x2, y2, 15), background: couleur, opacity: 0.85 }}
+            />
+          );
+        })}
+      {plusDouloureuse && (
+        <span
+          aria-hidden="true"
+          className="absolute -translate-x-1/2 -translate-y-1/2 text-xs pointer-events-none text-[var(--color-texte-sur-accent)]"
+          style={{ left: `${(xMilieu / 200) * 100}%`, top: `${(yMilieu / 400) * 100}%` }}
+        >
+          ★
+        </span>
+      )}
+      {traceCible.slice(0, -1).map(([x1, y1], i) => {
+        const [x2, y2] = traceCible[i + 1];
+        return (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onToggle(zone.id)}
+            aria-pressed={actif}
+            aria-label={libelleEtat}
+            title={libelleEtat}
+            className="absolute cursor-pointer"
+            style={{ ...styleSegment(x1, y1, x2, y2, 24), background: "transparent" }}
+          />
+        );
+      })}
+    </>
   );
 }
 
@@ -147,9 +252,10 @@ export function SchemaCorporel({
   onToggleZonePlusDouloureuse,
 }: SchemaCorporelProps) {
   const [vue, setVue] = useState<Vue>("face");
-  const points = vue === "face" ? ZONES_FACE : ZONES_DOS;
+  const zones = vue === "face" ? ZONES_FACE : ZONES_DOS;
   const autresZonesSelectionnees = zonesSelectionnees.filter((id) => IDS_HORS_SCHEMA.includes(id));
   const avecIntensite = zonesPlusDouloureuses !== undefined && onToggleZonePlusDouloureuse !== undefined;
+  const onToggle = avecIntensite ? onToggleZonePlusDouloureuse : onToggleZone;
 
   return (
     <div>
@@ -178,15 +284,25 @@ export function SchemaCorporel({
         style={{ width: "min(220px, 100%)", aspectRatio: "1 / 2" }}
       >
         <Silhouette vue={vue} />
-        {points.map((point) => (
-          <Hotspot
-            key={point.id}
-            point={point}
-            actif={zonesSelectionnees.includes(point.id)}
-            plusDouloureuse={avecIntensite && zonesPlusDouloureuses.includes(point.id)}
-            onToggle={avecIntensite ? onToggleZonePlusDouloureuse : onToggleZone}
-          />
-        ))}
+        {zones.map((zone) =>
+          zone.type === "point" ? (
+            <PointHotspot
+              key={zone.id}
+              zone={zone}
+              actif={zonesSelectionnees.includes(zone.id)}
+              plusDouloureuse={avecIntensite && zonesPlusDouloureuses.includes(zone.id)}
+              onToggle={onToggle}
+            />
+          ) : (
+            <MembreZone
+              key={zone.id}
+              zone={zone}
+              actif={zonesSelectionnees.includes(zone.id)}
+              plusDouloureuse={avecIntensite && zonesPlusDouloureuses.includes(zone.id)}
+              onToggle={onToggle}
+            />
+          ),
+        )}
       </div>
 
       <div className="flex justify-center mt-3">
@@ -210,8 +326,9 @@ export function SchemaCorporel({
 
       {avecIntensite && (
         <p className="text-xs text-texte-doux mt-3 text-center">
-          Appui 1 : sélectionne · Appui 2 : ★ zone la plus douloureuse ({zonesPlusDouloureuses.length}/
-          {MAX_ZONES_PLUS_DOULOUREUSES} max) · Appui 3 : désélectionne
+          Appui 1 : sélectionne ({zonesSelectionnees.length}/{MAX_ZONES_SELECTIONNEES} max) · Appui 2 : ★
+          zone la plus douloureuse ({zonesPlusDouloureuses.length}/{MAX_ZONES_PLUS_DOULOUREUSES} max) · Appui
+          3 : désélectionne
         </p>
       )}
 

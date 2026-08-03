@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cyclerZoneDouleur, MAX_ZONES_PLUS_DOULOUREUSES } from "./zonesDouleur";
+import { cyclerZoneDouleur, MAX_ZONES_PLUS_DOULOUREUSES, MAX_ZONES_SELECTIONNEES } from "./zonesDouleur";
 
 describe("cyclerZoneDouleur", () => {
   it("1er appui : sélectionne la zone", () => {
@@ -60,5 +60,30 @@ describe("cyclerZoneDouleur", () => {
       zonesPlusDouloureuses: [],
     });
     expect(suivant.zonesSelectionnees).toEqual(["ventre", "dos"]);
+  });
+
+  it("plafonne à MAX_ZONES_SELECTIONNEES : sélectionner une 7e zone reste sans effet", () => {
+    expect(MAX_ZONES_SELECTIONNEES).toBe(6);
+    const etatAvant = {
+      zonesSelectionnees: ["dos", "nuque", "epaule-gauche", "epaule-droite", "hanche-gauche", "hanche-droite"],
+      zonesPlusDouloureuses: ["dos"],
+    };
+    const suivant = cyclerZoneDouleur("main-gauche", etatAvant);
+    expect(suivant).toEqual(etatAvant);
+  });
+
+  it("libère la limite de zones sélectionnées une fois une zone désélectionnée", () => {
+    let etat = {
+      zonesSelectionnees: ["dos", "nuque", "epaule-gauche", "epaule-droite", "hanche-gauche", "hanche-droite"],
+      zonesPlusDouloureuses: [] as string[],
+    };
+    // "nuque" est simplement sélectionnée (pas "plus douloureuse") : il faut 2 appuis pour la désélectionner
+    // (1er appui : passe "plus douloureuse" ; 2e appui : désélectionne).
+    etat = cyclerZoneDouleur("nuque", etat);
+    etat = cyclerZoneDouleur("nuque", etat);
+    expect(etat.zonesSelectionnees).toHaveLength(5);
+
+    etat = cyclerZoneDouleur("main-gauche", etat);
+    expect(etat.zonesSelectionnees).toContain("main-gauche");
   });
 });

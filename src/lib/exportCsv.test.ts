@@ -12,7 +12,7 @@ describe("genererCSV", () => {
         date: "2026-07-20",
         datetime: "2026-07-20T18:30:00.000Z",
         severity: "haut",
-        location: ["genou-droit"],
+        location: ["jambe-droite"],
         important: true,
         createdAt: "2026-07-20T18:30:00.000Z",
         updatedAt: "2026-07-20T18:30:00.000Z",
@@ -27,7 +27,7 @@ describe("genererCSV", () => {
     expect(lignes[1]).toContain("Symptôme");
     expect(lignes[1]).toContain("Douleur");
     expect(lignes[1]).toContain("Haut");
-    expect(lignes[1]).toContain("Genou droit");
+    expect(lignes[1]).toContain("Jambe droite");
     expect(lignes[1]).toContain("Oui");
   });
 

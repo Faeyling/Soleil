@@ -7,6 +7,7 @@ import {
   trouverEntreeDuJour,
   supprimerEntree,
   restaurerEntree,
+  migrerZonesDouleurFusionnees,
 } from "./entreesRepository";
 
 beforeEach(async () => {
@@ -210,5 +211,95 @@ describe("enregistrerOuMettreAJour", () => {
     expect(await db.entrees.count()).toBe(1);
     const entree = await trouverEntreeDuJour("track_something", "humeur", "2026-07-20");
     expect(entree && "severity" in entree ? entree.severity : undefined).toBe("haut");
+  });
+});
+
+describe("migrerZonesDouleurFusionnees", () => {
+  it("remplace les anciennes zones articulaires par les nouvelles grandes régions", async () => {
+    const { entree } = await creerEntree({
+      type: "symptom",
+      item: "douleur",
+      date: "2026-07-20",
+      datetime: "2026-07-20T18:00:00.000Z",
+      evaluationEva: 5,
+      location: ["coude-droit", "poignet-droit", "genou-gauche"],
+      zonesPlusDouloureuses: ["poignet-droit"],
+    });
+
+    await migrerZonesDouleurFusionnees();
+
+    const relue = await db.entrees.get(entree.id);
+    expect(relue && "location" in relue ? relue.location : undefined).toEqual(
+      expect.arrayContaining(["bras-droit", "main-droite", "jambe-gauche"]),
+    );
+    expect(relue && "location" in relue ? relue.location : undefined).toHaveLength(3);
+    expect(relue && "zonesPlusDouloureuses" in relue ? relue.zonesPlusDouloureuses : undefined).toEqual([
+      "main-droite",
+    ]);
+  });
+
+  it("dédoublonne quand plusieurs anciennes zones fusionnent vers la même nouvelle zone", async () => {
+    const { entree } = await creerEntree({
+      type: "symptom",
+      item: "douleur",
+      date: "2026-07-20",
+      datetime: "2026-07-20T18:00:00.000Z",
+      evaluationEva: 5,
+      location: ["coude-gauche", "avant-bras-gauche", "poignet-gauche"],
+    });
+
+    await migrerZonesDouleurFusionnees();
+
+    const relue = await db.entrees.get(entree.id);
+    expect(relue && "location" in relue ? relue.location : undefined).toEqual(["bras-gauche", "main-gauche"]);
+  });
+
+  it("laisse intactes les zones déjà dans le nouveau schéma", async () => {
+    const { entree } = await creerEntree({
+      type: "symptom",
+      item: "douleur",
+      date: "2026-07-20",
+      datetime: "2026-07-20T18:00:00.000Z",
+      evaluationEva: 5,
+      location: ["torse", "dos", "hanche-droite"],
+    });
+
+    await migrerZonesDouleurFusionnees();
+
+    const relue = await db.entrees.get(entree.id);
+    expect(relue && "location" in relue ? relue.location : undefined).toEqual(["torse", "dos", "hanche-droite"]);
+  });
+
+  it("fusionne ventre, côtes et sacro-iliaque gauche/droite vers leurs zones élargies", async () => {
+    const { entree } = await creerEntree({
+      type: "symptom",
+      item: "douleur",
+      date: "2026-07-20",
+      datetime: "2026-07-20T18:00:00.000Z",
+      evaluationEva: 5,
+      location: ["ventre", "cotes-gauche", "sacro-iliaque-gauche", "sacro-iliaque-droite"],
+    });
+
+    await migrerZonesDouleurFusionnees();
+
+    const relue = await db.entrees.get(entree.id);
+    expect(relue && "location" in relue ? relue.location : undefined).toEqual(["torse", "sacro-iliaque"]);
+  });
+
+  it("est idempotente : rejouer la migration ne change plus rien", async () => {
+    await creerEntree({
+      type: "symptom",
+      item: "douleur",
+      date: "2026-07-20",
+      datetime: "2026-07-20T18:00:00.000Z",
+      evaluationEva: 5,
+      location: ["coude-droit"],
+    });
+
+    await migrerZonesDouleurFusionnees();
+    await migrerZonesDouleurFusionnees();
+
+    const entree = await trouverEntreeDuJour("symptom", "douleur", "2026-07-20");
+    expect(entree && "location" in entree ? entree.location : undefined).toEqual(["bras-droit"]);
   });
 });

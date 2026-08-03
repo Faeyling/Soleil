@@ -9,6 +9,7 @@ import {
   migrerDouleurVersEva,
   migrerCategoriesSymptomes,
 } from "./data/repositories/contenuRepository";
+import { migrerZonesDouleurFusionnees } from "./data/repositories/entreesRepository";
 import { initialiserContenuReactif } from "./data/contenuInit";
 import "./styles/tokens.css";
 
@@ -19,6 +20,7 @@ void initialiserContenuSiVide().then(async () => {
   await migrerDouleurVersEva();
   await migrerCategoriesSymptomes();
 });
+void migrerZonesDouleurFusionnees();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
