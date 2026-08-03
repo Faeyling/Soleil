@@ -714,7 +714,7 @@ export function genererRapportPDF(
           const moyenneEvaNum = evas.length > 0 ? evas.reduce((a, b) => a + b, 0) / evas.length : undefined;
           if (moyenneEvaNum !== undefined) {
             const swatch: Swatch = {
-              label: `EVA moyen : ${moyenneEvaNum.toFixed(1)}/10`,
+              label: `Impact moyen : ${moyenneEvaNum.toFixed(1)}/10`,
               couleur: COULEUR_SEVERITE_PDF[severiteDepuisEva(moyenneEvaNum)],
             };
             const hauteur = hauteurSwatches(doc, droite.largeur, [swatch]);

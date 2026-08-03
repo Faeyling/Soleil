@@ -328,6 +328,7 @@ function EtapeSymptomes({
                 />
               ) : def.typeFormulaire === "eva" ? (
                 <SelecteurEva
+                  itemId={id}
                   valeur={valeurs[id] ? Number(valeurs[id]) : undefined}
                   onChange={(v) => onChange(id, String(v))}
                 />

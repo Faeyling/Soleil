@@ -7,6 +7,7 @@ import { initTailleTexte } from "./lib/tailleTexte";
 import {
   initialiserContenuSiVide,
   migrerDouleurVersEva,
+  migrerFatigueVertigesVersEva,
   migrerCategoriesSymptomes,
 } from "./data/repositories/contenuRepository";
 import { migrerZonesDouleurFusionnees } from "./data/repositories/entreesRepository";
@@ -18,6 +19,7 @@ initTailleTexte();
 initialiserContenuReactif();
 void initialiserContenuSiVide().then(async () => {
   await migrerDouleurVersEva();
+  await migrerFatigueVertigesVersEva();
   await migrerCategoriesSymptomes();
 });
 void migrerZonesDouleurFusionnees();

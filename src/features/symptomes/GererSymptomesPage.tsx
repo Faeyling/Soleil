@@ -28,7 +28,7 @@ const FORMULAIRE_VIDE: FormulaireSymptome = {
 const LABEL_TYPE: Record<TypeFormulaireSymptome, string> = {
   severite: "Niveau (Bas / Moyen / Haut)",
   ouinon: "Oui / Non",
-  eva: "Échelle Visuelle Analogique (EVA, 0-10)",
+  eva: "Échelle d'impact (0-10, par description)",
   texte: "Texte libre",
 };
 

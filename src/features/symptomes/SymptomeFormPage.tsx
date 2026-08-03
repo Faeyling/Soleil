@@ -194,8 +194,8 @@ export function SymptomeFormPage() {
           <SelecteurOuiNon valeur={depuisSeverite(severite)} onChange={(r) => setSeverite(versSeverite(r))} />
         </Champ>
       ) : symptome.typeFormulaire === "eva" ? (
-        <Champ label="Douleur">
-          <SelecteurEva valeur={evaluationEva} onChange={setEvaluationEva} />
+        <Champ label={symptome.label}>
+          <SelecteurEva itemId={symptome.id} valeur={evaluationEva} onChange={setEvaluationEva} />
         </Champ>
       ) : symptome.typeFormulaire === "texte" ? (
         <Champ label="Description">

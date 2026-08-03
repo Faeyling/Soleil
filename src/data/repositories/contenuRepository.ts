@@ -28,6 +28,23 @@ export async function migrerDouleurVersEva(): Promise<void> {
 }
 
 /**
+ * Migration ponctuelle : Fatigue et Vertiges passent aussi à l'échelle
+ * d'impact (0-10, par description fonctionnelle) — même raison et même
+ * garantie que `migrerDouleurVersEva`. Les entrées déjà enregistrées avant
+ * cette migration gardent leur `severity` (Bas/Moyen/Haut) telle quelle et
+ * restent pleinement lisibles ; seules les nouvelles saisies auront une
+ * note 0-10.
+ */
+export async function migrerFatigueVertigesVersEva(): Promise<void> {
+  for (const id of ["fatigue", "vertiges"]) {
+    const symptome = await db.symptomes.get(id);
+    if (symptome && symptome.typeFormulaire !== "eva") {
+      await db.symptomes.update(id, { typeFormulaire: "eva" });
+    }
+  }
+}
+
+/**
  * Migration ponctuelle : les symptômes par défaut sont désormais regroupés
  * par grande catégorie clinique (ex. Dysautonomie) dans la grille — même
  * raison que `migrerDouleurVersEva`, une installation existante garde sinon

@@ -3,6 +3,7 @@ import { db } from "../db";
 import {
   initialiserContenuSiVide,
   migrerDouleurVersEva,
+  migrerFatigueVertigesVersEva,
   migrerCategoriesSymptomes,
   ajouterSymptome,
   modifierSymptome,
@@ -61,6 +62,35 @@ describe("migrerDouleurVersEva", () => {
     const relu = await db.symptomes.get("douleur");
     expect(relu?.localisable).toBe(true);
     expect(relu?.ordre).toBe(3);
+  });
+});
+
+describe("migrerFatigueVertigesVersEva", () => {
+  it("passe fatigue et vertiges déjà en base à l'échelle d'impact", async () => {
+    await db.symptomes.add({ id: "fatigue", label: "Fatigue", icone: "🪫", ordre: 0 });
+    await db.symptomes.add({ id: "vertiges", label: "Vertiges", icone: "💫", ordre: 1 });
+
+    await migrerFatigueVertigesVersEva();
+
+    expect((await db.symptomes.get("fatigue"))?.typeFormulaire).toBe("eva");
+    expect((await db.symptomes.get("vertiges"))?.typeFormulaire).toBe("eva");
+  });
+
+  it("ne fait rien si fatigue/vertiges n'existent pas encore en base", async () => {
+    await migrerFatigueVertigesVersEva();
+
+    expect(await db.symptomes.get("fatigue")).toBeUndefined();
+    expect(await db.symptomes.get("vertiges")).toBeUndefined();
+  });
+
+  it("ne touche pas aux autres champs", async () => {
+    await db.symptomes.add({ id: "fatigue", label: "Fatigue", icone: "🪫", categorie: "dysautonomie", ordre: 6 });
+
+    await migrerFatigueVertigesVersEva();
+
+    const relu = await db.symptomes.get("fatigue");
+    expect(relu?.categorie).toBe("dysautonomie");
+    expect(relu?.ordre).toBe(6);
   });
 });
 

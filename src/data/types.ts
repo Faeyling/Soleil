@@ -111,7 +111,7 @@ export interface SymptomeDef {
   icone: string;
   /** Si vrai, le formulaire propose une sélection d'articulations/zones concernées. */
   localisable?: boolean;
-  /** Échelle de saisie : "severite" (Bas/Moyen/Haut, par défaut), "ouinon" — ex. luxation/subluxation, un événement plutôt qu'une intensité —, "eva" — Échelle Visuelle Analogique de 0 à 10, réservée à la douleur — ou "texte" — description libre, ex. "Autre". */
+  /** Échelle de saisie : "severite" (Bas/Moyen/Haut, par défaut), "ouinon" — ex. luxation/subluxation, un événement plutôt qu'une intensité —, "eva" — échelle d'impact de 0 à 10 par description fonctionnelle (douleur, fatigue, vertiges — voir SelecteurEva pour les descriptions par symptôme) — ou "texte" — description libre, ex. "Autre". */
   typeFormulaire?: "severite" | "ouinon" | "texte" | "eva";
   /** Grande catégorie clinique regroupant ce symptôme dans la grille (ex. dysautonomie) — "autre" par défaut si absent. */
   categorie?: CategorieSymptome;

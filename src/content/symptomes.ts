@@ -12,8 +12,8 @@ export const SYMPTOMES_PAR_DEFAUT: SymptomeDef[] = [
   { id: "bleus", label: "Bleus / ecchymoses", icone: "🟣", categorie: "cutane", ordre: 2 },
   { id: "constipation", label: "Constipation", icone: "🌀", categorie: "digestif", ordre: 3 },
   { id: "diarrhee", label: "Diarrhée", icone: "🚽", categorie: "digestif", ordre: 4 },
-  { id: "vertiges", label: "Vertiges", icone: "💫", categorie: "dysautonomie", ordre: 5 },
-  { id: "fatigue", label: "Fatigue", icone: "🪫", categorie: "dysautonomie", ordre: 6 },
+  { id: "vertiges", label: "Vertiges", icone: "💫", typeFormulaire: "eva", categorie: "dysautonomie", ordre: 5 },
+  { id: "fatigue", label: "Fatigue", icone: "🪫", typeFormulaire: "eva", categorie: "dysautonomie", ordre: 6 },
   {
     id: "troubles-digestifs",
     label: "Troubles digestifs / gastro-intestinaux",
