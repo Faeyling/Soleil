@@ -75,6 +75,11 @@ function couleurZone(plusDouloureuse: boolean): string {
   return plusDouloureuse ? couleurSeverite("haut") : SECTIONS.symptomes.couleur;
 }
 
+/** Contour plus saturé (assombri) que le remplissage, pour que la zone colorée se détache nettement du bonhomme même quand la couleur de base est pastel. */
+function bordureSaturee(couleur: string): string {
+  return `color-mix(in srgb, ${couleur} 70%, black)`;
+}
+
 function libelleEtatZone(id: string, plusDouloureuse: boolean): string {
   const label = labelArticulation(id);
   return plusDouloureuse ? `${label} — zone la plus douloureuse de la journée` : label;
@@ -105,7 +110,7 @@ function PointHotspot({
       style={{
         left: `${(zone.x / 200) * 100}%`,
         top: `${(zone.y / 400) * 100}%`,
-        border: `${plusDouloureuse ? 3 : 2}px solid ${couleur}`,
+        border: `${plusDouloureuse ? 3 : 2}px solid ${actif ? bordureSaturee(couleur) : couleur}`,
         background: actif ? couleur : "var(--color-surface)",
         boxShadow: "0 1px 4px rgba(58,46,38,0.2)",
       }}
@@ -184,7 +189,12 @@ function MembreZone({
               key={i}
               aria-hidden="true"
               className="absolute rounded-full pointer-events-none"
-              style={{ ...styleSegment(x1, y1, x2, y2, 15), background: couleur, opacity: 0.85 }}
+              style={{
+                ...styleSegment(x1, y1, x2, y2, 18),
+                background: couleur,
+                border: `2px solid ${bordureSaturee(couleur)}`,
+                boxSizing: "border-box",
+              }}
             />
           );
         })}

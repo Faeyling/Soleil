@@ -362,6 +362,11 @@ const TRACES_SILHOUETTE_PDF: Record<string, [number, number][]> = {
 const LARGEUR_SILHOUETTE = 100;
 const HAUTEUR_SILHOUETTE = 192;
 
+/** Contour plus saturé (assombri) que le remplissage, pour que la zone colorée se détache nettement de la silhouette neutre. */
+function assombrir(couleur: [number, number, number], facteur: number): [number, number, number] {
+  return [couleur[0] * (1 - facteur), couleur[1] * (1 - facteur), couleur[2] * (1 - facteur)];
+}
+
 /** Dessine la mini-silhouette avec les zones les plus fréquentes coloriées selon leur rang, centrée dans l'espace fourni, et renvoie la position Y suivante. */
 function dessinerSilhouetteMini(
   doc: jsPDF,
@@ -394,11 +399,19 @@ function dessinerSilhouetteMini(
   doc.line(versX(62), versY(95), versX(61), versY(135));
   doc.line(versX(61), versY(135), versX(60), versY(170));
 
-  // Membres colorés (bras/jambe) : redessine par-dessus la ligne neutre pour les zones classées.
+  // Membres colorés (bras/jambe) : redessine par-dessus la ligne neutre pour les zones classées —
+  // un trait large et plus sombre (contour) suivi d'un trait plus étroit et saturé (remplissage)
+  // simule un contour net autour de toute la zone, plutôt qu'un simple filet fin.
   for (const [zoneId, trace] of Object.entries(TRACES_SILHOUETTE_PDF)) {
     const rang = rangParZone.get(zoneId);
     if (rang === undefined) continue;
-    doc.setDrawColor(...GRADIENT_ZONES[rang]);
+    const couleur = GRADIENT_ZONES[rang];
+    doc.setDrawColor(...assombrir(couleur, 0.35));
+    doc.setLineWidth(9 * echelle);
+    for (let i = 0; i < trace.length - 1; i++) {
+      doc.line(versX(trace[i][0]), versY(trace[i][1]), versX(trace[i + 1][0]), versY(trace[i + 1][1]));
+    }
+    doc.setDrawColor(...couleur);
     doc.setLineWidth(7 * echelle);
     for (let i = 0; i < trace.length - 1; i++) {
       doc.line(versX(trace[i][0]), versY(trace[i][1]), versX(trace[i + 1][0]), versY(trace[i + 1][1]));
@@ -409,9 +422,10 @@ function dessinerSilhouetteMini(
   for (const [zoneId, point] of Object.entries(POSITIONS_SILHOUETTE_PDF)) {
     const rang = rangParZone.get(zoneId);
     const rayon = (zoneId === "torse" || zoneId === "dos" ? 8 : 5.5) * echelle;
-    doc.setDrawColor(...(rang !== undefined ? GRADIENT_ZONES[rang] : COULEUR_TRAIT_SILHOUETTE));
-    doc.setFillColor(...(rang !== undefined ? GRADIENT_ZONES[rang] : COULEUR_FOND_DOUCE));
-    doc.setLineWidth(1.2);
+    const couleur = rang !== undefined ? GRADIENT_ZONES[rang] : undefined;
+    doc.setDrawColor(...(couleur ? assombrir(couleur, 0.35) : COULEUR_TRAIT_SILHOUETTE));
+    doc.setFillColor(...(couleur ?? COULEUR_FOND_DOUCE));
+    doc.setLineWidth(couleur ? 2 : 1.2);
     doc.circle(versX(point.x), versY(point.y), rayon, "FD");
   }
 
