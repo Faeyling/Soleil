@@ -3,7 +3,7 @@ import type { Entree, EntreeSymptome, Medicament, Marqueur } from "../data/types
 import { labelSeverite, ordreSeverite, LABEL_SEVERITE, type Severite } from "./severite";
 import { libelleEntree } from "./libelleEntree";
 import { labelArticulation, trouverSymptome } from "../content/symptomes";
-import { dateDuJour, formatDateLisible, joursEntre, nomMois } from "./date";
+import { formatDateLisible, joursEntre } from "./date";
 import type { EvaluationBeighton } from "../data/repositories/beightonRepository";
 import { LABEL_TRANCHE_AGE_BEIGHTON, seuilPositifBeighton } from "../content/ressources";
 import { medicamentsStockBas } from "./stock";
@@ -481,50 +481,52 @@ function zonesPlusDouloureusesFrequentes(
     .map((z, i) => ({ ...z, rang: i }));
 }
 
-/** Regroupe les jours d'une période par mois calendaire (clé "YYYY-MM", dans l'ordre chronologique). */
-function moisDeLaPeriode(dateDebut: string, dateFin: string): string[] {
-  const vus = new Set<string>();
-  const mois: string[] = [];
-  for (const jour of joursEntre(dateDebut, dateFin)) {
-    const cle = jour.slice(0, 7);
-    if (!vus.has(cle)) {
-      vus.add(cle);
-      mois.push(cle);
-    }
-  }
-  return mois;
-}
-
-function libelleMois(cle: string): string {
-  const [annee, mois] = cle.split("-").map(Number);
-  return `${nomMois(mois - 1)} ${annee}`;
-}
-
 /**
- * Pourcentage de jours de la période (et, pour chaque mois couvert, pourcentage
- * de jours de ce mois) où au moins une entrée existe pour cet élément — plus
- * parlant qu'un simple comptage brut d'occurrences pour comparer des périodes
- * de longueurs différentes.
+ * Le rapport répond à des questions précises plutôt que d'exposer toutes
+ * les statistiques calculables :
+ *  - Ça arrive souvent ? → pourcentageJours
+ *  - À quel point c'est grave quand c'est grave ? → pourcentageJoursForts
+ *    (jours "haut"/"crise", quel que soit le type de saisie — l'EVA dérive
+ *    déjà une sévérité automatiquement, donc ce calcul reste uniforme)
+ *  - Ça s'aggrave, s'améliore, ou stable ? → calculerTendance (1re moitié
+ *    de la période comparée à la 2e — plus lisible qu'une liste mois par
+ *    mois qu'il faudrait décoder à la main). Suit la proportion de jours
+ *    "forts" quand il y en a eu au moins un sur la période — un symptôme
+ *    déjà signalé tous les jours ne peut plus devenir "plus fréquent", donc
+ *    la fréquence brute ne dirait jamais qu'il s'aggrave alors que sa
+ *    sévérité peut grimper ; sans jour fort du tout, retombe sur la
+ *    fréquence, seul signal disponible pour un symptôme resté léger.
  */
-function repartitionParMois(
-  dates: Set<string>,
-  joursPeriode: string[],
-  dateDebut: string,
-  dateFin: string,
-): { pourcentageGlobal: number; parMois: string[] } {
-  const pourcentageGlobal =
-    joursPeriode.length > 0 ? Math.round((dates.size / joursPeriode.length) * 100) : 0;
-  const parMois = moisDeLaPeriode(dateDebut, dateFin).map((cle) => {
-    const joursDuMoisDansPeriode = joursPeriode.filter((j) => j.startsWith(cle));
-    const joursAvecEntree = joursDuMoisDansPeriode.filter((j) => dates.has(j)).length;
-    const pct =
-      joursDuMoisDansPeriode.length > 0
-        ? Math.round((joursAvecEntree / joursDuMoisDansPeriode.length) * 100)
-        : 0;
-    return `${libelleMois(cle)} : ${pct}%`;
-  });
-  return { pourcentageGlobal, parMois };
+function pourcentageJours(dates: Set<string>, joursPeriode: string[]): number {
+  return joursPeriode.length > 0 ? Math.round((dates.size / joursPeriode.length) * 100) : 0;
 }
+
+function datesJoursForts(liste: Entree[]): Set<string> {
+  return new Set(
+    liste.filter((e) => "severity" in e && (e.severity === "haut" || e.severity === "crise")).map((e) => e.date),
+  );
+}
+
+type Tendance = "hausse" | "stable" | "baisse";
+
+/** Écart minimal de 15 points entre les deux moitiés pour ignorer le bruit sur de petits effectifs. */
+function calculerTendance(dates: Set<string>, datesFortes: Set<string>, joursPeriode: string[]): Tendance {
+  if (joursPeriode.length < 4) return "stable";
+  const ensembleSuivi = datesFortes.size > 0 ? datesFortes : dates;
+  const milieu = Math.floor(joursPeriode.length / 2);
+  const pct = (jours: string[]) =>
+    jours.length > 0 ? (jours.filter((j) => ensembleSuivi.has(j)).length / jours.length) * 100 : 0;
+  const delta = pct(joursPeriode.slice(milieu)) - pct(joursPeriode.slice(0, milieu));
+  if (delta >= 15) return "hausse";
+  if (delta <= -15) return "baisse";
+  return "stable";
+}
+
+const TENDANCE_INFO: Record<Tendance, { label: string; couleur: [number, number, number] }> = {
+  hausse: { label: "en hausse", couleur: COULEUR_SEVERITE_PDF.haut },
+  stable: { label: "stable", couleur: COULEUR_DOUX },
+  baisse: { label: "en baisse", couleur: COULEUR_SEVERITE_PDF.bas },
+};
 
 export function genererRapportPDF(
   entrees: Entree[],
@@ -680,45 +682,37 @@ export function genererRapportPDF(
         parItem.set(e.item, liste);
       }
 
-      // "Depuis le début du suivi" : indépendant de la période choisie pour le
-      // rapport — s'appuie sur toutes les entrées jamais enregistrées, pas
-      // seulement `entreesPeriode`.
-      const dateDebutSuivi = entrees.reduce<string | undefined>(
-        (min, e) => (min === undefined || e.date < min ? e.date : min),
-        undefined,
-      );
-      const joursDepuisDebut = dateDebutSuivi ? joursEntre(dateDebutSuivi, dateDuJour()) : [];
-      const parItemToutesEntrees = new Map<string, Entree[]>();
-      for (const e of entrees) {
-        if (e.type !== "symptom") continue;
-        const liste = parItemToutesEntrees.get(e.item) ?? [];
-        liste.push(e);
-        parItemToutesEntrees.set(e.item, liste);
-      }
-
       const symptomesAvecStats = [...parItem.entries()]
         .map(([item, liste]) => {
           const dates = new Set(liste.map((e) => e.date));
-          const { pourcentageGlobal, parMois } = repartitionParMois(
-            dates,
-            joursPeriode,
-            dateDebutEffective,
-            options.dateFin,
-          );
-          const datesToutesEntrees = new Set((parItemToutesEntrees.get(item) ?? []).map((e) => e.date));
-          const pourcentageDepuisDebut =
-            joursDepuisDebut.length > 0
-              ? Math.round((datesToutesEntrees.size / joursDepuisDebut.length) * 100)
-              : 0;
-          return { item, liste, pourcentageGlobal, parMois, pourcentageDepuisDebut };
+          const datesFortes = datesJoursForts(liste);
+          return {
+            item,
+            liste,
+            pourcentageGlobal: pourcentageJours(dates, joursPeriode),
+            pourcentageJoursForts: pourcentageJours(datesFortes, joursPeriode),
+            tendance: calculerTendance(dates, datesFortes, joursPeriode),
+          };
         })
-        .sort((a, b) => b.pourcentageGlobal - a.pourcentageGlobal);
+        // Priorité aux symptômes qui deviennent sévères le plus souvent, pas
+        // seulement les plus fréquents : un symptôme rare mais qui tourne
+        // régulièrement à la crise mérite d'être vu avant un symptôme fréquent
+        // mais toujours léger.
+        .sort((a, b) => b.pourcentageJoursForts - a.pourcentageJoursForts || b.pourcentageGlobal - a.pourcentageGlobal);
 
-      for (const { item, liste, pourcentageGlobal, parMois, pourcentageDepuisDebut } of symptomesAvecStats) {
+      for (const { item, liste, pourcentageGlobal, pourcentageJoursForts: pctForts, tendance } of symptomesAvecStats) {
         const label = libelleEntree(liste[0]);
-        droite.sousTitre(
-          `${label} — signalé ${pourcentageGlobal}% des jours de la période (${pourcentageDepuisDebut}% depuis le début du suivi)`,
-        );
+        droite.sousTitre(label);
+
+        const infoTendance = TENDANCE_INFO[tendance];
+        const swatches: Swatch[] = [
+          { label: `${pourcentageGlobal}% des jours`, couleur: COULEUR_DOUX },
+          { label: infoTendance.label, couleur: infoTendance.couleur },
+          {
+            label: `${pctForts}% jours forts`,
+            couleur: pctForts > 0 ? COULEUR_SEVERITE_PDF.haut : COULEUR_SEVERITE_PDF.bas,
+          },
+        ];
 
         if (trouverSymptome(item)?.typeFormulaire === "eva") {
           const evas = liste
@@ -727,26 +721,15 @@ export function genererRapportPDF(
             .filter((v): v is number => v != null);
           const moyenneEvaNum = evas.length > 0 ? evas.reduce((a, b) => a + b, 0) / evas.length : undefined;
           if (moyenneEvaNum !== undefined) {
-            const swatch: Swatch = {
-              label: `Impact moyen : ${moyenneEvaNum.toFixed(1)}/10`,
+            swatches.push({
+              label: `Impact moyen ${moyenneEvaNum.toFixed(1)}/10`,
               couleur: COULEUR_SEVERITE_PDF[severiteDepuisEva(moyenneEvaNum)],
-            };
-            const hauteur = hauteurSwatches(doc, droite.largeur, [swatch]);
-            droite.ajouter(hauteur, (x, yy, largeur) => dessinerSwatches(doc, x, yy, largeur, [swatch]));
+            });
           }
-          droite.paragraphe(`Par mois : ${parMois.join(" · ")}`, 9.5, COULEUR_DOUX);
-        } else {
-          const compte: Record<Severite, number> = { bas: 0, moyen: 0, haut: 0, crise: 0 };
-          for (const e of liste) {
-            if ("severity" in e && e.severity) compte[e.severity]++;
-          }
-          const swatches: Swatch[] = (["bas", "moyen", "haut", "crise"] as Severite[])
-            .filter((s) => s !== "crise" || compte.crise > 0)
-            .map((s) => ({ label: `${labelSeverite(s, item)} ${compte[s]}`, couleur: COULEUR_SEVERITE_PDF[s] }));
-          const hauteur = hauteurSwatches(doc, droite.largeur, swatches);
-          droite.ajouter(hauteur, (x, yy, largeur) => dessinerSwatches(doc, x, yy, largeur, swatches));
-          droite.paragraphe(`Par mois : ${parMois.join(" · ")}`, 9.5, COULEUR_DOUX);
         }
+
+        const hauteur = hauteurSwatches(doc, droite.largeur, swatches);
+        droite.ajouter(hauteur, (x, yy, largeur) => dessinerSwatches(doc, x, yy, largeur, swatches));
       }
     }
   }
