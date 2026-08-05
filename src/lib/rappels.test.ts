@@ -6,6 +6,8 @@ import {
   masquerRappelSauvegardePendantQuelquesJours,
   doitRappelerParcoursDuJour,
   masquerRappelParcoursAujourdhui,
+  doitAlerterParcoursHierManque,
+  masquerAlerteParcoursHierAujourdhui,
   doitAlerterStockBas,
   masquerAlerteStockPendantQuelquesJours,
   doitRappelerMedicament,
@@ -74,6 +76,27 @@ describe("rappel du parcours quotidien", () => {
     expect(doitRappelerParcoursDuJour(true)).toBe(true);
     masquerRappelParcoursAujourdhui();
     expect(doitRappelerParcoursDuJour(true)).toBe(false);
+  });
+});
+
+describe("alerte du parcours d'hier manqué", () => {
+  it("n'alerte rien si des entrées existent déjà pour hier", () => {
+    expect(doitAlerterParcoursHierManque(false)).toBe(false);
+  });
+
+  it("alerte si aucune entrée n'existe pour hier", () => {
+    expect(doitAlerterParcoursHierManque(true)).toBe(true);
+  });
+
+  it("n'alerte plus une fois masqué pour aujourd'hui", () => {
+    expect(doitAlerterParcoursHierManque(true)).toBe(true);
+    masquerAlerteParcoursHierAujourdhui();
+    expect(doitAlerterParcoursHierManque(true)).toBe(false);
+  });
+
+  it("reste indépendante du rappel du jour même (clés distinctes)", () => {
+    masquerRappelParcoursAujourdhui();
+    expect(doitAlerterParcoursHierManque(true)).toBe(true);
   });
 });
 

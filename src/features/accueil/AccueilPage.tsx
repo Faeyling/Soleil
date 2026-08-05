@@ -12,12 +12,14 @@ import { ChargementEcran } from "../../components/ui/ChargementEcran";
 import { BanniereRappel } from "../../components/ui/BanniereRappel";
 import { Mascotte } from "../../components/mascotte/Mascotte";
 import { SECTIONS } from "../../lib/sections";
-import { dateDuJour, formatDateLisible } from "../../lib/date";
+import { ajouterJours, dateDuJour, formatDateLisible } from "../../lib/date";
 import { medicamentsStockBas } from "../../lib/stock";
 import { synchroniserSauvegardeAutoSiPossible } from "../../lib/sauvegardeAuto";
 import {
   doitRappelerParcoursDuJour,
   masquerRappelParcoursAujourdhui,
+  doitAlerterParcoursHierManque,
+  masquerAlerteParcoursHierAujourdhui,
   doitRappelerSauvegarde,
   masquerRappelSauvegardePendantQuelquesJours,
   doitAlerterStockBas,
@@ -41,6 +43,7 @@ export function AccueilPage() {
   const entrees = entreesBrutes === CHARGEMENT ? AUCUNE_ENTREE : entreesBrutes;
   const tousLesMedicaments = useMedicaments();
   const [rappelParcoursMasque, setRappelParcoursMasque] = useState(false);
+  const [alerteParcoursHierMasquee, setAlerteParcoursHierMasquee] = useState(false);
   const [rappelSauvegardeMasque, setRappelSauvegardeMasque] = useState(false);
   const [alerteStockMasquee, setAlerteStockMasquee] = useState(false);
   const [rappelMedicamentsMasque, setRappelMedicamentsMasque] = useState(false);
@@ -76,8 +79,12 @@ export function AccueilPage() {
 
   const entreesJourSelectionne = jourSelectionne ? entreesParJour.get(jourSelectionne) ?? [] : [];
   const entreesAujourdhui = entreesParJour.get(dateDuJour()) ?? [];
+  const hier = ajouterJours(dateDuJour(), -1);
+  const entreesHier = entreesParJour.get(hier) ?? [];
   const afficherRappelParcours =
     !rappelParcoursMasque && doitRappelerParcoursDuJour(entreesAujourdhui.length === 0);
+  const afficherAlerteParcoursHier =
+    !alerteParcoursHierMasquee && doitAlerterParcoursHierManque(entreesHier.length === 0);
   const afficherRappelSauvegarde = !rappelSauvegardeMasque && doitRappelerSauvegarde();
   const medicamentsStockBasListe = medicamentsStockBas(tousLesMedicaments);
   const afficherAlerteStock =
@@ -154,6 +161,21 @@ export function AccueilPage() {
           onIgnorer={() => {
             masquerRappelParcoursAujourdhui();
             setRappelParcoursMasque(true);
+          }}
+          couleur={SECTIONS.suivis.couleurFonce}
+          couleurClaire={SECTIONS.suivis.couleurClaire}
+        />
+      )}
+
+      {afficherAlerteParcoursHier && (
+        <BanniereRappel
+          icone="⚠️"
+          texte={`Le suivi du ${formatDateLisible(hier)} n'a pas été rempli. Tu peux le compléter maintenant, daté à hier.`}
+          labelAction="Remplir le suivi d'hier"
+          onAction={() => navigate(`/parcours?date=${hier}`)}
+          onIgnorer={() => {
+            masquerAlerteParcoursHierAujourdhui();
+            setAlerteParcoursHierMasquee(true);
           }}
           couleur={SECTIONS.suivis.couleurFonce}
           couleurClaire={SECTIONS.suivis.couleurClaire}

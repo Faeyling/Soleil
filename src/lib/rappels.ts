@@ -4,6 +4,7 @@ import type { Medicament } from "../data/types";
 const CLE_DERNIERE_SAUVEGARDE = "soleil-derniere-sauvegarde";
 const CLE_RAPPEL_SAUVEGARDE_MASQUE_JUSQUAU = "soleil-rappel-sauvegarde-masque-jusquau";
 const CLE_RAPPEL_PARCOURS_MASQUE_LE = "soleil-rappel-parcours-masque-le";
+const CLE_ALERTE_PARCOURS_HIER_MASQUEE_LE = "soleil-alerte-parcours-hier-masquee-le";
 const CLE_ALERTE_STOCK_MASQUEE_JUSQUAU = "soleil-alerte-stock-masquee-jusquau";
 const PREFIXE_RAPPEL_MEDICAMENT_MASQUE_LE = "soleil-rappel-medicament-masque-le-";
 
@@ -44,6 +45,22 @@ export function doitRappelerParcoursDuJour(entreesJourVides: boolean): boolean {
 
 export function masquerRappelParcoursAujourdhui(): void {
   localStorage.setItem(CLE_RAPPEL_PARCOURS_MASQUE_LE, dateDuJour());
+}
+
+/**
+ * Alerte distincte du rappel "aujourd'hui" ci-dessus : signale un jour
+ * complètement passé sous silence plutôt qu'un simple rappel de la journée
+ * en cours. Se masque pour la journée comme les autres rappels — puisque
+ * "hier" change chaque jour, un nouveau jour manqué redéclenche
+ * naturellement une nouvelle alerte le lendemain.
+ */
+export function doitAlerterParcoursHierManque(entreesHierVides: boolean): boolean {
+  if (!entreesHierVides) return false;
+  return localStorage.getItem(CLE_ALERTE_PARCOURS_HIER_MASQUEE_LE) !== dateDuJour();
+}
+
+export function masquerAlerteParcoursHierAujourdhui(): void {
+  localStorage.setItem(CLE_ALERTE_PARCOURS_HIER_MASQUEE_LE, dateDuJour());
 }
 
 export function doitAlerterStockBas(nombreMedicamentsStockBas: number): boolean {

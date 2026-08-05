@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { EnTete } from "../../components/ui/EnTete";
 import { BarreProgression } from "../../components/ui/BarreProgression";
 import { SelecteurSeverite } from "../../components/ui/SelecteurSeverite";
@@ -20,7 +20,7 @@ import { trouverSuivi } from "../../content/autresSuivis";
 import { useEntreesDuJour } from "../../hooks/useEntrees";
 import { useMedicaments } from "../../hooks/useMedicaments";
 import { enregistrerOuMettreAJour, creerEntree } from "../../data/repositories/entreesRepository";
-import { dateDuJour, maintenantISO } from "../../lib/date";
+import { dateDuJour, formatDateLisible, isoDepuisDate } from "../../lib/date";
 import { ID_NOTE_JOURNEE } from "../../lib/libelleEntree";
 import type { EntreeSymptome, EntreeSuivi } from "../../data/types";
 
@@ -28,7 +28,12 @@ const TOTAL_ETAPES = 5;
 
 export function ParcoursQuotidienPage() {
   const navigate = useNavigate();
-  const dateJour = dateDuJour();
+  const [searchParams] = useSearchParams();
+  // Permet de compléter un jour manqué (ex. depuis l'alerte "suivi d'hier
+  // non rempli" sur l'accueil) avec exactement le même parcours, juste daté
+  // différemment — pas de sélecteur de date dans le parcours lui-même.
+  const dateJour = searchParams.get("date") ?? dateDuJour();
+  const estAujourdhui = dateJour === dateDuJour();
   const entreesJour = useEntreesDuJour(dateJour);
   const medicaments = useMedicaments();
 
@@ -126,7 +131,7 @@ export function ParcoursQuotidienPage() {
         location: def?.localisable ? localisationValeurs[item] : undefined,
         zonesPlusDouloureuses: def?.localisable && estEva ? zonesPlusDouloureusesValeurs[item] : undefined,
         date: dateJour,
-        datetime: maintenantISO(),
+        datetime: isoDepuisDate(dateJour),
       });
     }
 
@@ -136,7 +141,7 @@ export function ParcoursQuotidienPage() {
         item: "humeur",
         severity: humeur,
         date: dateJour,
-        datetime: maintenantISO(),
+        datetime: isoDepuisDate(dateJour),
       });
     }
 
@@ -153,7 +158,7 @@ export function ParcoursQuotidienPage() {
         medicationId: medicament.id,
         medicationName: medicament.nom,
         date: dateJour,
-        datetime: maintenantISO(),
+        datetime: isoDepuisDate(dateJour),
       });
     }
 
@@ -172,7 +177,7 @@ export function ParcoursQuotidienPage() {
         unit: suivi.typeFormulaire === "numerique" ? suivi.unite : undefined,
         note: suivi.typeFormulaire === "texte" ? valeurBrute : undefined,
         date: dateJour,
-        datetime: maintenantISO(),
+        datetime: isoDepuisDate(dateJour),
       });
     }
 
@@ -182,7 +187,7 @@ export function ParcoursQuotidienPage() {
         item: ID_NOTE_JOURNEE,
         note: noteFin.trim(),
         date: dateJour,
-        datetime: maintenantISO(),
+        datetime: isoDepuisDate(dateJour),
       });
     }
 
@@ -193,9 +198,13 @@ export function ParcoursQuotidienPage() {
     return (
       <div className="flex flex-col items-center text-center gap-4 pt-10">
         <Mascotte taille={150} />
-        <h1 className="text-xl font-bold">Suivi du jour enregistré !</h1>
+        <h1 className="text-xl font-bold">
+          {estAujourdhui ? "Suivi du jour enregistré !" : `Suivi du ${formatDateLisible(dateJour)} enregistré !`}
+        </h1>
         <p className="text-texte-doux max-w-sm">
-          Merci d'avoir pris ce moment pour toi. À demain, si tu en as besoin — je serai là.
+          {estAujourdhui
+            ? "Merci d'avoir pris ce moment pour toi. À demain, si tu en as besoin — je serai là."
+            : "Merci d'avoir pris le temps de compléter cette journée."}
         </p>
         <Bouton onClick={() => navigate("/")}>Retour à l'accueil</Bouton>
       </div>
@@ -204,7 +213,7 @@ export function ParcoursQuotidienPage() {
 
   return (
     <div>
-      <EnTete titre="Suivi du jour" couleur={couleurEtape} />
+      <EnTete titre={estAujourdhui ? "Suivi du jour" : `Suivi du ${formatDateLisible(dateJour)}`} couleur={couleurEtape} />
       <div className="mb-6">
         <BarreProgression etape={etape} total={TOTAL_ETAPES} couleur={couleurEtape} />
       </div>
@@ -213,6 +222,7 @@ export function ParcoursQuotidienPage() {
         <div className="rounded-[var(--rayon-grand)]">
           {etape === 1 && (
             <EtapeSymptomes
+              estAujourdhui={estAujourdhui}
               ids={idsSymptomesQuotidiens}
               valeurs={symptomeValeurs}
               onChange={(id, s) => setSymptomeValeurs((prev) => ({ ...prev, [id]: s }))}
@@ -227,6 +237,7 @@ export function ParcoursQuotidienPage() {
           {etape === 2 && <EtapeHumeur valeur={humeur} onChange={setHumeur} />}
           {etape === 3 && (
             <EtapeMedicaments
+              estAujourdhui={estAujourdhui}
               medicaments={medicaments.filter((m) => !m.desactive)}
               coches={medicamentsCoches}
               onToggle={(id) =>
@@ -274,6 +285,7 @@ export function ParcoursQuotidienPage() {
 }
 
 function EtapeSymptomes({
+  estAujourdhui,
   ids,
   valeurs,
   onChange,
@@ -282,6 +294,7 @@ function EtapeSymptomes({
   zonesPlusDouloureuses,
   onChangeZonesPlusDouloureuses,
 }: {
+  estAujourdhui: boolean;
   ids: string[];
   valeurs: Record<string, string>;
   onChange: (id: string, v: string) => void;
@@ -293,7 +306,7 @@ function EtapeSymptomes({
   return (
     <div>
       <h2 className="font-bold text-lg mb-4" style={{ color: SECTIONS.symptomes.couleurFonce }}>
-        Comment se sentent tes symptômes aujourd'hui ?
+        {estAujourdhui ? "Comment se sentent tes symptômes aujourd'hui ?" : "Comment se sentaient tes symptômes ce jour-là ?"}
       </h2>
       {ids.length === 0 && (
         <p className="text-sm text-texte-doux">
@@ -387,10 +400,12 @@ function EtapeHumeur({
 }
 
 function EtapeMedicaments({
+  estAujourdhui,
   medicaments,
   coches,
   onToggle,
 }: {
+  estAujourdhui: boolean;
   medicaments: { id: string; nom: string }[];
   coches: Set<string>;
   onToggle: (id: string) => void;
@@ -398,7 +413,7 @@ function EtapeMedicaments({
   return (
     <div>
       <h2 className="font-bold text-lg mb-4" style={{ color: SECTIONS.medicaments.couleurFonce }}>
-        Quels médicaments as-tu pris aujourd'hui ?
+        {estAujourdhui ? "Quels médicaments as-tu pris aujourd'hui ?" : "Quels médicaments as-tu pris ce jour-là ?"}
       </h2>
       {medicaments.length === 0 ? (
         <p className="text-sm text-texte-doux">
